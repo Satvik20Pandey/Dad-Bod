@@ -359,6 +359,24 @@ const builtInFoodDb = {
   oil: { kcal: 884, protein: 0, carbs: 0, fiber: 0, sugar: 0, fat: 100, satFat: 14, polyFat: 34, monoFat: 43, transFat: 0.5, cholesterol: 0, sodium: 0, potassium: 0, vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 },
 };
 
+let externalFoodDb = {};
+let foodDatasetEntries = [];
+let foodDatasetLoaded = false;
+let foodDatasetLoadPromise = null;
+
+const genericFoodTokens = new Set([
+  "oil",
+  "ghee",
+  "butter",
+  "sauce",
+  "masala",
+  "gravy",
+  "pickle",
+  "spice",
+  "salt",
+  "sugar",
+]);
+
 const adminDefaultState = {
   profile: {
     currentWeight: 82,
@@ -367,9 +385,13 @@ const adminDefaultState = {
     heightCm: 180.3,
     adminPlanVersion: 2,
     weeklyLoss: 1,
+    goalMode: "loss",
     calorieTarget: 1800,
+    recommendedCalories: 1800,
+    manualCalorieTarget: 1800,
     maintenanceCalories: 2460,
     deficitCalories: 1800,
+    surplusCalories: 0,
     macros: {
       proteinG: 149,
       fatG: 57,
@@ -386,6 +408,8 @@ const adminDefaultState = {
   gymLogsByDate: {},
   weightEntries: [],
   photoEntries: [],
+  editingMealId: null,
+  editingPhotoId: null,
 };
 
 const genericDefaultState = {
@@ -395,9 +419,13 @@ const genericDefaultState = {
     age: 24,
     heightCm: 170,
     weeklyLoss: 0.5,
+    goalMode: "loss",
     calorieTarget: 1900,
+    recommendedCalories: 1900,
+    manualCalorieTarget: 0,
     maintenanceCalories: 2250,
     deficitCalories: 1900,
+    surplusCalories: 0,
     macros: {
       proteinG: 136,
       fatG: 54,
@@ -406,7 +434,7 @@ const genericDefaultState = {
   },
   settings: {
     apiKey: "",
-    aiModel: "openai/gpt-4o-mini",
+    aiModel: "openai/gpt-4o",
   },
   mealsByDate: {},
   foodLibrary: {},
@@ -414,6 +442,8 @@ const genericDefaultState = {
   gymLogsByDate: {},
   weightEntries: [],
   photoEntries: [],
+  editingMealId: null,
+  editingPhotoId: null,
 };
 
 let authStore = loadAuthStore();
@@ -423,6 +453,14 @@ let appEventsBound = false;
 let onboardingEventsBound = false;
 const gifCache = {};
 let activeSpeechRecognition = null;
+
+const exerciseGifQueryOverrides = {
+  "mountain climbers": "mountain climbers plank core exercise workout",
+  "march in place": "march in place cardio exercise indoor",
+  "high knees march": "high knees march in place exercise form",
+};
+
+const exerciseGifBlockedKeywords = ["mountain", "cliff", "hiking", "everest", "snow", "rock climbing", "alpinism"];
 
 function clone(data) {
   if (typeof structuredClone === "function") return structuredClone(data);
@@ -469,6 +507,202 @@ function parseOptionalNumber(inputId) {
   if (v === "" || v == null) return null;
   const n = Number(v);
   return Number.isFinite(n) ? n : null;
+}
+
+function normalizeFoodKey(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\([^)]*\)/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function tokenizeFoodText(value) {
+  const stopWords = new Set([
+    "with",
+    "without",
+    "and",
+    "plus",
+    "for",
+    "the",
+    "in",
+    "of",
+    "a",
+    "an",
+    "ml",
+    "gram",
+    "grams",
+    "g",
+    "restaurant",
+    "homemade",
+  ]);
+
+  return normalizeFoodKey(value)
+    .split(" ")
+    .filter((token) => token.length > 1 && !stopWords.has(token));
+}
+
+function mapFoodPayloadToNutrition(item) {
+  return withNutritionDefaults({
+    kcal: Number(item?.kcal || 0),
+    protein: Number(item?.protein || 0),
+    carbs: Number(item?.carbs || 0),
+    fiber: Number(item?.fiber || 0),
+    sugar: Number(item?.sugar || 0),
+    fat: Number(item?.fat || 0),
+    satFat: Number(item?.satFat || 0),
+    polyFat: Number(item?.polyFat || 0),
+    monoFat: Number(item?.monoFat || 0),
+    transFat: Number(item?.transFat || 0),
+    cholesterol: Number(item?.cholesterol || 0),
+    sodium: Number(item?.sodium || 0),
+    potassium: Number(item?.potassium || 0),
+    vitaminA: Number(item?.vitaminA || 0),
+    vitaminC: Number(item?.vitaminC || 0),
+    calcium: Number(item?.calcium || 0),
+    iron: Number(item?.iron || 0),
+  });
+}
+
+async function loadFoodDatasetIfNeeded() {
+  if (foodDatasetLoaded) return;
+  if (foodDatasetLoadPromise) {
+    await foodDatasetLoadPromise;
+    return;
+  }
+
+  foodDatasetLoadPromise = (async () => {
+    try {
+      const response = await fetch("./assets/food-dataset.json", { cache: "no-cache" });
+      if (!response.ok) throw new Error(`dataset http ${response.status}`);
+
+      const payload = await response.json();
+      const foods = Array.isArray(payload?.foods) ? payload.foods : [];
+      if (!foods.length) {
+        throw new Error("dataset has no foods");
+      }
+
+      const index = {};
+      const entries = [];
+
+      foods.forEach((food) => {
+        const nutrition = mapFoodPayloadToNutrition(food);
+        const aliases = [food?.name, food?.key, ...(Array.isArray(food?.aliases) ? food.aliases : [])]
+          .map((alias) => normalizeFoodKey(alias))
+          .filter(Boolean);
+
+        if (!aliases.length) return;
+
+        aliases.forEach((alias) => {
+          if (!index[alias]) index[alias] = nutrition;
+        });
+
+        entries.push({
+          name: String(food?.name || food?.key || aliases[0]),
+          key: aliases[0],
+          nutrition,
+        });
+      });
+
+      externalFoodDb = index;
+      foodDatasetEntries = entries;
+      foodDatasetLoaded = true;
+    } catch (error) {
+      console.warn("Food dataset load failed, using built-in DB only.", error);
+      externalFoodDb = {};
+      foodDatasetEntries = [];
+      foodDatasetLoaded = false;
+    } finally {
+      foodDatasetLoadPromise = null;
+    }
+  })();
+
+  await foodDatasetLoadPromise;
+}
+
+function getMergedFoodDb() {
+  const merged = {};
+  const addSource = (source) => {
+    Object.entries(source || {}).forEach(([rawKey, values]) => {
+      const key = normalizeFoodKey(rawKey);
+      if (!key) return;
+      merged[key] = withNutritionDefaults(values);
+    });
+  };
+
+  addSource(builtInFoodDb);
+  addSource(externalFoodDb);
+  addSource(state?.foodLibrary || {});
+
+  return merged;
+}
+
+function scoreFoodKeyMatch(normalizedText, textTokens, dbKey) {
+  if (!normalizedText || !dbKey) return 0;
+  if (normalizedText === dbKey) return 100;
+
+  const dbTokens = dbKey.split(" ").filter(Boolean);
+  const overlapTokens = dbTokens.filter((token) => textTokens.includes(token));
+  const overlap = overlapTokens.length;
+
+  let score = 0;
+
+  if (normalizedText.includes(dbKey)) score += 60;
+  if (dbKey.includes(normalizedText)) score += 30;
+
+  score += overlap * 9;
+
+  if (dbTokens.length > 1 && overlap === dbTokens.length) score += 18;
+
+  // Avoid overfitting a single generic ingredient token to a full dish string.
+  if (dbTokens.length === 1 && textTokens.length >= 2) {
+    const token = dbTokens[0];
+    if (genericFoodTokens.has(token)) {
+      score -= 22;
+    }
+
+    if (!textTokens.includes(token)) {
+      score -= 30;
+    }
+  }
+
+  if (dbTokens.length >= 2) {
+    const overlapRatio = overlap / dbTokens.length;
+    if (overlapRatio >= 0.6) score += 16;
+    if (overlapRatio < 0.35 && !normalizedText.includes(dbKey)) score -= 14;
+  }
+
+  return score;
+}
+
+function findTopFoodMatches(text, db, limit = 8) {
+  const normalizedText = normalizeFoodKey(text);
+  if (!normalizedText) return [];
+
+  const tokens = tokenizeFoodText(normalizedText);
+  const ranked = Object.keys(db || {})
+    .map((key) => ({
+      key,
+      score: scoreFoodKeyMatch(normalizedText, tokens, key),
+      nutrition: db[key],
+    }))
+    .filter((entry) => entry.score > 0)
+    .sort((a, b) => b.score - a.score);
+
+  return ranked.slice(0, Math.max(1, limit));
+}
+
+function buildFoodReferenceSnippet(description, qty, db) {
+  const refs = findTopFoodMatches(description, db, 8);
+  if (!refs.length) return "No close food references found in the dataset.";
+
+  return refs
+    .map((item, idx) => {
+      const n = withNutritionDefaults(item.nutrition);
+      return `${idx + 1}. ${item.key} (per 100g): kcal ${formatNum(n.kcal, 0)}, protein ${formatNum(n.protein, 1)}g, carbs ${formatNum(n.carbs, 1)}g, fat ${formatNum(n.fat, 1)}g, fiber ${formatNum(n.fiber, 1)}g`;
+    })
+    .join("\n");
 }
 
 function loadAuthStore() {
@@ -934,25 +1168,58 @@ function handleWelcomeSubmit(e) {
 function calculateTargetsFromProfile() {
   if (!state) return;
 
-  const currentWeight = Number(state.profile.currentWeight || 70);
-  const goalWeight = Number(state.profile.goalWeight || currentWeight);
-  const weeklyLoss = Number(state.profile.weeklyLoss || 0.5);
+  const currentWeight = Math.max(30, Number(state.profile.currentWeight || 70));
+  const goalWeight = Math.max(30, Number(state.profile.goalWeight || currentWeight));
+  const age = Math.max(10, Number(state.profile.age || 24));
+  const heightCm = Math.max(120, Number(state.profile.heightCm || 170));
+  const weeklyChangeKg = Math.max(0.1, Math.abs(Number(state.profile.weeklyLoss || 0.5)));
+  const goalMode =
+    goalWeight > currentWeight ? "gain" : goalWeight < currentWeight ? "loss" : "maintain";
 
-  const maintenance = Math.max(1400, Math.round(currentWeight * 30));
-  const dailyDeficit = Math.max(200, Math.min(1200, Math.round((weeklyLoss * 7700) / 7)));
-  const deficitCalories = Math.max(1200, maintenance - dailyDeficit);
+  // Mifflin-St Jeor baseline estimate when gender/activity detail is unavailable.
+  const bmrEstimate = Math.max(1100, Math.round(10 * currentWeight + 6.25 * heightCm - 5 * age + 5));
+  const maintenance = Math.max(1300, Math.round(bmrEstimate * 1.4));
 
+  const dailyAdjustment = Math.max(150, Math.min(700, Math.round((weeklyChangeKg * 7700) / 7)));
+  const recommendedCalories =
+    goalMode === "gain"
+      ? maintenance + dailyAdjustment
+      : goalMode === "loss"
+        ? Math.max(1200, maintenance - dailyAdjustment)
+        : maintenance;
+
+  const manualTarget = Number(state.profile.manualCalorieTarget || 0);
+  const hasManualTarget = Number.isFinite(manualTarget) && manualTarget >= 1000;
+  const activeCalorieTarget = hasManualTarget ? manualTarget : recommendedCalories;
+
+  state.profile.currentWeight = currentWeight;
+  state.profile.goalWeight = goalWeight;
+  state.profile.age = age;
+  state.profile.heightCm = heightCm;
+  state.profile.weeklyLoss = weeklyChangeKg;
+  state.profile.goalMode = goalMode;
   state.profile.maintenanceCalories = maintenance;
-  state.profile.deficitCalories = deficitCalories;
+  state.profile.recommendedCalories = recommendedCalories;
+  state.profile.calorieTarget = activeCalorieTarget;
+  state.profile.deficitCalories = goalMode === "loss" ? recommendedCalories : 0;
+  state.profile.surplusCalories = goalMode === "gain" ? recommendedCalories : 0;
 
-  const existingTarget = Number(state.profile.calorieTarget || 0);
-  state.profile.calorieTarget = existingTarget > 0 ? existingTarget : deficitCalories;
+  const proteinPerKg = goalMode === "gain" ? 1.9 : goalMode === "maintain" ? 1.8 : 2.1;
+  const proteinG = Math.max(90, Math.round(goalWeight * proteinPerKg));
 
-  const proteinG = Math.max(90, Math.round(goalWeight * 2.1));
-  const fatG = Math.max(56, Math.min(70, Math.round(goalWeight * 0.8)));
-  const carbsG = Math.max(80, Math.round((state.profile.calorieTarget - proteinG * 4 - fatG * 9) / 4));
+  let fatG = Math.max(40, Math.round(currentWeight * 0.75));
+  let carbsG = Math.round((activeCalorieTarget - proteinG * 4 - fatG * 9) / 4);
 
-  state.profile.macros = { proteinG, fatG, carbsG };
+  if (carbsG < 80) {
+    carbsG = 80;
+    fatG = Math.max(35, Math.round((activeCalorieTarget - proteinG * 4 - carbsG * 4) / 9));
+  }
+
+  state.profile.macros = {
+    proteinG,
+    fatG: Math.max(35, fatG),
+    carbsG: Math.max(80, carbsG),
+  };
 }
 
 function updateDateTime() {
@@ -1193,11 +1460,32 @@ function renderDietForm() {
   if (select("mealSlot") && !select("mealSlot").value) {
     select("mealSlot").value = "breakfast";
   }
+
+  const submitBtn = select("mealSubmitBtn");
+  if (submitBtn) submitBtn.textContent = state.editingMealId ? "Update Meal" : "Save Meal";
+
+  const cancelBtn = select("mealCancelEditBtn");
+  if (cancelBtn) {
+    const editing = Boolean(state.editingMealId);
+    cancelBtn.disabled = !editing;
+    cancelBtn.style.opacity = editing ? "1" : "0.65";
+  }
 }
 
 function clearMealInputFields() {
   select("mealForm")?.reset();
   if (select("mealSlot")) select("mealSlot").value = "breakfast";
+  state.editingMealId = null;
+  setText("mealStatus", "");
+
+  const submitBtn = select("mealSubmitBtn");
+  if (submitBtn) submitBtn.textContent = "Save Meal";
+
+  const cancelBtn = select("mealCancelEditBtn");
+  if (cancelBtn) {
+    cancelBtn.disabled = true;
+    cancelBtn.style.opacity = "0.65";
+  }
 }
 
 function getMealDisplayName(meal) {
@@ -1250,7 +1538,10 @@ function renderMealsList() {
                       <summary>View full nutrients</summary>
                       <div class="meal-nutrient-grid">${nutrientDetails}</div>
                     </details>
-                    <button class="btn-small" onclick="deleteMeal('${m.id}')">Delete</button>
+                    <div style="display:flex;gap:8px;margin-top:8px;">
+                      <button class="btn-small" onclick="startEditMeal('${m.id}')">Edit</button>
+                      <button class="btn-small" style="color:#f44336;" onclick="deleteMeal('${m.id}')">Delete</button>
+                    </div>
                   </div>
                 `;
               })
@@ -1298,6 +1589,49 @@ function deleteMeal(id) {
   saveState();
   renderAll();
 }
+
+function startEditMeal(id) {
+  const meal = getDayMeals().find(m => m.id === id);
+  if (!meal) {
+    showToast("Meal not found.", "error");
+    return;
+  }
+
+  state.editingMealId = id;
+  
+  // Load meal data into form
+  select("mealDescription").value = meal.description || meal.name || "";
+  select("mealQty").value = meal.qty || 100;
+  select("mealSlot").value = meal.slot || "breakfast";
+  select("mealCalories").value = meal.kcal || 0;
+  
+  // Load nutrient fields
+  nutrientFields.forEach((field) => {
+    const inputId = nutrientInputIds[field];
+    if (inputId && select(inputId)) {
+      select(inputId).value = Number(meal[field] || 0).toFixed(nutrientUnits[field] === 'g' ? 1 : 0);
+    }
+  });
+
+  setText("mealStatus", `Editing meal: ${meal.name || meal.description}`);
+  showTab("diet");
+  select("mealDescription").focus();
+  
+  const submitBtn = select("mealSubmitBtn");
+  if (submitBtn) submitBtn.textContent = "Update Meal";
+
+  const cancelBtn = select("mealCancelEditBtn");
+  if (cancelBtn) {
+    cancelBtn.disabled = false;
+    cancelBtn.style.opacity = "1";
+  }
+}
+
+function cancelEditMeal() {
+  clearMealInputFields();
+  showToast("Edit cancelled.", "info");
+}
+
 
 const portionHintByKeyword = {
   egg: 50,
@@ -1490,13 +1824,73 @@ function estimateUnknownFood(description, grams) {
 }
 
 function findBestFoodMatch(text, db) {
-  const normalizedText = String(text || "").toLowerCase();
-  const keys = Object.keys(db).sort((a, b) => b.length - a.length);
-  return keys.find((key) => normalizedText.includes(key)) || null;
+  const top = findTopFoodMatches(text, db, 1)[0];
+  if (!top) return null;
+
+  const normalizedText = normalizeFoodKey(text);
+  const textTokens = tokenizeFoodText(normalizedText);
+  const keyTokens = String(top.key || "").split(" ").filter(Boolean);
+
+  if (keyTokens.length === 1 && textTokens.length >= 2 && genericFoodTokens.has(keyTokens[0])) {
+    return null;
+  }
+
+  return top.score >= 16 ? top.key : null;
+}
+
+function splitMealDescription(description) {
+  return String(description || "")
+    .split(/\+|,|\sand\s|\s&\s|\swith\s/i)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function applyMealSpecificSanityAdjustments(description, nutrition, gramsHint) {
+  const adjusted = normalizeNutrition(nutrition);
+  const text = normalizeFoodKey(description);
+  const totalGrams = Math.max(1, Number(gramsHint || inferQuantityFromDescription(description, 100) || 100));
+
+  const massBasedProteinCap = (totalGrams / 100) * 28;
+  if (adjusted.protein > massBasedProteinCap) adjusted.protein = massBasedProteinCap;
+
+  const massBasedFatCap = (totalGrams / 100) * 45;
+  if (adjusted.fat > massBasedFatCap) adjusted.fat = massBasedFatCap;
+
+  // Carb-dominant dishes should not get extremely high protein unless explicitly protein-heavy.
+  const hasProteinHeavySignals = /(chicken|fish|egg|paneer|tofu|soy|dal|rajma|chana|lentil|keema|mutton)/i.test(text);
+  const carbHeavyDish = /(idli|dosa|rice|chawal|pulao|biryani|poha|upma|paratha|chapati|roti|bread|khichdi|noodles)/i.test(text);
+  if (carbHeavyDish && !hasProteinHeavySignals) {
+    const carbDishProteinCap = (totalGrams / 100) * 10;
+    if (adjusted.protein > carbDishProteinCap) {
+      adjusted.protein = carbDishProteinCap;
+    }
+  }
+
+  const eggCountMatch = text.match(/(\d+(?:\.\d+)?)\s*eggs?\b/i);
+  const eggCount = eggCountMatch ? Number(eggCountMatch[1]) : 0;
+  if (eggCount > 0 && /egg curry/.test(text)) {
+    const gravyAllowance = Math.min(4, Math.max(1, totalGrams / 200));
+    const realisticProteinCap = eggCount * 6.5 + gravyAllowance;
+    if (adjusted.protein > realisticProteinCap) {
+      adjusted.protein = realisticProteinCap;
+    }
+  }
+
+  const macroCalories = estimateCaloriesFromNutrition(adjusted);
+  if (!adjusted.kcal || adjusted.kcal < macroCalories * 0.72 || adjusted.kcal > macroCalories * 1.45) {
+    adjusted.kcal = Math.round(macroCalories);
+  }
+
+  adjusted.kcal = Math.max(0, adjusted.kcal);
+  adjusted.protein = Math.max(0, adjusted.protein);
+  adjusted.carbs = Math.max(0, adjusted.carbs);
+  adjusted.fat = Math.max(0, adjusted.fat);
+
+  return adjusted;
 }
 
 function estimateMealSegment(segmentText, db, overrideGrams = null) {
-  const text = String(segmentText || "").trim().toLowerCase();
+  const text = normalizeFoodKey(segmentText);
   const matchedKey = findBestFoodMatch(text, db);
   const inferredGrams = inferQuantityFromDescription(
     text,
@@ -1520,24 +1914,32 @@ function estimateMealSegment(segmentText, db, overrideGrams = null) {
 }
 
 function estimateFromFoodDb(description, qtyInput = null) {
-  const text = String(description || "").trim().toLowerCase();
-  const db = { ...builtInFoodDb, ...state.foodLibrary };
+  const text = String(description || "").trim();
+  if (!foodDatasetLoaded && !foodDatasetLoadPromise) {
+    loadFoodDatasetIfNeeded().catch(() => {});
+  }
+  const db = getMergedFoodDb();
 
   const explicitQty = Number(qtyInput);
   const hasExplicitQty = Number.isFinite(explicitQty) && explicitQty > 0;
 
-  const segments = text
-    .split(/\+|,|\sand\s|\s&\s/)
-    .map((part) => part.trim())
-    .filter(Boolean);
+  const segments = splitMealDescription(text);
 
   if (!segments.length) {
-    return estimateUnknownFood(text, hasExplicitQty ? explicitQty : 100);
+    return applyMealSpecificSanityAdjustments(
+      text,
+      estimateUnknownFood(text, hasExplicitQty ? explicitQty : 100),
+      hasExplicitQty ? explicitQty : 100
+    );
   }
 
   if (segments.length === 1) {
     const segmentEstimate = estimateMealSegment(segments[0], db, hasExplicitQty ? explicitQty : null);
-    return segmentEstimate.nutrition;
+    return applyMealSpecificSanityAdjustments(
+      text,
+      segmentEstimate.nutrition,
+      hasExplicitQty ? explicitQty : segmentEstimate.grams
+    );
   }
 
   const combined = zeroNutritionTotals();
@@ -1560,7 +1962,11 @@ function estimateFromFoodDb(description, qtyInput = null) {
     });
   }
 
-  return combined;
+  return applyMealSpecificSanityAdjustments(
+    text,
+    combined,
+    hasExplicitQty ? explicitQty : inferredTotalGrams
+  );
 }
 
 function fillMealFormFromEstimate(estimation) {
@@ -1576,17 +1982,21 @@ function fillMealFormFromEstimate(estimation) {
   });
 }
 
-function estimateMealFromBtn() {
+async function estimateMealFromBtn() {
   const description = select("mealDescription")?.value.trim();
   if (!description) {
     alert("Enter food description first.");
     return;
   }
 
+  await loadFoodDatasetIfNeeded();
+
   const qty = parseOptionalNumber("mealQty");
   const estimation = estimateFromFoodDb(description, qty);
   fillMealFormFromEstimate(estimation);
-  setText("mealStatus", "Estimated using improved built-in food intelligence.");
+  setText("mealStatus", foodDatasetLoaded
+    ? "Estimated using merged Indian food dataset (CSV + XLS)."
+    : "Estimated using built-in food intelligence.");
 }
 
 function extractJsonObject(text) {
@@ -1684,15 +2094,31 @@ async function aiEstimateMeal() {
 
   if (!ensureApiKey("AI meal estimate")) return;
 
+  await loadFoodDatasetIfNeeded();
+
   const qtyInput = parseOptionalNumber("mealQty");
   const qty = Number(qtyInput || inferQuantityFromDescription(description, 100) || 100);
-  setText("mealStatus", "AI is estimating full nutrition profile...");
+  setText("mealStatus", "AI is estimating full nutrition profile using merged food dataset references...");
 
   try {
-    const prompt = `Estimate nutrition for this meal description:
+    const db = getMergedFoodDb();
+    const foodReferences = buildFoodReferenceSnippet(description, qty, db);
+
+    const prompt = `You are finalizing nutrition for this meal description:
 "${description}"
 
-Assume total quantity: ${qty} grams.
+Total quantity: ${qty} grams.
+
+Reference foods from verified Indian dataset:
+${foodReferences}
+
+Rules:
+1) Use meal context words like restaurant, homemade, curry, fried, grilled.
+2) Handle multi-item meals and quantity text intelligently.
+3) Keep macros realistic by edible mass.
+4) For "egg curry with N eggs", protein should roughly align with N eggs plus small gravy protein.
+5) Your JSON numbers are final.
+
 Return strict JSON with only numeric fields:
 kcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg, confidence.
 No commentary.`;
@@ -1702,7 +2128,7 @@ No commentary.`;
         {
           role: "system",
           content:
-            "You are a nutrition estimation engine. Return only one JSON object with numeric values. No markdown, no explanations.",
+            "You are a nutrition estimation engine for Indian foods. Use provided references, apply context from description, and return exactly one JSON object with numeric values only.",
         },
         {
           role: "user",
@@ -1734,11 +2160,9 @@ No commentary.`;
       iron: pickNumericValue(parsed, ["ironMg", "iron"]),
     };
 
-    if (!aiNutrition.kcal) {
-      aiNutrition.kcal = estimateCaloriesFromNutrition(aiNutrition);
-    }
+    const corrected = applyMealSpecificSanityAdjustments(description, aiNutrition, qty);
 
-    fillMealFormFromEstimate(aiNutrition);
+    fillMealFormFromEstimate(corrected);
 
     const qtyInputEl = select("mealQty");
     if (qtyInputEl && !qtyInputEl.value) {
@@ -1747,11 +2171,12 @@ No commentary.`;
 
     const confidence = pickNumericValue(parsed, ["confidence"], 0);
     const confidenceText = confidence > 0 ? ` (confidence ${Math.round(confidence)}%)` : "";
-    setText("mealStatus", `AI estimate ready${confidenceText}. Review and save.`);
+    const sourceText = foodDatasetLoaded ? "dataset-guided AI" : "AI";
+    setText("mealStatus", `${sourceText} estimate ready${confidenceText}. Review and save.`);
   } catch {
     const fallback = estimateFromFoodDb(description, qty);
     fillMealFormFromEstimate(fallback);
-    setText("mealStatus", "AI estimate failed. Used built-in estimate instead.");
+    setText("mealStatus", "AI estimate failed. Used dataset estimate instead.");
   }
 }
 
@@ -1915,8 +2340,11 @@ function handleMealFormSubmit(e) {
 
   const kcal = Number(manualKcal ?? estimateCaloriesFromNutrition(finalNutrition));
 
+  const editingId = state.editingMealId;
+  const existingMeal = editingId ? getDayMeals().find((m) => m.id === editingId) : null;
+
   const meal = {
-    id: uid("meal"),
+    id: existingMeal?.id || uid("meal"),
     slot: select("mealSlot")?.value || "breakfast",
     name: description,
     description,
@@ -1928,10 +2356,20 @@ function handleMealFormSubmit(e) {
     meal[field] = Number(finalNutrition[field] || 0);
   });
 
-  getDayMeals().push(meal);
+  if (existingMeal) {
+    Object.assign(existingMeal, meal);
+  } else {
+    getDayMeals().push(meal);
+  }
+
   saveState();
+
+  const wasEditing = Boolean(existingMeal);
   clearMealInputFields();
-  setText("mealStatus", `Meal saved with full nutrient profile (${Math.round(qty)}g).`);
+  setText(
+    "mealStatus",
+    `${wasEditing ? "Meal updated" : "Meal saved"} with full nutrient profile (${Math.round(qty)}g).`
+  );
   renderAll();
 }
 
@@ -1954,14 +2392,9 @@ function getSpeechErrorMessage(errorCode) {
 }
 
 async function startVoiceInput(targetInputId = "mealDescription") {
-  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!SpeechRecognition) {
-    showToast("Voice input is not supported on this browser.", "error");
-    setText("mealStatus", "Voice input is not supported on this browser.");
-    return;
-  }
+  const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
 
-  if (!window.isSecureContext && location.hostname !== "localhost") {
+  if (!isNativeApp && !window.isSecureContext && location.hostname !== "localhost") {
     showToast("Voice input needs HTTPS.", "error");
     setText("mealStatus", "Voice input requires HTTPS connection.");
     return;
@@ -1970,6 +2403,7 @@ async function startVoiceInput(targetInputId = "mealDescription") {
   const input = select(targetInputId);
   if (!input) return;
 
+  // Request microphone permission first so Android app settings show mic access.
   if (navigator.mediaDevices?.getUserMedia) {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -1986,6 +2420,16 @@ async function startVoiceInput(targetInputId = "mealDescription") {
       setText("mealStatus", message);
       return;
     }
+  }
+
+  const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SpeechRecognition) {
+    const message = isNativeApp
+      ? "Microphone permission is granted, but speech recognition is unavailable on this Android WebView."
+      : "Voice input is not supported on this browser.";
+    showToast(message, "error");
+    setText("mealStatus", message);
+    return;
   }
 
   if (activeSpeechRecognition) {
@@ -2299,45 +2743,139 @@ function fileToDataUrl(file) {
   });
 }
 
+function compressDataUrlImage(dataUrl, maxSide = 1280, quality = 0.84) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      let { width, height } = image;
+      const longest = Math.max(width, height);
+      if (longest > maxSide) {
+        const ratio = maxSide / longest;
+        width = Math.max(1, Math.round(width * ratio));
+        height = Math.max(1, Math.round(height * ratio));
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        resolve(dataUrl);
+        return;
+      }
+
+      ctx.drawImage(image, 0, 0, width, height);
+      const compressed = canvas.toDataURL("image/jpeg", quality);
+      resolve(compressed || dataUrl);
+    };
+    image.onerror = reject;
+    image.src = dataUrl;
+  });
+}
+
+async function fileToOptimizedDataUrl(file) {
+  const raw = await fileToDataUrl(file);
+  return compressDataUrlImage(raw, 1280, 0.84);
+}
+
+function normalizePhotoDate(value) {
+  const text = String(value || "").trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(text)) return text;
+
+  const date = new Date(text);
+  if (Number.isNaN(date.getTime())) return todayDate();
+
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, "0");
+  const d = String(date.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
+async function analyzePhotoDataUrlWithAI(dataUrl, contextText = "") {
+  const prompt = contextText
+    ? `Analyze this fitness progress photo. Context: ${contextText}. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.`
+    : "Analyze this fitness progress photo and give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.";
+
+  const result = await callOpenRouter(
+    [
+      {
+        role: "system",
+        content:
+          "You are a fitness coach. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.",
+      },
+      {
+        role: "user",
+        content: [
+          { type: "text", text: prompt },
+          { type: "image_url", image_url: { url: dataUrl } },
+        ],
+      },
+    ],
+    state.settings.aiModel || "openai/gpt-4o"
+  );
+
+  return result || "AI did not return text. Please try again.";
+}
+
 async function analyzePhotoWithAI() {
-  const file = select("photoInput")?.files?.[0];
-  if (!file) {
-    setText("photoAiFeedback", "Select a photo first, then tap AI Analyze Photo.");
+  if (!ensureApiKey("AI photo analysis")) return;
+
+  const selectedFile = select("photoInput")?.files?.[0];
+  const latestSaved = Array.isArray(state.photoEntries) && state.photoEntries.length ? state.photoEntries[0] : null;
+
+  if (!selectedFile && !latestSaved) {
+    setText("photoAiFeedback", "Select a photo first (or save one), then tap AI Analyze Photo.");
     return;
   }
-
-  if (!ensureApiKey("AI photo analysis")) return;
 
   setText("photoAiFeedback", "AI is analyzing your progress photo...");
 
   try {
-    const dataUrl = await fileToDataUrl(file);
+    const dataUrl = selectedFile
+      ? await fileToOptimizedDataUrl(selectedFile)
+      : latestSaved.image;
 
-    const result = await callOpenRouter(
-      [
-        {
-          role: "system",
-          content:
-            "You are a fitness coach. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.",
-        },
-        {
-          role: "user",
-          content: [
-            { type: "text", text: "Analyze this fitness progress photo and give practical next steps." },
-            { type: "image_url", image_url: { url: dataUrl } },
-          ],
-        },
-      ],
-      state.settings.aiModel || "openai/gpt-4o-vision"
-    );
+    const context = selectedFile
+      ? `Type: ${select("photoType")?.value || "body"}; Date: ${normalizePhotoDate(select("photoDate")?.value || todayDate())}; Note: ${String(select("photoNote")?.value || "").trim() || "none"}`
+      : `Saved photo. Type: ${latestSaved.type}; Date: ${normalizePhotoDate(latestSaved.date)}; Note: ${latestSaved.note || "none"}`;
 
-    setText("photoAiFeedback", result || "AI did not return text. Please try again.");
-  } catch {
+    const result = await analyzePhotoDataUrlWithAI(dataUrl, context);
+    setText("photoAiFeedback", result);
+  } catch (error) {
+    console.warn("AI photo analysis failed", error);
     setText("photoAiFeedback", "AI analysis failed. Please check API key/model or internet.");
   }
 }
 
-function handlePhotoSubmit(e) {
+async function analyzeSavedPhoto(photoId) {
+  const photo = (state.photoEntries || []).find((entry) => entry.id === photoId);
+  if (!photo) {
+    showToast("Photo not found.", "error");
+    return;
+  }
+
+  if (!ensureApiKey("AI photo analysis")) return;
+  setText("photoAiFeedback", "AI is analyzing selected saved photo...");
+
+  try {
+    const context = `Saved photo. Type: ${photo.type}; Date: ${normalizePhotoDate(photo.date)}; Note: ${photo.note || "none"}`;
+    const result = await analyzePhotoDataUrlWithAI(photo.image, context);
+    setText("photoAiFeedback", result);
+    showToast("Saved photo analyzed.", "success");
+  } catch (error) {
+    console.warn("Saved photo analysis failed", error);
+    setText("photoAiFeedback", "AI analysis failed for this saved photo.");
+  }
+}
+
+function deletePhotoEntry(photoId) {
+  state.photoEntries = (state.photoEntries || []).filter((entry) => entry.id !== photoId);
+  saveState();
+  renderPhotoSection();
+  showToast("Photo deleted.", "success");
+}
+
+async function handlePhotoSubmit(e) {
   e.preventDefault();
 
   const file = select("photoInput")?.files?.[0];
@@ -2346,28 +2884,28 @@ function handlePhotoSubmit(e) {
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = () => {
+  try {
+    const image = await fileToOptimizedDataUrl(file);
+    const photoDate = normalizePhotoDate(select("photoDate")?.value || todayDate());
+
     state.photoEntries.unshift({
       id: uid("photo"),
-      date: new Date().toISOString(),
+      date: photoDate,
+      capturedAt: new Date().toISOString(),
       type: select("photoType")?.value || "body",
       note: select("photoNote")?.value || "",
-      image: reader.result,
+      image,
     });
-
-    const now = Date.now();
-    state.photoEntries = state.photoEntries.filter(
-      (p) => now - new Date(p.date).getTime() <= 30 * 24 * 60 * 60 * 1000
-    );
 
     saveState();
     select("photoForm")?.reset();
+    if (select("photoDate")) select("photoDate").value = todayDate();
     renderPhotoSection();
     showToast("Photo saved! 📸", "success");
-  };
-
-  reader.readAsDataURL(file);
+  } catch (error) {
+    console.warn("Photo save failed", error);
+    showToast("Photo save failed. Try a smaller image.", "error");
+  }
 }
 
 function renderPhotoSection() {
@@ -2381,13 +2919,17 @@ function renderPhotoSection() {
 
   gallery.innerHTML = state.photoEntries
     .map((p) => {
-      const date = new Date(p.date).toLocaleDateString();
+      const date = normalizePhotoDate(p.date);
       const typeLabel = p.type === "body" ? "Body" : "Scale";
       return `
         <div class="photo-card">
           <h3>${typeLabel} | ${date}</h3>
           <img src="${p.image}" alt="${escapeHtml(typeLabel)}" />
           <p class="muted" style="padding: 10px 10px 12px;">${escapeHtml(p.note || "No note")}</p>
+          <div style="display:flex;gap:8px;padding: 0 10px 12px;">
+            <button class="btn-small" onclick="analyzeSavedPhoto('${p.id}')">AI Analyze</button>
+            <button class="btn-small" style="color:#f44336;" onclick="deletePhotoEntry('${p.id}')">Delete</button>
+          </div>
         </div>
       `;
     })
@@ -2401,8 +2943,11 @@ function handleProfileSubmit(e) {
   state.profile.goalWeight = Number(select("goalWeight")?.value || state.profile.goalWeight);
   state.profile.age = Number(select("age")?.value || state.profile.age);
   state.profile.heightCm = Number(select("heightCm")?.value || state.profile.heightCm);
-  state.profile.weeklyLoss = Number(select("weeklyLoss")?.value || state.profile.weeklyLoss);
-  state.profile.calorieTarget = Number(select("calorieTarget")?.value || state.profile.calorieTarget);
+  state.profile.weeklyLoss = Math.abs(Number(select("weeklyLoss")?.value || state.profile.weeklyLoss));
+
+  const calorieOverride = parseOptionalNumber("calorieTarget");
+  state.profile.manualCalorieTarget =
+    calorieOverride && calorieOverride >= 1000 ? Number(calorieOverride) : 0;
 
   calculateTargetsFromProfile();
   saveState();
@@ -2416,15 +2961,22 @@ function renderProfileForm() {
   if (select("age")) select("age").value = state.profile.age;
   if (select("heightCm")) select("heightCm").value = state.profile.heightCm;
   if (select("weeklyLoss")) select("weeklyLoss").value = state.profile.weeklyLoss;
-  if (select("calorieTarget")) select("calorieTarget").value = state.profile.calorieTarget;
+  if (select("calorieTarget")) {
+    select("calorieTarget").value = state.profile.manualCalorieTarget ? Number(state.profile.manualCalorieTarget) : "";
+    select("calorieTarget").placeholder = `Auto: ${formatNum(state.profile.recommendedCalories || state.profile.calorieTarget || 0, 0)} kcal`;
+  }
 
   const p = state.profile;
   const box = select("targetSummary");
   if (!box) return;
 
+  const modeLabel =
+    p.goalMode === "gain" ? "Gain Target" : p.goalMode === "loss" ? "Cut Target" : "Maintenance Target";
+
   box.innerHTML = `
     <div class="summary-box"><div>Maintenance</div><div>${formatNum(p.maintenanceCalories, 0)} kcal</div></div>
-    <div class="summary-box"><div>Cut Target</div><div>${formatNum(p.deficitCalories, 0)} kcal</div></div>
+    <div class="summary-box"><div>${modeLabel}</div><div>${formatNum(p.recommendedCalories || p.calorieTarget, 0)} kcal</div></div>
+    <div class="summary-box"><div>Active Calories</div><div>${formatNum(p.calorieTarget, 0)} kcal</div></div>
     <div class="summary-box"><div>Protein</div><div>${formatNum(p.macros.proteinG, 0)} g</div></div>
     <div class="summary-box"><div>Carbs</div><div>${formatNum(p.macros.carbsG, 0)} g</div></div>
     <div class="summary-box"><div>Fat</div><div>${formatNum(p.macros.fatG, 0)} g</div></div>
@@ -2432,7 +2984,7 @@ function renderProfileForm() {
 }
 
 function autoCalculateTargets() {
-  state.profile.calorieTarget = 0;
+  state.profile.manualCalorieTarget = 0;
   calculateTargetsFromProfile();
   saveState();
   renderAll();
@@ -2440,7 +2992,7 @@ function autoCalculateTargets() {
 
 function renderApiSettings() {
   if (select("apiKeyInput")) select("apiKeyInput").value = state.settings.apiKey || "";
-  if (select("aiModelInput")) select("aiModelInput").value = state.settings.aiModel || "openai/gpt-4o-mini";
+  if (select("aiModelInput")) select("aiModelInput").value = state.settings.aiModel || "openai/gpt-4o";
 
   const status = state.settings.apiKey
     ? "API key is saved for this account."
@@ -2458,8 +3010,8 @@ function handleApiFormSubmit(e) {
   }
 
   state.settings.apiKey = apiKey;
-  state.settings.aiModel = (select("aiModelInput")?.value || "openai/gpt-4o-mini").trim();
-  if (!state.settings.aiModel) state.settings.aiModel = "openai/gpt-4o-mini";
+  state.settings.aiModel = (select("aiModelInput")?.value || "openai/gpt-4o").trim();
+  if (!state.settings.aiModel) state.settings.aiModel = "openai/gpt-4o";
 
   saveState();
   renderApiSettings();
@@ -2526,6 +3078,42 @@ function openAbsGuide(encodedName) {
   openExerciseModal(exercise);
 }
 
+function getExerciseSearchQuery(exerciseName) {
+  const key = normalizeFoodKey(exerciseName);
+  if (exerciseGifQueryOverrides[key]) return exerciseGifQueryOverrides[key];
+  return `${exerciseName} exercise form`;
+}
+
+function scoreGifResult(query, result) {
+  const q = normalizeFoodKey(query);
+  const queryTokens = tokenizeFoodText(q);
+  const title = normalizeFoodKey(result?.title || "");
+  const tags = Array.isArray(result?.tags) ? result.tags.join(" ") : "";
+  const desc = normalizeFoodKey(result?.content_description || "");
+  const searchable = `${title} ${normalizeFoodKey(tags)} ${desc}`;
+
+  let score = 0;
+  queryTokens.forEach((token) => {
+    if (searchable.includes(token)) score += 5;
+  });
+
+  if (/exercise|workout|fitness|form|training|gym/.test(searchable)) score += 12;
+
+  if (q.includes("mountain climbers") && /cliff|hiking|everest|snow|alpinism/.test(searchable)) {
+    score -= 20;
+  }
+
+  if (q.includes("march in place") && /high knees|indoor|cardio|warm up/.test(searchable)) {
+    score += 10;
+  }
+
+  if (exerciseGifBlockedKeywords.some((word) => searchable.includes(word)) && !/exercise|workout|fitness/.test(searchable)) {
+    score -= 8;
+  }
+
+  return score;
+}
+
 function openExerciseModal(exercise) {
   setText("modalTitle", exercise.name);
   setText("modalCues", `${exercise.sets} | ${exercise.cues}`);
@@ -2538,7 +3126,7 @@ function openExerciseModal(exercise) {
     gifEl.alt = `${exercise.name} guide`;
   }
 
-  const query = `${exercise.name} exercise form`;
+  const query = getExerciseSearchQuery(exercise.name);
   const videoBtn = select("modalVideoBtn");
   if (videoBtn) videoBtn.dataset.query = query;
 
@@ -2577,8 +3165,13 @@ async function getExerciseGifUrl(query) {
   const results = Array.isArray(data?.results) ? data.results : [];
 
   const gifUrl = results
-    .map((r) => r?.media?.[0]?.gif?.url)
-    .find((url) => typeof url === "string" && url.startsWith("http"));
+    .map((result) => ({
+      url: result?.media?.[0]?.gif?.url,
+      score: scoreGifResult(query, result),
+    }))
+    .filter((entry) => typeof entry.url === "string" && entry.url.startsWith("http"))
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.url)[0];
 
   if (!gifUrl) throw new Error("No GIF found");
 
@@ -2647,6 +3240,7 @@ function renderAll() {
   renderMorningForm();
 
   if (select("weightDate")) select("weightDate").value = todayDate();
+  if (select("photoDate") && !select("photoDate").value) select("photoDate").value = todayDate();
   renderWeightSummary();
   drawWeightChart();
   renderPhotoSection();
@@ -2667,6 +3261,7 @@ function bindAppEvents() {
   select("profileForm")?.addEventListener("submit", handleProfileSubmit);
   select("autoTargetBtn")?.addEventListener("click", autoCalculateTargets);
   select("mealForm")?.addEventListener("submit", handleMealFormSubmit);
+  select("mealCancelEditBtn")?.addEventListener("click", cancelEditMeal);
   select("voiceBtn")?.addEventListener("click", () => startVoiceInput("mealDescription"));
   select("estimateMealBtn")?.addEventListener("click", estimateMealFromBtn);
   select("aiEstimateMealBtn")?.addEventListener("click", aiEstimateMeal);
@@ -2730,7 +3325,11 @@ function exposeWindowActions() {
   window.scrollToTab = scrollToTab;
   window.toggleExercise = toggleExercise;
   window.toggleAbsExercise = toggleAbsExercise;
+  window.startEditMeal = startEditMeal;
+  window.cancelEditMeal = cancelEditMeal;
   window.deleteMeal = deleteMeal;
+  window.analyzeSavedPhoto = analyzeSavedPhoto;
+  window.deletePhotoEntry = deletePhotoEntry;
   window.openExerciseGuide = openExerciseGuide;
   window.openAbsGuide = openAbsGuide;
 }
@@ -2739,6 +3338,8 @@ function init() {
   bindOnboardingEvents();
   bindAppEvents();
   exposeWindowActions();
+
+  loadFoodDatasetIfNeeded().catch(() => {});
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});

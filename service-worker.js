@@ -1,4 +1,4 @@
-const CACHE_NAME = "dad-bod-cache-v5";
+const CACHE_NAME = "dad-bod-cache-v6";
 const ASSETS = [
   "./",
   "./index.html",
@@ -6,6 +6,7 @@ const ASSETS = [
   "./app-new.js",
   "./manifest.webmanifest",
   "./assets/icon.svg",
+  "./assets/food-dataset.json",
   "./assets/exercise-fallback.svg",
 ];
 
