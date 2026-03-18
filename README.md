@@ -1,85 +1,90 @@
-# Dad Bod - Built Dream Physique ??
+# Dad Bod - Built Dream Physique
 
-A premium, mobile-first **personal fitness & nutrition tracking PWA** designed to help you achieve your body transformation goals.
+A premium mobile-first fitness and nutrition tracker with room-only workouts, meal logging, progress tracking, and optional AI features.
 
-## Features ?
+## Live Features
 
-- **?? Smart Fitness Tracking**: Track daily workouts with exercise GIFs and completion progress
-- **??? Meal Logging**: Track calories, macros, and nutrients with AI-powered meal estimation
-- **?? Progress Photos**: Capture and analyze your transformation journey
-- **?? AI-Powered Features**: 
-  - Meal estimation using OpenRouter API
-  - Photo analysis with OCR for nutrition labels
-- **?? Multi-User Support**: Create accounts and manage independent progress
-- **?? Room-Only Workouts**: 42 no-equipment exercises designed for home use
-- **?? Progressive Web App**: Install on home screen, works offline
-- **?? Customizable Goals**: Set weight, fitness, and nutrition targets
+- Multi-user sign in and sign up flow (local storage based)
+- Admin preset account with default profile and weekly diet plan
+- 7-day room-only no-equipment workout split
+- Exercise GIF guides with Tenor API fallback handling
+- Diet logging with macro and micronutrient tracking
+- Weight chart, progress photos, and daily workout completion
+- Optional OpenRouter AI features with in-app API key shortcut
+- PWA support (manifest + service worker)
 
-## Getting Started ??
+## Admin Account
 
-### Web Version
+- Email: satvikofficial20@gmail.com
+- Password: Satvik123
 
-Clone and run:
-\\\ash
+## Quick Start (Web)
+
+```bash
 git clone https://github.com/Satvik20Pandey/Dad-Bod.git
 cd Dad-Bod
-python -m http.server 8000  # or: npx http-server
-\\\
-
-**Admin Login:**
-- Email: \satvikofficial20@gmail.com\
-- Password: \Satvik123\
-
-### Mobile App
-
-\\\ash
 npm install
-npm run build:android  # Create APK
-\\\
-
-## Tech Stack ???
-
-- Vanilla JavaScript (ES6+), HTML5, CSS3
-- LocalStorage (per-user isolation)
-- Tenor API (exercise GIFs)
-- OpenRouter (AI features - optional)
-- Capacitor (mobile wrapper)
-
-## Features
-
-### Workouts ??
-- 7-day room-only routine (no equipment)
-- 6 exercises per day with GIF guides
-- Completion tracking
-
-### Diet ???
-- Meal logging with AI estimation
-- Calorie and macro tracking
-- Weekly meal plan template
-
-### Progress ??
-- Photo gallery with dates
-- Weight tracking chart
-- Body measurements
-
-### AI Features ??
-- Optional (no API key needed for core app)
-- Get free API key via in-app button
-- Meal estimation and photo analysis
-
-## Deployment ??
-
-### Vercel (Recommended)
-\\\ash
-git push origin main
-# Then deploy from Vercel dashboard
-\\\
-
-### Local Server
-\\\ash
 python -m http.server 8080
-\\\
+```
 
----
+Open http://localhost:8080
 
-**Built with ?? for serious fitness transformation.**
+## Build Mobile Artifacts
+
+```bash
+npm run build:dist
+npm run sync
+cd android
+./gradlew assembleRelease
+./gradlew bundleRelease
+```
+
+## Signed Artifacts In This Repo
+
+Generated files are committed in `release/`:
+
+- `release/DadBod-v1.0.0-signed.apk`
+- `release/DadBod-v1.0.0-signed.aab`
+
+## OpenRouter API Key Setup
+
+In the app:
+
+1. Open Settings tab
+2. Click `Get Free API Key`
+3. Create/copy key from OpenRouter
+4. Paste in `OpenRouter API Key` field and save
+
+Core app features work even without an API key.
+
+## Deployment
+
+### Vercel (recommended)
+
+This repo includes `vercel.json` for static deployment.
+
+1. Import this GitHub repo in Vercel dashboard
+2. Deploy the `main` branch
+3. Redeploy after each push
+
+If using CLI, login first:
+
+```bash
+npx vercel login
+npx vercel --prod
+```
+
+## Project Structure
+
+- `index.html` - App shell and tabs
+- `app-new.js` - Main app logic
+- `styles.css` - Premium responsive UI
+- `assets/icon.svg` - Improved DB brand logo
+- `scripts/build-dist.js` - Dist sync helper for Capacitor
+- `scripts/setup-android-sdk.ps1` - Local Android SDK setup helper
+- `release/` - Signed APK and AAB
+
+## Notes
+
+- Android SDK is configured at `C:\Users\Admin\Android\Sdk` on this machine.
+- Capacitor uses `dist/` as webDir (`capacitor.config.json`).

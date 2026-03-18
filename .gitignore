@@ -2,6 +2,7 @@ node_modules/
 dist/
 build/
 *.log
+*.tmp
 .DS_Store
 .env
 .env.local
@@ -10,9 +11,12 @@ build/
 android/
 ios/
 .capacitor/
-capacitor.config.json
 .idea/
 .vscode/
 *.swp
 *.swo
 *~
+
+# Track distributable artifacts in release/
+!release/*.apk
+!release/*.aab
