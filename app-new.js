@@ -8,7 +8,13 @@ const TENOR_PUBLIC_KEY = "LIVDSRZULELA";
 const APP_NAME = "Dad Bod";
 const APP_TAGLINE = "Built Dream Physique";
 const APP_VERSION = "1.0.2";
-const OTP_EXPIRY_MS = 5 * 60 * 1000;
+
+const ONBOARDING_QUOTES = [
+  "One day or day one. You decide.",
+  "Consistency beats intensity when intensity is temporary.",
+  "Build habits, and your body will follow.",
+  "The work you do today shows up next month.",
+];
 
 const daysOrder = ["Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"];
 
@@ -236,19 +242,19 @@ const nutrientUnits = {
 };
 
 const baseNutrientTargets = {
-  fiber: 30,
-  sugar: 50,
+  fiber: 35,
+  sugar: 35,
   satFat: 20,
-  polyFat: 22,
-  monoFat: 44,
-  transFat: 2,
+  polyFat: 0,
+  monoFat: 0,
+  transFat: 0,
   cholesterol: 300,
-  sodium: 2000,
-  potassium: 3500,
+  sodium: 2300,
+  potassium: 4000,
   vitaminA: 900,
-  vitaminC: 90,
+  vitaminC: 100,
   calcium: 1000,
-  iron: 18,
+  iron: 12,
 };
 
 const nutrientInputIds = {
@@ -414,7 +420,7 @@ let authStore = loadAuthStore();
 let currentUser = null;
 let state = null;
 let appEventsBound = false;
-let authEventsBound = false;
+let onboardingEventsBound = false;
 const gifCache = {};
 let activeSpeechRecognition = null;
 
@@ -467,25 +473,18 @@ function parseOptionalNumber(inputId) {
 
 function loadAuthStore() {
   const raw = localStorage.getItem(AUTH_KEY);
-  let parsed = { users: [], userStates: {}, activeUserId: null, pendingOtps: {} };
+  let parsed = { users: [], userStates: {}, activeUserId: null, userDirectory: [] };
   if (raw) {
     try {
       parsed = JSON.parse(raw);
     } catch {
-      parsed = { users: [], userStates: {}, activeUserId: null, pendingOtps: {} };
+      parsed = { users: [], userStates: {}, activeUserId: null, userDirectory: [] };
     }
   }
 
   if (!Array.isArray(parsed.users)) parsed.users = [];
   if (!parsed.userStates || typeof parsed.userStates !== "object") parsed.userStates = {};
-  if (!parsed.pendingOtps || typeof parsed.pendingOtps !== "object") parsed.pendingOtps = {};
-
-  const now = Date.now();
-  Object.keys(parsed.pendingOtps).forEach((email) => {
-    if (Number(parsed.pendingOtps[email]?.expiresAt || 0) < now) {
-      delete parsed.pendingOtps[email];
-    }
-  });
+  if (!Array.isArray(parsed.userDirectory)) parsed.userDirectory = [];
 
   return ensureAdminUser(parsed);
 }
@@ -502,8 +501,7 @@ function ensureAdminUser(store) {
       id: uid("user"),
       name: "Satvik",
       email: ADMIN_EMAIL,
-      password: ADMIN_PASSWORD,
-      provider: "email",
+      provider: "email-profile",
       isAdmin: true,
       createdAt: new Date().toISOString(),
     };
@@ -511,9 +509,8 @@ function ensureAdminUser(store) {
   }
 
   admin.email = ADMIN_EMAIL;
-  admin.password = ADMIN_PASSWORD;
   admin.isAdmin = true;
-  admin.provider = "email";
+  admin.provider = "email-profile";
   admin.name = admin.name || "Satvik";
 
   if (!store.userStates[admin.id]) {
@@ -575,6 +572,11 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
 }
 
+function isValidGmail(email) {
+  const normalized = normalizeEmail(email);
+  return isValidEmail(normalized) && normalized.endsWith("@gmail.com");
+}
+
 function deriveNameFromEmail(email) {
   return normalizeEmail(email)
     .split("@")[0]
@@ -582,73 +584,19 @@ function deriveNameFromEmail(email) {
     .replace(/\b\w/g, (c) => c.toUpperCase()) || "Member";
 }
 
-function createOtpChallenge(email, purpose = "auth") {
-  const normalizedEmail = normalizeEmail(email);
-  const code = String(Math.floor(100000 + Math.random() * 900000));
-  authStore.pendingOtps[normalizedEmail] = {
-    code,
-    purpose,
-    expiresAt: Date.now() + OTP_EXPIRY_MS,
-    attemptsLeft: 5,
-    createdAt: Date.now(),
-  };
-  saveAuthStore();
-  return code;
-}
-
-function verifyOtpChallenge(email, otp, purpose = "auth") {
-  const normalizedEmail = normalizeEmail(email);
-  const challenge = authStore.pendingOtps[normalizedEmail];
-
-  if (!challenge) {
-    return { ok: false, message: "No active verification code. Please request a new one." };
-  }
-
-  if (challenge.purpose !== purpose) {
-    delete authStore.pendingOtps[normalizedEmail];
-    saveAuthStore();
-    return { ok: false, message: "Verification session mismatch. Start again." };
-  }
-
-  if (Date.now() > Number(challenge.expiresAt || 0)) {
-    delete authStore.pendingOtps[normalizedEmail];
-    saveAuthStore();
-    return { ok: false, message: "Code expired. Request a fresh code." };
-  }
-
-  const entered = String(otp || "").replace(/\D/g, "").slice(0, 6);
-  if (entered !== String(challenge.code)) {
-    challenge.attemptsLeft = Math.max(0, Number(challenge.attemptsLeft || 0) - 1);
-    if (challenge.attemptsLeft === 0) {
-      delete authStore.pendingOtps[normalizedEmail];
-      saveAuthStore();
-      return { ok: false, message: "Too many wrong attempts. Request a new code." };
-    }
-    saveAuthStore();
-    return {
-      ok: false,
-      message: `Incorrect code. ${challenge.attemptsLeft} attempt${challenge.attemptsLeft === 1 ? "" : "s"} left.`,
-    };
-  }
-
-  delete authStore.pendingOtps[normalizedEmail];
-  saveAuthStore();
-  return { ok: true };
-}
-
 function findUserByEmail(email) {
   const lookup = normalizeEmail(email);
   return authStore.users.find((u) => (u.email || "").toLowerCase() === lookup) || null;
 }
 
-function createUser({ name, email, password, provider }) {
+function createUser({ name, email, provider }) {
   const normalizedEmail = normalizeEmail(email);
   const user = {
     id: uid("user"),
     name: name?.trim() || "Member",
     email: normalizedEmail,
-    password: password || "",
-    provider: provider || "email",
+    password: "",
+    provider: provider || "email-profile",
     isAdmin: normalizedEmail === ADMIN_EMAIL,
     createdAt: new Date().toISOString(),
   };
@@ -660,6 +608,92 @@ function createUser({ name, email, password, provider }) {
   saveAuthStore();
 
   return user;
+}
+
+function upsertUserProfile(name, email) {
+  const normalizedEmail = normalizeEmail(email);
+  let user = findUserByEmail(normalizedEmail);
+
+  if (!user) {
+    return createUser({ name, email: normalizedEmail, provider: "email-profile" });
+  }
+
+  user.name = name?.trim() || user.name || deriveNameFromEmail(normalizedEmail);
+  user.provider = "email-profile";
+  user.isAdmin = normalizedEmail === ADMIN_EMAIL;
+  user.email = normalizedEmail;
+  saveAuthStore();
+  return user;
+}
+
+function recordUserDirectoryEntry(user) {
+  if (!user) return;
+  if (!Array.isArray(authStore.userDirectory)) authStore.userDirectory = [];
+
+  const normalizedEmail = normalizeEmail(user.email);
+  const now = new Date().toISOString();
+  const existing = authStore.userDirectory.find(
+    (entry) => normalizeEmail(entry.email) === normalizedEmail
+  );
+
+  if (existing) {
+    existing.name = user.name || existing.name;
+    existing.lastSeenAt = now;
+    existing.userId = user.id;
+    existing.isAdmin = Boolean(user.isAdmin);
+  } else {
+    authStore.userDirectory.push({
+      id: uid("directory"),
+      userId: user.id,
+      name: user.name || deriveNameFromEmail(normalizedEmail),
+      email: normalizedEmail,
+      isAdmin: Boolean(user.isAdmin),
+      firstSeenAt: now,
+      lastSeenAt: now,
+    });
+  }
+
+  saveAuthStore();
+}
+
+function exportUserDirectoryCsv() {
+  if (!currentUser?.isAdmin) {
+    showToast("Only admin can export user sheet.", "error");
+    return;
+  }
+
+  const rows = Array.isArray(authStore.userDirectory) ? authStore.userDirectory : [];
+  if (!rows.length) {
+    showToast("No user entries available yet.", "error");
+    return;
+  }
+
+  const toCsvCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const header = ["Name", "Email", "Admin", "First Seen", "Last Seen"];
+
+  const lines = [header.map(toCsvCell).join(",")];
+  rows.forEach((entry) => {
+    lines.push(
+      [
+        entry.name,
+        entry.email,
+        entry.isAdmin ? "Yes" : "No",
+        entry.firstSeenAt,
+        entry.lastSeenAt,
+      ]
+        .map(toCsvCell)
+        .join(",")
+    );
+  });
+
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dad-bod-users-${todayDate()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast("Users sheet exported.", "success");
 }
 
 function getDefaultWeeklyPlan() {
@@ -686,18 +720,26 @@ function saveState() {
   }
 }
 
-function switchAuthTab(tabName) {
-  document.querySelectorAll(".auth-tab").forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-auth-tab") === tabName);
-  });
-  select("signInForm")?.classList.toggle("active", tabName === "signin");
-  select("signUpForm")?.classList.toggle("active", tabName === "signup");
+function setOnboardingQuote() {
+  const idx = Math.floor(Math.random() * ONBOARDING_QUOTES.length);
+  const quote = ONBOARDING_QUOTES[idx];
+  setText("welcomeQuote", `"${quote}"`);
 }
 
-function showAuthShell(tabName = "signin") {
+function prefillOnboardingForm(user = null) {
+  const candidate = user || authStore.users.find((u) => u.id === authStore.activeUserId) || null;
+  if (!candidate) return;
+
+  if (select("welcomeName")) select("welcomeName").value = candidate.name || "";
+  if (select("welcomeEmail")) select("welcomeEmail").value = candidate.email || "";
+}
+
+function showAuthShell(prefillUser = null) {
   select("authShell")?.classList.remove("hidden");
   select("appShell")?.classList.add("hidden");
-  switchAuthTab(tabName);
+  select("welcomeForm")?.reset();
+  setOnboardingQuote();
+  prefillOnboardingForm(prefillUser);
 }
 
 function showAppShell() {
@@ -815,12 +857,19 @@ function updateBranding() {
     ? `${currentUser.name}${currentUser.isAdmin ? " (Admin)" : ""}`
     : "Guest";
   setText("userBadge", badgeText);
+  setText("userEmailLine", currentUser?.email || "guest@profile");
+
+  const userSheetBtn = select("userSheetExportBtn");
+  if (userSheetBtn) {
+    userSheetBtn.classList.toggle("hidden", !currentUser?.isAdmin);
+  }
 }
 
 function activateUser(user) {
   currentUser = user;
   authStore.activeUserId = user.id;
   saveAuthStore();
+  recordUserDirectoryEntry(user);
 
   state = loadStateForUser(user);
 
@@ -850,125 +899,36 @@ function logoutCurrentUser() {
   state = null;
   authStore.activeUserId = null;
   saveAuthStore();
-  showAuthShell("signin");
+  showAuthShell();
 }
 
-function handleSignInSubmit(e) {
+function handleWelcomeSubmit(e) {
   e.preventDefault();
 
-  const email = normalizeEmail(select("signInEmail")?.value);
-  const password = select("signInPassword")?.value;
-
-  if (!isValidEmail(email)) {
-    showToast("Please enter a valid email address.", "error");
-    return;
-  }
-
-  const user = findUserByEmail(email);
-
-  if (!user) {
-    showToast("Account not found. Please sign up first.", "error");
-    return;
-  }
-
-  if (String(user.provider || "").startsWith("google")) {
-    showToast("This account uses verified Google sign-in. Use Continue with Google.", "error");
-    return;
-  }
-
-  if ((user.password || "") !== (password || "")) {
-    showToast("Incorrect password.", "error");
-    return;
-  }
-
-  activateUser(user);
-  showToast("Welcome back, " + user.name + "!", "success");
-}
-
-function handleSignUpSubmit(e) {
-  e.preventDefault();
-
-  const name = select("signUpName")?.value.trim();
-  const email = normalizeEmail(select("signUpEmail")?.value);
-  const password = select("signUpPassword")?.value || "";
+  const name = String(select("welcomeName")?.value || "").trim();
+  const email = normalizeEmail(select("welcomeEmail")?.value);
 
   if (!name || !email) {
-    showToast("Please enter name and email.", "error");
+    showToast("Please enter your name and Gmail ID.", "error");
     return;
   }
 
-  if (!isValidEmail(email)) {
-    showToast("Please enter a valid email address.", "error");
+  if (!isValidGmail(email)) {
+    showToast("Please enter a valid Gmail address.", "error");
     return;
   }
 
   if (email === ADMIN_EMAIL) {
-    showToast("This admin account already exists. Please sign in.", "error");
-    return;
+    const passkey = prompt("Admin passkey required for this Gmail ID:");
+    if ((passkey || "") !== ADMIN_PASSWORD) {
+      showToast("Incorrect admin passkey.", "error");
+      return;
+    }
   }
 
-  if (password.length < 6) {
-    showToast("Password must be at least 6 characters.", "error");
-    return;
-  }
-
-  if (findUserByEmail(email)) {
-    showToast("This email is already registered. Please sign in.", "error");
-    return;
-  }
-
-  const user = createUser({ name, email, password, provider: "email" });
+  const user = upsertUserProfile(name, email);
   activateUser(user);
-  showToast("Welcome to Dad Bod, " + user.name + "!", "success");
-}
-
-function handleGoogleQuickSignIn() {
-  const emailInput = prompt("Enter your Google email address:");
-  if (!emailInput) return;
-
-  const email = normalizeEmail(emailInput);
-  if (!isValidEmail(email)) {
-    showToast("Please enter a valid email address.", "error");
-    return;
-  }
-
-  const existing = findUserByEmail(email);
-  if (existing && existing.provider === "email") {
-    showToast("This email already uses password sign-in. Use Sign In tab.", "error");
-    return;
-  }
-
-  const otp = createOtpChallenge(email, "google");
-  const expiresInMinutes = Math.round(OTP_EXPIRY_MS / 60000);
-  showToast(`Verification code generated. Enter it within ${expiresInMinutes} min.`, "success");
-
-  const enteredOtp = prompt(`Enter 6-digit verification code for ${email}:\n\nDemo code: ${otp}`);
-  if (!enteredOtp) {
-    showToast("Google verification cancelled.", "error");
-    return;
-  }
-
-  const verifyResult = verifyOtpChallenge(email, enteredOtp, "google");
-  if (!verifyResult.ok) {
-    showToast(verifyResult.message, "error");
-    return;
-  }
-
-  let user = existing;
-  if (!user) {
-    user = createUser({
-      name: deriveNameFromEmail(email),
-      email,
-      password: "",
-      provider: "google-verified",
-    });
-  } else {
-    user.provider = "google-verified";
-    saveAuthStore();
-  }
-
-  activateUser(user);
-  showToast("Google sign-in verified for " + user.name + ".", "success");
+  showToast("Welcome, " + user.name + "!", "success");
 }
 
 function calculateTargetsFromProfile() {
@@ -989,7 +949,7 @@ function calculateTargetsFromProfile() {
   state.profile.calorieTarget = existingTarget > 0 ? existingTarget : deficitCalories;
 
   const proteinG = Math.max(90, Math.round(goalWeight * 2.1));
-  const fatG = Math.max(35, Math.round(goalWeight * 0.8));
+  const fatG = Math.max(56, Math.min(70, Math.round(goalWeight * 0.8)));
   const carbsG = Math.max(80, Math.round((state.profile.calorieTarget - proteinG * 4 - fatG * 9) / 4));
 
   state.profile.macros = { proteinG, fatG, carbsG };
@@ -2730,6 +2690,7 @@ function bindAppEvents() {
   });
 
   select("exportBtn")?.addEventListener("click", exportData);
+  select("userSheetExportBtn")?.addEventListener("click", exportUserDirectoryCsv);
   select("clearDayBtn")?.addEventListener("click", clearToday);
 
   select("logoutBtn")?.addEventListener("click", logoutCurrentUser);
@@ -2758,20 +2719,11 @@ function bindAppEvents() {
   });
 }
 
-function bindAuthEvents() {
-  if (authEventsBound) return;
-  authEventsBound = true;
+function bindOnboardingEvents() {
+  if (onboardingEventsBound) return;
+  onboardingEventsBound = true;
 
-  document.querySelectorAll(".auth-tab").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      switchAuthTab(btn.getAttribute("data-auth-tab"));
-    });
-  });
-
-  select("signInForm")?.addEventListener("submit", handleSignInSubmit);
-  select("signUpForm")?.addEventListener("submit", handleSignUpSubmit);
-  select("googleSignInBtn")?.addEventListener("click", handleGoogleQuickSignIn);
-  select("googleSignUpBtn")?.addEventListener("click", handleGoogleQuickSignIn);
+  select("welcomeForm")?.addEventListener("submit", handleWelcomeSubmit);
 }
 
 function exposeWindowActions() {
@@ -2784,7 +2736,7 @@ function exposeWindowActions() {
 }
 
 function init() {
-  bindAuthEvents();
+  bindOnboardingEvents();
   bindAppEvents();
   exposeWindowActions();
 
@@ -2800,7 +2752,7 @@ function init() {
     if (activeUser) {
       activateUser(activeUser);
     } else {
-      showAuthShell("signin");
+      showAuthShell();
     }
   }, 1200);
 
