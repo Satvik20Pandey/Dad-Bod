@@ -1,11 +1,13 @@
 {
-  "name": "Dad Bod - Built Dream Physique",
+  "name": "Dad Bod — Free Fitness & Nutrition Tracker",
   "short_name": "Dad Bod",
   "start_url": "./index.html",
   "display": "standalone",
-  "background_color": "#f2f4f8",
-  "theme_color": "#ff5a2a",
-  "description": "Dad Bod fitness app for diet, home workouts, and progress tracking.",
+  "orientation": "portrait",
+  "background_color": "#F8FAFB",
+  "theme_color": "#FF6B35",
+  "description": "Your free all-in-one fitness tracker. Track calories, macros, micronutrients, workouts, weight, and progress photos.",
+  "categories": ["health", "fitness", "lifestyle"],
   "icons": [
     {
       "src": "assets/icon.svg",

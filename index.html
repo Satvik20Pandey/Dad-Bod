@@ -2,24 +2,41 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#ff5a2a" />
-    <meta name="description" content="Dad Bod - Built Dream Physique. Personal diet, workout, and progress tracker." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#F8FAFB" />
+    <meta name="description" content="Dad Bod — Your free all-in-one fitness tracker. Track calories, macros, micronutrients, workouts, weight, and progress photos. Built for real results." />
+    <meta name="keywords" content="fitness tracker, calorie counter, diet plan, workout tracker, macro tracker, micronutrients, dad bod fitness, free fitness app" />
+    <meta name="author" content="Satvik Pandey" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta property="og:title" content="Dad Bod — Free Fitness & Nutrition Tracker" />
+    <meta property="og:description" content="Track calories, macros, micronutrients, workouts and progress — completely free. No premium walls." />
+    <meta property="og:type" content="website" />
     <link rel="manifest" href="manifest.webmanifest" />
     <link rel="icon" href="assets/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/icon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="styles.css" />
-    <title>Dad Bod - Built Dream Physique</title>
+    <title>Dad Bod — Free Fitness & Nutrition Tracker</title>
   </head>
   <body>
+    <!-- SPLASH SCREEN -->
+    <div class="splash-screen" id="splashScreen">
+      <img src="assets/icon.svg" alt="Dad Bod" class="splash-logo" />
+      <div class="splash-title">Dad Bod</div>
+      <div class="splash-subtitle">Built Dream Physique</div>
+      <div class="splash-loader"></div>
+    </div>
+
     <div class="bg-gradient" aria-hidden="true"></div>
 
-    <section class="auth-shell" id="authShell">
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ========== AUTH ========== -->
+    <section class="auth-shell hidden" id="authShell">
       <article class="auth-card">
         <div class="brand-lockup">
           <img src="assets/icon.svg" alt="Dad Bod logo" class="brand-logo" />
@@ -35,82 +52,163 @@
         <form id="signInForm" class="auth-form active">
           <label>
             <span class="label-text">Email</span>
-            <input type="email" id="signInEmail" required placeholder="you@example.com" />
+            <input type="email" id="signInEmail" required placeholder="you@example.com" autocomplete="email" />
           </label>
           <label>
             <span class="label-text">Password</span>
-            <input type="password" id="signInPassword" required placeholder="Password" />
+            <input type="password" id="signInPassword" required placeholder="Your password" autocomplete="current-password" />
           </label>
-          <button type="submit" class="btn-primary full-width">Sign In</button>
-          <button type="button" class="btn-secondary full-width" id="googleSignInBtn">Continue With Google</button>
+          <button type="submit" class="btn-primary full-width" id="signInSubmitBtn">Sign In</button>
+          <button type="button" class="btn-secondary btn-google full-width" id="googleSignInBtn">
+            <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </button>
         </form>
 
         <form id="signUpForm" class="auth-form">
           <label>
             <span class="label-text">Full Name</span>
-            <input type="text" id="signUpName" required placeholder="Your name" />
+            <input type="text" id="signUpName" required placeholder="Your name" autocomplete="name" />
           </label>
           <label>
             <span class="label-text">Email</span>
-            <input type="email" id="signUpEmail" required placeholder="you@example.com" />
+            <input type="email" id="signUpEmail" required placeholder="you@example.com" autocomplete="email" />
           </label>
           <label>
             <span class="label-text">Password</span>
-            <input type="password" id="signUpPassword" required placeholder="Create password" />
+            <input type="password" id="signUpPassword" required placeholder="Create password (min 6 chars)" autocomplete="new-password" minlength="6" />
           </label>
           <button type="submit" class="btn-primary full-width">Create Account</button>
-          <button type="button" class="btn-secondary full-width" id="googleSignUpBtn">Continue With Google</button>
+          <button type="button" class="btn-secondary btn-google full-width" id="googleSignUpBtn">
+            <svg viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            Continue with Google
+          </button>
         </form>
 
-        <p class="auth-note">
-          AI features are optional. You can use meal logging, workouts, and tracking without any API key.
-        </p>
+        <div class="auth-note">
+          🔒 Your data stays on your device. No personal information is shared.
+        </div>
       </article>
     </section>
 
+    <!-- ========== APP ========== -->
     <main class="app-container hidden" id="appShell">
       <div class="app-content">
+        <!-- Header -->
         <header class="app-header">
           <div class="header-top">
-            <div>
-              <h1 id="brandTitle">Dad Bod</h1>
-              <p class="tagline" id="brandTagline">Built Dream Physique</p>
-              <p class="date-time" id="dateTimeText">Today</p>
+            <div class="header-top-left">
+              <img src="assets/icon.svg" alt="Dad Bod" class="header-logo-small" />
+              <div>
+                <h1 id="brandTitle">Dad Bod</h1>
+                <p class="tagline" id="brandTagline">Built Dream Physique</p>
+              </div>
             </div>
             <div class="header-actions">
               <span class="user-pill" id="userBadge">Guest</span>
-              <button class="btn-ghost" type="button" id="logoutBtn">Logout</button>
             </div>
           </div>
+          <p class="date-time" id="dateTimeText">Today</p>
           <div class="header-stats" id="headerStats"></div>
         </header>
 
+        <!-- ===== HOME TAB ===== -->
         <section id="tabHome" class="tab-content active">
+          <!-- Streak Banner -->
+          <div class="streak-banner" id="streakBanner">
+            <div class="streak-icon">🔥</div>
+            <div class="streak-info">
+              <div class="streak-count" id="streakCount">0 Day Streak</div>
+              <div class="streak-label">Keep logging to build your streak!</div>
+            </div>
+          </div>
+
+          <!-- Calorie Ring -->
+          <article class="card">
+            <div class="calorie-ring-section">
+              <div class="calorie-ring-wrapper">
+                <svg width="180" height="180" viewBox="0 0 180 180">
+                  <defs>
+                    <linearGradient id="calorieGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stop-color="#FF6B35" />
+                      <stop offset="100%" stop-color="#FF8F5E" />
+                    </linearGradient>
+                  </defs>
+                  <circle class="calorie-ring-bg" cx="90" cy="90" r="78" />
+                  <circle class="calorie-ring-fill" id="calorieRing" cx="90" cy="90" r="78"
+                    stroke-dasharray="490" stroke-dashoffset="490" />
+                </svg>
+                <div class="calorie-ring-center">
+                  <div class="calorie-ring-value" id="calorieRingValue">0</div>
+                  <div class="calorie-ring-label">remaining</div>
+                </div>
+              </div>
+              <div class="macro-pills" id="macroPills">
+                <div class="macro-pill"><span class="macro-dot protein"></span> Protein: <b id="pillProtein">0g</b></div>
+                <div class="macro-pill"><span class="macro-dot carbs"></span> Carbs: <b id="pillCarbs">0g</b></div>
+                <div class="macro-pill"><span class="macro-dot fat"></span> Fat: <b id="pillFat">0g</b></div>
+              </div>
+            </div>
+          </article>
+
+          <!-- Quick Actions -->
+          <div class="quick-actions">
+            <button class="quick-action-btn" onclick="scrollToTab('diet')">
+              <span>🍽️</span> Log Meal
+            </button>
+            <button class="quick-action-btn" onclick="scrollToTab('gym')">
+              <span>💪</span> Workout
+            </button>
+            <button class="quick-action-btn" onclick="scrollToTab('progress')">
+              <span>⚖️</span> Weight
+            </button>
+          </div>
+
+          <!-- Today Summary Cards -->
           <div class="dashboard-grid">
             <article class="card-large">
-              <h2>Today Nutrition</h2>
+              <div class="card-icon-title">
+                <div class="card-icon nutrition">🍎</div>
+                <div>
+                  <h2 style="margin-bottom:0">Today's Nutrition</h2>
+                </div>
+              </div>
               <div id="todayMacroSummary" class="macro-grid"></div>
-              <button class="btn-primary full-width" onclick="scrollToTab('diet')">Log Meal</button>
+              <button class="btn-primary full-width" onclick="scrollToTab('diet')">+ Log Meal</button>
             </article>
 
             <article class="card-large">
-              <h2>Current Weight</h2>
+              <div class="card-icon-title">
+                <div class="card-icon weight">⚖️</div>
+                <div>
+                  <h2 style="margin-bottom:0">Weight</h2>
+                </div>
+              </div>
               <div class="weight-display" id="weightDisplay"></div>
               <button class="btn-secondary full-width" onclick="scrollToTab('progress')">Update Weight</button>
             </article>
 
             <article class="card-large">
-              <h2>Today Workout</h2>
+              <div class="card-icon-title">
+                <div class="card-icon workout">🏋️</div>
+                <div>
+                  <h2 style="margin-bottom:0">Today's Workout</h2>
+                </div>
+              </div>
               <p id="todayWorkoutTitle" class="workout-title"></p>
               <div id="todayExerciseCount" class="progress-info"></div>
-              <button class="btn-primary full-width" onclick="scrollToTab('gym')">Start Gym</button>
+              <button class="btn-primary full-width" onclick="scrollToTab('gym')">Start Workout</button>
             </article>
           </div>
         </section>
 
+        <!-- ===== DIET TAB ===== -->
         <section id="tabDiet" class="tab-content">
           <article class="card">
-            <h2>Add Meal</h2>
+            <div class="card-icon-title">
+              <div class="card-icon nutrition">🍽️</div>
+              <h2 style="margin-bottom:0">Add Meal</h2>
+            </div>
             <form id="mealForm" class="form-grid">
               <label>
                 <span class="label-text">Meal Type</span>
@@ -133,7 +231,7 @@
                 <span class="label-text">Calories</span>
                 <input type="number" id="mealCalories" placeholder="Leave blank to estimate" />
               </label>
-              
+
               <fieldset class="mini-form">
                 <legend>Macros</legend>
                 <label>Protein (g)<input type="number" id="mealProtein" min="0" step="0.1" /></label>
@@ -158,7 +256,7 @@
 
               <button class="btn-primary full-width" type="submit">Save Meal</button>
             </form>
-            <p class="muted" id="mealStatus"></p>
+            <p class="muted" id="mealStatus" style="margin-top:8px;font-size:0.82rem;"></p>
           </article>
 
           <article class="card">
@@ -167,35 +265,48 @@
           </article>
         </section>
 
+        <!-- ===== WEEKLY PLAN TAB ===== -->
         <section id="tabWeeklyPlan" class="tab-content">
           <article class="card">
-            <h2>Weekly 1800 kcal Plan</h2>
-            <p class="muted" id="weeklyPlanIntro">Customize your weekly meals. You can type manually or use voice assist.</p>
+            <div class="card-icon-title">
+              <div class="card-icon" style="background:linear-gradient(135deg,#F0F4FF,#DCE5FF)">📅</div>
+              <h2 style="margin-bottom:0">Weekly Meal Plan</h2>
+            </div>
+            <p class="muted" id="weeklyPlanIntro" style="margin-bottom:12px;">Customize your weekly meals.</p>
             <div class="plan-builder-hint" id="planBuilderHint">
-              <p class="muted">New users: build your custom weekly plan with typing or mic.</p>
+              <p class="muted" style="margin-bottom:8px;">New here? Build your custom weekly plan.</p>
               <div class="btn-row">
-                <button class="btn-secondary" id="planWizardBtn" type="button">Create Plan (Type)</button>
-                <button class="btn-secondary" id="planVoiceBtn" type="button">Fill One Meal By Voice</button>
+                <button class="btn-secondary" id="planWizardBtn" type="button">✏️ Create Plan</button>
+                <button class="btn-secondary" id="planVoiceBtn" type="button">🎤 Voice Fill</button>
               </div>
             </div>
             <div id="weeklyPlanContainer" class="weekly-plan-grid"></div>
-            <div class="btn-row">
-              <button class="btn-secondary" id="resetPlanBtn" type="button">Reset</button>
+            <div class="btn-row" style="margin-top:12px;">
+              <button class="btn-ghost" id="resetPlanBtn" type="button">Reset</button>
               <button class="btn-primary" id="savePlanBtn" type="button">Save Plan</button>
             </div>
           </article>
         </section>
 
+        <!-- ===== GYM TAB ===== -->
         <section id="tabGym" class="tab-content">
           <article class="card">
-            <h2>Today: <span id="todayWorkoutDayName"></span></h2>
-            <p id="todayWorkoutNote" class="muted"></p>
+            <div class="card-icon-title">
+              <div class="card-icon workout">💪</div>
+              <div>
+                <h2 style="margin-bottom:0">Today: <span id="todayWorkoutDayName"></span></h2>
+              </div>
+            </div>
+            <p id="todayWorkoutNote" class="muted" style="margin-bottom:12px;"></p>
             <div id="todayExerciseList" class="exercise-checklist"></div>
-            <p id="workoutCompletionText" class="progress-info"></p>
+            <p id="workoutCompletionText" class="progress-info" style="margin-top:12px;"></p>
           </article>
 
           <article class="card">
-            <h2>Morning Session</h2>
+            <div class="card-icon-title">
+              <div class="card-icon" style="background:linear-gradient(135deg,#FFF0F5,#FFD6E7)">🌅</div>
+              <h2 style="margin-bottom:0">Morning Session</h2>
+            </div>
             <form id="morningForm" class="form-grid">
               <label>
                 <span class="label-text">Activity</span>
@@ -220,7 +331,7 @@
                 <span>Abs Circuit Done</span>
               </label>
               <label>
-                <span class="label-text">Morning Notes</span>
+                <span class="label-text">Notes</span>
                 <textarea id="morningNotes" rows="2" placeholder="How did the session feel?"></textarea>
               </label>
               <button class="btn-primary full-width" type="submit">Save Check-in</button>
@@ -228,15 +339,22 @@
           </article>
 
           <article class="card">
-            <h2>Abs Circuit (No Equipment)</h2>
-            <p class="muted">Complete each exercise. Click for form guide.</p>
+            <div class="card-icon-title">
+              <div class="card-icon" style="background:linear-gradient(135deg,#F0FFF4,#C6F6D5)">🔥</div>
+              <h2 style="margin-bottom:0">Abs Circuit</h2>
+            </div>
+            <p class="muted" style="margin-bottom:10px;">No equipment needed. Tap for form guide.</p>
             <div id="absExerciseList" class="exercise-checklist"></div>
           </article>
         </section>
 
+        <!-- ===== PROGRESS TAB ===== -->
         <section id="tabProgress" class="tab-content">
           <article class="card">
-            <h2>Weight Tracker</h2>
+            <div class="card-icon-title">
+              <div class="card-icon weight">📊</div>
+              <h2 style="margin-bottom:0">Weight Tracker</h2>
+            </div>
             <form id="weightForm" class="form-grid">
               <label>
                 <span class="label-text">Date</span>
@@ -248,12 +366,15 @@
               </label>
               <button class="btn-primary full-width" type="submit">Record Weight</button>
             </form>
-            <div id="weightSummary" class="summary-grid"></div>
+            <div id="weightSummary" class="summary-grid" style="margin-top:12px;"></div>
             <canvas id="weightChart" width="800" height="260"></canvas>
           </article>
 
           <article class="card">
-            <h2>Progress Photos</h2>
+            <div class="card-icon-title">
+              <div class="card-icon" style="background:linear-gradient(135deg,#FFF0F5,#FFD6E7)">📸</div>
+              <h2 style="margin-bottom:0">Progress Photos</h2>
+            </div>
             <form id="photoForm" class="form-grid">
               <label>
                 <span class="label-text">Photo Type</span>
@@ -264,7 +385,7 @@
               </label>
               <label>
                 <span class="label-text">Note</span>
-                <input type="text" id="photoNote" placeholder="Optional" />
+                <input type="text" id="photoNote" placeholder="Optional note" />
               </label>
               <label class="btn-secondary full-width file-label">
                 📷 Take Photo
@@ -273,99 +394,181 @@
               <button class="btn-secondary full-width" id="aiPhotoAnalyzeBtn" type="button">✨ AI Analyze Photo</button>
               <button class="btn-primary full-width" type="submit">Save Photo</button>
             </form>
-            <p class="muted" id="photoAiFeedback"></p>
-            <div id="photoGallery" class="photo-grid"></div>
+            <p class="muted" id="photoAiFeedback" style="margin-top:8px;"></p>
+            <div id="photoGallery" class="photo-grid" style="margin-top:12px;"></div>
           </article>
         </section>
 
+        <!-- ===== MORE TAB (Settings + Play Store pages) ===== -->
         <section id="tabSettings" class="tab-content">
-          <article class="card">
-            <h2>Goals</h2>
-            <form id="profileForm" class="form-grid">
-              <label>
-                <span class="label-text">Current Weight (kg)</span>
-                <input type="number" id="currentWeight" min="30" max="250" step="0.1" />
-              </label>
-              <label>
-                <span class="label-text">Goal Weight (kg)</span>
-                <input type="number" id="goalWeight" min="30" max="250" step="0.1" />
-              </label>
-              <label>
-                <span class="label-text">Age</span>
-                <input type="number" id="age" min="10" max="90" />
-              </label>
-              <label>
-                <span class="label-text">Height (cm)</span>
-                <input type="number" id="heightCm" min="120" max="230" step="0.1" />
-              </label>
-              <label>
-                <span class="label-text">Weekly Loss Target (kg)</span>
-                <input type="number" id="weeklyLoss" min="0.2" max="1.5" step="0.1" />
-              </label>
-              <label>
-                <span class="label-text">Daily Calories</span>
-                <input type="number" id="calorieTarget" min="1000" max="4000" step="10" />
-              </label>
-              <button class="btn-primary" type="submit">Update Goals</button>
-              <button class="btn-secondary" type="button" id="autoTargetBtn">Auto Calculate</button>
-            </form>
-            <div id="targetSummary" class="summary-grid"></div>
-          </article>
-
-          <article class="card">
-            <h2>Data</h2>
-            <div class="btn-row">
-              <button class="btn-secondary" id="exportBtn">💾 Export</button>
-              <label class="btn-secondary file-label">📂 Import<input type="file" id="importInput" accept="application/json" /></label>
-              <button class="btn-danger" id="clearDayBtn">🗑️ Clear Today</button>
-            </div>
-          </article>
-
-          <article class="card">
-            <h2>AI Settings (Optional)</h2>
-            <p class="muted">Only required for AI meal estimate and AI photo analysis.</p>
-            <form id="apiForm" class="form-grid">
-              <label>
-                <span class="label-text">OpenRouter API Key</span>
-                <input type="password" id="apiKeyInput" placeholder="sk-or-v1-..." />
-              </label>
-              <label>
-                <span class="label-text">Model</span>
-                <input type="text" id="aiModelInput" placeholder="openai/gpt-4o-mini" />
-              </label>
-              <button class="btn-primary full-width" type="submit">Save AI Settings</button>
-            </form>
-            <p id="apiStatus" class="muted"></p>
-          </article>
-
-              <article class="card api-help">
-                <div class="api-help-header">
-                  <h3>Don't have an API Key?</h3>
-                  <p class="muted">Get your free OpenRouter API key in seconds</p>
+          <div class="settings-section">
+            <!-- Goals -->
+            <article class="card">
+              <div class="card-icon-title">
+                <div class="card-icon" style="background:linear-gradient(135deg,#E8F4FF,#CCE5FF)">🎯</div>
+                <h2 style="margin-bottom:0">Goals</h2>
+              </div>
+              <form id="profileForm" class="form-grid">
+                <label>
+                  <span class="label-text">Current Weight (kg)</span>
+                  <input type="number" id="currentWeight" min="30" max="250" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Goal Weight (kg)</span>
+                  <input type="number" id="goalWeight" min="30" max="250" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Age</span>
+                  <input type="number" id="age" min="10" max="90" />
+                </label>
+                <label>
+                  <span class="label-text">Height (cm)</span>
+                  <input type="number" id="heightCm" min="120" max="230" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Weekly Loss Target (kg)</span>
+                  <input type="number" id="weeklyLoss" min="0.2" max="1.5" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Daily Calories</span>
+                  <input type="number" id="calorieTarget" min="1000" max="4000" step="10" />
+                </label>
+                <div class="btn-row">
+                  <button class="btn-primary" type="submit">Update Goals</button>
+                  <button class="btn-secondary" type="button" id="autoTargetBtn">Auto Calculate</button>
                 </div>
-                <button type="button" class="btn-secondary full-width" id="getApiKeyBtn">
-                  🔑 Get Free API Key
-                </button>
-                <p class="api-help-notes">
-                  <strong>How it works:</strong><br/>
-                  1. Click the button above<br/>
-                  2. Sign up at OpenRouter.ai<br/>
-                  3. Copy your API key<br/>
-                  4. Paste it above and save
-                </p>
-              </article>
+              </form>
+              <div id="targetSummary" class="summary-grid" style="margin-top:12px;"></div>
+            </article>
+
+            <!-- Data -->
+            <article class="card">
+              <div class="card-icon-title">
+                <div class="card-icon" style="background:linear-gradient(135deg,#F0F4FF,#DCE5FF)">💾</div>
+                <h2 style="margin-bottom:0">Data</h2>
+              </div>
+              <div class="btn-row">
+                <button class="btn-secondary" id="exportBtn">💾 Export</button>
+                <label class="btn-secondary file-label">📂 Import<input type="file" id="importInput" accept="application/json" /></label>
+                <button class="btn-danger" id="clearDayBtn">🗑️ Clear Today</button>
+              </div>
+            </article>
+
+            <!-- AI Settings -->
+            <article class="card">
+              <div class="card-icon-title">
+                <div class="card-icon" style="background:linear-gradient(135deg,#F5F0FF,#E8DBFF)">✨</div>
+                <h2 style="margin-bottom:0">AI Settings</h2>
+              </div>
+              <p class="muted" style="margin-bottom:10px;font-size:0.82rem;">Optional — powers AI meal estimation and photo analysis.</p>
+              <form id="apiForm" class="form-grid">
+                <label>
+                  <span class="label-text">OpenRouter API Key</span>
+                  <input type="password" id="apiKeyInput" placeholder="sk-or-v1-..." />
+                </label>
+                <label>
+                  <span class="label-text">Model</span>
+                  <input type="text" id="aiModelInput" placeholder="openai/gpt-4o-mini" />
+                </label>
+                <button class="btn-primary full-width" type="submit">Save AI Settings</button>
+              </form>
+              <p id="apiStatus" class="muted" style="margin-top:6px;font-size:0.82rem;"></p>
+            </article>
+
+            <article class="card api-help">
+              <div class="api-help-header">
+                <h3>Don't have an API Key?</h3>
+                <p class="muted" style="font-size:0.82rem;">Get your free OpenRouter API key in seconds</p>
+              </div>
+              <button type="button" class="btn-secondary full-width" id="getApiKeyBtn">
+                🔑 Get Free API Key
+              </button>
+              <p class="api-help-notes">
+                <strong>Steps:</strong><br/>
+                1. Click button above → OpenRouter.ai<br/>
+                2. Sign up (free)<br/>
+                3. Copy API key → paste above
+              </p>
+            </article>
+
+            <!-- Play Store Sections -->
+            <div class="settings-group">
+              <div class="settings-group-title">App</div>
+              <div class="settings-item" id="settingsAbout">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon" style="background:#F0F4FF;">ℹ️</div>
+                  <div class="settings-item-text">
+                    <h3>About Dad Bod</h3>
+                    <p>Version 1.0.0</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsHelp">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon" style="background:#E8FFF4;">💬</div>
+                  <div class="settings-item-text">
+                    <h3>Help & Support</h3>
+                    <p>Contact us for assistance</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsPrivacy">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon" style="background:#FFF0F5;">🔒</div>
+                  <div class="settings-item-text">
+                    <h3>Privacy Policy</h3>
+                    <p>How we handle your data</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsTerms">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon" style="background:#FFF5E0;">📄</div>
+                  <div class="settings-item-text">
+                    <h3>Terms of Service</h3>
+                    <p>Usage terms & conditions</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsRate">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon" style="background:#FFF0E8;">⭐</div>
+                  <div class="settings-item-text">
+                    <h3>Rate This App</h3>
+                    <p>Love Dad Bod? Leave a review!</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+            </div>
+
+            <!-- Logout -->
+            <button class="btn-danger full-width" type="button" id="logoutBtn" style="margin-top:4px;">
+              Logout
+            </button>
+
+            <p class="muted" style="text-align:center;font-size:0.72rem;padding:8px 0 20px;">
+              Made with ❤️ by Satvik Pandey<br/>
+              © 2024-2026 Dad Bod. All rights reserved.
+            </p>
+          </div>
         </section>
       </div>
 
+      <!-- Bottom Navigation -->
       <nav class="bottom-nav">
         <button class="nav-btn active" data-tab="home"><span>🏠</span><small>Home</small></button>
         <button class="nav-btn" data-tab="diet"><span>🍽️</span><small>Diet</small></button>
-        <button class="nav-btn" data-tab="weekly-plan"><span>📅</span><small>Plan</small></button>
         <button class="nav-btn" data-tab="gym"><span>💪</span><small>Workout</small></button>
         <button class="nav-btn" data-tab="progress"><span>📊</span><small>Progress</small></button>
-        <button class="nav-btn" data-tab="settings"><span>⚙️</span><small>Settings</small></button>
+        <button class="nav-btn" data-tab="settings"><span>⚙️</span><small>More</small></button>
       </nav>
 
+      <!-- Exercise Modal -->
       <div id="exerciseModal" class="modal hidden" aria-hidden="true">
         <div class="modal-backdrop" id="modalBackdrop"></div>
         <article class="modal-content">
@@ -373,13 +576,23 @@
           <h2 id="modalTitle">Exercise Guide</h2>
           <p id="modalLoading" class="muted">Loading GIF guide...</p>
           <img id="modalGif" src="" alt="Exercise GIF" class="exercise-gif" />
-          <p id="modalCues" class="muted"></p>
-          <button class="btn-secondary full-width" id="modalVideoBtn" type="button">Open Video Guide</button>
-          <button class="btn-primary full-width" id="modalCloseBtnBottom" type="button">Close</button>
+          <p id="modalCues" class="muted" style="margin-bottom:12px;"></p>
+          <button class="btn-secondary full-width" id="modalVideoBtn" type="button">▶️ Open Video Guide</button>
+          <button class="btn-primary full-width" id="modalCloseBtnBottom" type="button" style="margin-top:8px;">Close</button>
+        </article>
+      </div>
+
+      <!-- Policy Modal (reusable) -->
+      <div id="policyModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" id="policyModalBackdrop"></div>
+        <article class="modal-content">
+          <button class="modal-close" id="policyModalCloseBtn" type="button" aria-label="Close">×</button>
+          <h2 id="policyModalTitle">Title</h2>
+          <div id="policyModalBody" class="policy-content"></div>
+          <button class="btn-primary full-width" id="policyModalDoneBtn" type="button" style="margin-top:12px;">Done</button>
         </article>
       </div>
     </main>
-
 
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
     <script src="app-new.js"></script>

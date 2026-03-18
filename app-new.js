@@ -463,6 +463,108 @@ function showAppShell() {
   select("appShell")?.classList.remove("hidden");
 }
 
+/* ---- Toast Notification ---- */
+function showToast(msg, type = "") {
+  const t = select("toast");
+  if (!t) return;
+  t.textContent = msg;
+  t.className = "toast show" + (type ? " " + type : "");
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => { t.className = "toast"; }, 2600);
+}
+
+/* ---- Splash Screen ---- */
+function hideSplash() {
+  const s = select("splashScreen");
+  if (!s) return;
+  s.classList.add("fade-out");
+  setTimeout(() => s.remove(), 600);
+}
+
+/* ---- Streak Calculation ---- */
+function calculateStreak() {
+  if (!state) return 0;
+  let streak = 0;
+  const today = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    const meals = state.mealsByDate[key];
+    if (meals && meals.length > 0) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+  }
+  return streak;
+}
+
+function renderStreak() {
+  const streak = calculateStreak();
+  const el = select("streakCount");
+  if (el) el.textContent = streak + " Day Streak";
+}
+
+/* ---- Calorie Ring ---- */
+function renderCalorieRing() {
+  const totals = dailyTotals();
+  const target = Number(state.profile.calorieTarget || 2000);
+  const eaten = totals.kcal;
+  const remaining = Math.max(0, target - eaten);
+  const pct = Math.min(1, eaten / target);
+  const circumference = 2 * Math.PI * 78; // ~490
+  const offset = circumference * (1 - pct);
+
+  const ring = select("calorieRing");
+  if (ring) {
+    ring.style.strokeDasharray = circumference;
+    ring.style.strokeDashoffset = offset;
+  }
+
+  const val = select("calorieRingValue");
+  if (val) val.textContent = formatNum(remaining, 0);
+
+  const pp = select("pillProtein");
+  const pc = select("pillCarbs");
+  const pf = select("pillFat");
+  if (pp) pp.textContent = formatNum(totals.protein, 0) + "g";
+  if (pc) pc.textContent = formatNum(totals.carbs, 0) + "g";
+  if (pf) pf.textContent = formatNum(totals.fat, 0) + "g";
+}
+
+/* ---- Policy Modals ---- */
+function openPolicyModal(title, bodyHtml) {
+  setText("policyModalTitle", title);
+  const body = select("policyModalBody");
+  if (body) body.innerHTML = bodyHtml;
+  const m = select("policyModal");
+  if (m) { m.classList.remove("hidden"); m.setAttribute("aria-hidden", "false"); }
+  document.body.classList.add("modal-open");
+}
+
+function closePolicyModal() {
+  const m = select("policyModal");
+  if (m) { m.classList.add("hidden"); m.setAttribute("aria-hidden", "true"); }
+  document.body.classList.remove("modal-open");
+}
+
+function openAbout() {
+  openPolicyModal("About Dad Bod", `<div class="policy-content"><p><strong>Dad Bod — Built Dream Physique</strong></p><p>Version 1.0.0</p><p>Dad Bod is your free, all-in-one fitness companion. Track calories, macros, micronutrients, workouts, weight, and progress photos — all without any subscription or premium wall.</p><p><strong>Key Features:</strong></p><ul><li>Complete calorie & macro tracking</li><li>Detailed micronutrient tracking (Fiber, Calcium, Iron, Vitamin C)</li><li>AI-powered meal estimation</li><li>Camera nutrition label scanning</li><li>Voice input for meal logging</li><li>Structured weekly workout plans</li><li>Weight trend tracking with charts</li><li>Progress photo timeline</li><li>Weekly meal planner</li></ul><p><strong>Developer:</strong> Satvik Pandey</p><p>© 2024-2026 Dad Bod. All rights reserved.</p></div>`);
+}
+
+function openHelp() {
+  openPolicyModal("Help & Support", `<div class="policy-content"><p>Need help? We're here for you.</p><h3>Contact Us</h3><p>Email: <a href="mailto:satvikofficial20@gmail.com">satvikofficial20@gmail.com</a></p><h3>FAQ</h3><p><strong>Q: Is Dad Bod really free?</strong><br/>A: Yes! All core features including calorie tracking, workouts, and progress tracking are completely free.</p><p><strong>Q: Do I need an API key?</strong><br/>A: No. API key is only needed for optional AI features like smart meal estimation and photo analysis. All manual tracking works without it.</p><p><strong>Q: Where is my data stored?</strong><br/>A: All data is stored locally on your device. We don't collect or send your personal data to any server.</p><p><strong>Q: How do I export my data?</strong><br/>A: Go to More → Data → Export to download your data as a JSON file.</p></div>`);
+}
+
+function openPrivacyPolicy() {
+  openPolicyModal("Privacy Policy", `<div class="policy-content"><p><em>Last updated: March 2026</em></p><h3>Data Collection</h3><p>Dad Bod does not collect, store, or transmit any personal information to external servers. All user data including meal logs, workout records, weight entries, and photos are stored locally on your device using browser local storage.</p><h3>Third-Party Services</h3><p>If you choose to use AI features, your meal descriptions may be sent to OpenRouter API using your own API key. No personal identifiers are included.</p><p>Exercise GIFs are fetched from Tenor API. No user data is shared with Tenor.</p><h3>Cookies</h3><p>Dad Bod does not use cookies or any tracking technologies.</p><h3>Data Deletion</h3><p>You can delete all your data at any time by clearing your browser data or using the Clear Today / Export features in the app.</p><h3>Contact</h3><p>For privacy concerns: <a href="mailto:satvikofficial20@gmail.com">satvikofficial20@gmail.com</a></p></div>`);
+}
+
+function openTerms() {
+  openPolicyModal("Terms of Service", `<div class="policy-content"><p><em>Last updated: March 2026</em></p><h3>Acceptance</h3><p>By using Dad Bod, you agree to these terms. If you disagree, please do not use the app.</p><h3>Use License</h3><p>Dad Bod grants you a free, non-exclusive, non-transferable license to use the application for personal fitness tracking.</p><h3>Disclaimer</h3><p>Dad Bod is not a medical application. Nutritional estimates are approximate. Always consult a healthcare professional before starting any diet or exercise program.</p><h3>Limitation of Liability</h3><p>Dad Bod is provided "as is" without warranties. We are not liable for any health outcomes or data loss.</p><h3>Changes</h3><p>We may update these terms. Continued use constitutes acceptance of changes.</p><h3>Contact</h3><p>Questions: <a href="mailto:satvikofficial20@gmail.com">satvikofficial20@gmail.com</a></p></div>`);
+}
+
 function updateBranding() {
   setText("brandTitle", APP_NAME);
   setText("brandTagline", APP_TAGLINE);
@@ -517,16 +619,22 @@ function handleSignInSubmit(e) {
   const user = findUserByEmail(email);
 
   if (!user) {
-    alert("Account not found. Please sign up first.");
+    showToast("Account not found. Please sign up first.", "error");
+    return;
+  }
+
+  if (user.provider === "google") {
+    showToast("This account uses Google sign-in. Use Continue with Google.", "error");
     return;
   }
 
   if ((user.password || "") !== (password || "")) {
-    alert("Incorrect password.");
+    showToast("Incorrect password.", "error");
     return;
   }
 
   activateUser(user);
+  showToast("Welcome back, " + user.name + "!", "success");
 }
 
 function handleSignUpSubmit(e) {
@@ -537,46 +645,54 @@ function handleSignUpSubmit(e) {
   const password = select("signUpPassword")?.value || "";
 
   if (!name || !email) {
-    alert("Please enter name and email.");
+    showToast("Please enter name and email.", "error");
     return;
   }
 
   if (email === ADMIN_EMAIL) {
-    alert("This admin account already exists. Please sign in.");
+    showToast("This admin account already exists. Please sign in.", "error");
     return;
   }
 
   if (password.length < 6) {
-    alert("Password must be at least 6 characters.");
+    showToast("Password must be at least 6 characters.", "error");
     return;
   }
 
   if (findUserByEmail(email)) {
-    alert("This email is already registered. Please sign in.");
+    showToast("This email is already registered. Please sign in.", "error");
     return;
   }
 
   const user = createUser({ name, email, password, provider: "email" });
   activateUser(user);
+  showToast("Welcome to Dad Bod, " + user.name + "! 💪", "success");
 }
 
 function handleGoogleQuickSignIn() {
-  const enteredEmail = prompt("Enter your Google Gmail address to continue:");
-  if (!enteredEmail) return;
+  /* Show a styled prompt for Google email */
+  const email = prompt("Enter your Google email address:");
+  if (!email) return;
 
-  const email = enteredEmail.trim().toLowerCase();
-  if (!email.endsWith("@gmail.com")) {
-    alert("Please enter a valid Gmail address.");
+  const trimmed = email.trim().toLowerCase();
+  if (!trimmed.includes("@") || !trimmed.includes(".")) {
+    showToast("Please enter a valid email address.", "error");
     return;
   }
 
-  let user = findUserByEmail(email);
+  let user = findUserByEmail(trimmed);
+  if (user && user.provider !== "google") {
+    showToast("This email uses password sign-in. Please use Sign In tab.", "error");
+    return;
+  }
+
   if (!user) {
-    const fallbackName = email.split("@")[0];
-    user = createUser({ name: fallbackName, email, password: "", provider: "google" });
+    const fallbackName = trimmed.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+    user = createUser({ name: fallbackName, email: trimmed, password: "", provider: "google" });
   }
 
   activateUser(user);
+  showToast("Signed in as " + user.name, "success");
 }
 
 function calculateTargetsFromProfile() {
@@ -819,15 +935,16 @@ function showTab(tabName) {
   };
 
   const contentId = map[tabName];
-  const navBtnSelector = `[data-tab="${tabName}"]`;
 
   document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
   document.querySelectorAll(".nav-btn").forEach((el) => el.classList.remove("active"));
 
   const content = select(contentId);
-  const btn = document.querySelector(navBtnSelector);
-
   if (content) content.classList.add("active");
+
+  /* Match nav button - weekly-plan maps to diet nav btn */
+  const navTab = tabName === "weekly-plan" ? "diet" : tabName;
+  const btn = document.querySelector(`[data-tab="${navTab}"]`);
   if (btn) btn.classList.add("active");
 
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1264,14 +1381,14 @@ function saveWeeklyPlan() {
     state.weeklyPlan[day][field] = el.value;
   });
   saveState();
-  alert("Weekly plan saved.");
+  showToast("Weekly plan saved!", "success");
 }
 
 function resetWeeklyPlan() {
   state.weeklyPlan = getDefaultWeeklyPlan();
   saveState();
   renderWeeklyPlan();
-  alert("Weekly plan reset.");
+  showToast("Weekly plan reset.");
 }
 
 function startWeeklyPlanWizard() {
@@ -1294,7 +1411,7 @@ function startWeeklyPlanWizard() {
   state.weeklyPlan = generated;
   saveState();
   renderWeeklyPlan();
-  alert("Custom weekly plan created.");
+  showToast("Custom weekly plan created!", "success");
 }
 
 function startWeeklyVoiceFill() {
@@ -1348,7 +1465,7 @@ function handleMorningSubmit(e) {
   log.morningNotes = select("morningNotes")?.value || "";
 
   saveState();
-  alert("Morning check-in saved.");
+  showToast("Morning check-in saved! 🌅", "success");
 }
 
 function renderMorningForm() {
@@ -1382,7 +1499,7 @@ function handleWeightSubmit(e) {
   state.weightEntries = state.weightEntries.sort((a, b) => a.date.localeCompare(b.date));
   saveState();
   renderAll();
-  alert("Weight recorded.");
+  showToast("Weight recorded! 📊", "success");
 }
 
 function renderWeightSummary() {
@@ -1533,7 +1650,7 @@ function handlePhotoSubmit(e) {
     saveState();
     select("photoForm")?.reset();
     renderPhotoSection();
-    alert("Photo saved.");
+    showToast("Photo saved! 📸", "success");
   };
 
   reader.readAsDataURL(file);
@@ -1576,7 +1693,7 @@ function handleProfileSubmit(e) {
   calculateTargetsFromProfile();
   saveState();
   renderAll();
-  alert("Goals updated.");
+  showToast("Goals updated! 🎯", "success");
 }
 
 function renderProfileForm() {
@@ -1626,7 +1743,7 @@ function handleApiFormSubmit(e) {
 
   saveState();
   renderApiSettings();
-  alert("AI settings saved.");
+  showToast("AI settings saved!", "success");
 }
 
 function exportData() {
@@ -1659,7 +1776,7 @@ function importData(e) {
       state = mergeState(base, importedState);
       saveState();
       renderAll();
-      alert("Data imported.");
+      showToast("Data imported successfully!", "success");
     } catch {
       alert("Invalid JSON file format.");
     }
@@ -1799,6 +1916,8 @@ function renderAll() {
   updateBranding();
   renderHeaderStats();
   renderDashboard();
+  renderCalorieRing();
+  renderStreak();
   renderDietForm();
   renderMealsList();
   renderWeeklyPlan();
@@ -1859,8 +1978,22 @@ function bindAppEvents() {
   select("modalBackdrop")?.addEventListener("click", closeExerciseModal);
   select("modalVideoBtn")?.addEventListener("click", openModalVideoGuide);
 
+  /* Policy modal */
+  select("policyModalCloseBtn")?.addEventListener("click", closePolicyModal);
+  select("policyModalDoneBtn")?.addEventListener("click", closePolicyModal);
+  select("policyModalBackdrop")?.addEventListener("click", closePolicyModal);
+
+  /* Settings items */
+  select("settingsAbout")?.addEventListener("click", openAbout);
+  select("settingsHelp")?.addEventListener("click", openHelp);
+  select("settingsPrivacy")?.addEventListener("click", openPrivacyPolicy);
+  select("settingsTerms")?.addEventListener("click", openTerms);
+  select("settingsRate")?.addEventListener("click", () => {
+    showToast("Thank you! Rating will be available on Play Store soon. ⭐");
+  });
+
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") closeExerciseModal();
+    if (event.key === "Escape") { closeExerciseModal(); closePolicyModal(); }
   });
 }
 
@@ -1899,11 +2032,16 @@ function init() {
   }
 
   const activeUser = authStore.users.find((u) => u.id === authStore.activeUserId);
-  if (activeUser) {
-    activateUser(activeUser);
-  } else {
-    showAuthShell("signin");
-  }
+
+  /* Splash screen timing */
+  setTimeout(() => {
+    hideSplash();
+    if (activeUser) {
+      activateUser(activeUser);
+    } else {
+      showAuthShell("signin");
+    }
+  }, 1200);
 
   setInterval(updateDateTime, 30000);
 }
