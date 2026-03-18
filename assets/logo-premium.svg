@@ -1,0 +1,64 @@
+<svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="gradientPrimary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff5a2a;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#ff7a4d;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0f3460;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradientAccent" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#ff5a2a;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#ff8c42;stop-opacity:0.8" />
+    </linearGradient>
+    <filter id="shadowPremium">
+      <feGaussianBlur in="SourceGraphic" stdDeviation="2"/>
+      <feDropShadow dx="4" dy="4" stdDeviation="3" flood-opacity="0.3"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer circle background -->
+  <circle cx="100" cy="100" r="95" fill="url(#gradientPrimary)" filter="url(#shadowPremium)"/>
+  
+  <!-- Inner white circle -->
+  <circle cx="100" cy="100" r="88" fill="#ffffff" opacity="0.98"/>
+  
+  <!-- Decorative corners -->
+  <rect x="18" y="18" width="8" height="8" rx="2" fill="url(#gradientAccent)" opacity="0.6"/>
+  <rect x="174" y="18" width="8" height="8" rx="2" fill="url(#gradientAccent)" opacity="0.6"/>
+  <rect x="18" y="174" width="8" height="8" rx="2" fill="url(#gradientAccent)" opacity="0.6"/>
+  <rect x="174" y="174" width="8" height="8" rx="2" fill="url(#gradientAccent)" opacity="0.6"/>
+  
+  <!-- Premium text styling -->
+  <g>
+    <!-- Letter D -->
+    <path d="M 65 55 L 85 55 Q 95 55 95 70 L 95 130 Q 95 145 85 145 L 65 145 Z" 
+          fill="url(#gradientPrimary)" opacity="0.9"/>
+    <path d="M 71 62 L 71 138 L 83 138 Q 91 138 91 128 L 91 72 Q 91 62 83 62 Z" 
+          fill="#ffffff"/>
+    
+    <!-- Decorative pill shape under D -->
+    <ellipse cx="80" cy="152" rx="12" ry="4" fill="url(#gradientAccent)" opacity="0.4"/>
+    
+    <!-- Letter B -->
+    <path d="M 105 55 L 125 55 Q 135 55 135 70 L 135 85 Q 135 95 125 98 L 135 98 Q 145 100 145 115 L 145 130 Q 145 145 125 145 L 105 145 Z" 
+          fill="url(#gradientPrimary)" opacity="0.9"/>
+    <path d="M 111 62 L 111 101 L 123 101 Q 131 101 131 89 L 131 73 Q 131 62 123 62 Z" 
+          fill="#ffffff"/>
+    <path d="M 111 105 L 111 138 L 123 138 Q 133 138 133 123 L 133 113 Q 133 105 123 105 Z" 
+          fill="#ffffff"/>
+    
+    <!-- Decorative pill shape under B -->
+    <ellipse cx="120" cy="152" rx="12" ry="4" fill="url(#gradientAccent)" opacity="0.4"/>
+  </g>
+  
+  <!-- Accent line under letters -->
+  <line x1="60" y1="155" x2="140" y2="155" stroke="url(#gradientAccent)" stroke-width="3" stroke-linecap="round" opacity="0.7"/>
+  
+  <!-- Shine effect -->
+  <ellipse cx="70" cy="50" rx="25" ry="20" fill="#ffffff" opacity="0.2"/>
+  
+  <!-- Premium badge corner -->
+  <g transform="translate(150, 20)">
+    <circle cx="0" cy="0" r="12" fill="url(#gradientAccent)"/>
+    <text x="0" y="4" text-anchor="middle" font-size="14" font-weight="bold" fill="#ffffff" font-family="Arial">★</text>
+  </g>
+</svg>
