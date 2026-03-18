@@ -550,7 +550,7 @@ function closePolicyModal() {
 }
 
 function openAbout() {
-  openPolicyModal("About Dad Bod", `<div class="policy-content"><p><strong>Dad Bod — Built Dream Physique</strong></p><p>Version 1.0.0</p><p>Dad Bod is your free, all-in-one fitness companion. Track calories, macros, micronutrients, workouts, weight, and progress photos — all without any subscription or premium wall.</p><p><strong>Key Features:</strong></p><ul><li>Complete calorie & macro tracking</li><li>Detailed micronutrient tracking (Fiber, Calcium, Iron, Vitamin C)</li><li>AI-powered meal estimation</li><li>Camera nutrition label scanning</li><li>Voice input for meal logging</li><li>Structured weekly workout plans</li><li>Weight trend tracking with charts</li><li>Progress photo timeline</li><li>Weekly meal planner</li></ul><p><strong>Developer:</strong> Satvik Pandey</p><p>© 2024-2026 Dad Bod. All rights reserved.</p></div>`);
+  openPolicyModal("About Dad Bod", `<div class="policy-content"><p><strong>Dad Bod — Built Dream Physique</strong></p><p>Version 1.0.1</p><p>Dad Bod is your free, all-in-one fitness companion. Track calories, macros, micronutrients, workouts, weight, and progress photos — all without any subscription or premium wall.</p><p><strong>Key Features:</strong></p><ul><li>Complete calorie & macro tracking</li><li>Detailed micronutrient tracking (Fiber, Calcium, Iron, Vitamin C)</li><li>AI-powered meal estimation</li><li>Camera nutrition label scanning</li><li>Voice input for meal logging</li><li>Structured weekly workout plans</li><li>Weight trend tracking with charts</li><li>Progress photo timeline</li><li>Weekly meal planner</li></ul><p><strong>Developer:</strong> Satvik Pandey</p><p>© 2024-2026 Dad Bod. All rights reserved.</p></div>`);
 }
 
 function openHelp() {

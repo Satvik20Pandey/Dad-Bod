@@ -43,8 +43,10 @@ cd android
 
 Generated files are committed in `release/`:
 
-- `release/DadBod-v1.0.0-signed.apk`
-- `release/DadBod-v1.0.0-signed.aab`
+- `release/DadBod-latest-signed.apk`
+- `release/DadBod-latest-signed.aab`
+- `release/DadBod-v1.0.1-signed.apk`
+- `release/DadBod-v1.0.1-signed.aab`
 
 ## OpenRouter API Key Setup
 

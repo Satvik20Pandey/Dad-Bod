@@ -5,7 +5,7 @@
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#F8FAFB",
-  "theme_color": "#FF6B35",
+  "theme_color": "#FF5A2A",
   "description": "Your free all-in-one fitness tracker. Track calories, macros, micronutrients, workouts, weight, and progress photos.",
   "categories": ["health", "fitness", "lifestyle"],
   "icons": [
