@@ -8,7 +8,9 @@ A premium mobile-first fitness and nutrition tracker with room-only workouts, me
 - Admin preset account with default profile and weekly diet plan
 - 7-day room-only no-equipment workout split
 - Exercise GIF guides with Tenor API fallback handling
-- Diet logging with macro and micronutrient tracking
+- Diet logging with full nutrient tracking (macros + fats + vitamins + minerals)
+- Voice-based meal description capture with improved estimation
+- Verified Google sign-in flow with one-time code step
 - Weight chart, progress photos, and daily workout completion
 - Optional OpenRouter AI features with in-app API key shortcut
 - PWA support (manifest + service worker)
@@ -45,6 +47,8 @@ Generated files are committed in `release/`:
 
 - `release/DadBod-latest-signed.apk`
 - `release/DadBod-latest-signed.aab`
+- `release/DadBod-v1.0.2-signed.apk`
+- `release/DadBod-v1.0.2-signed.aab`
 - `release/DadBod-v1.0.1-signed.apk`
 - `release/DadBod-v1.0.1-signed.aab`
 

@@ -7,6 +7,8 @@ const TENOR_PUBLIC_KEY = "LIVDSRZULELA";
 
 const APP_NAME = "Dad Bod";
 const APP_TAGLINE = "Built Dream Physique";
+const APP_VERSION = "1.0.2";
+const OTP_EXPIRY_MS = 5 * 60 * 1000;
 
 const daysOrder = ["Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"];
 
@@ -176,18 +178,179 @@ const roomGymSplit = {
   },
 };
 
+const nutrientFields = [
+  "protein",
+  "carbs",
+  "fiber",
+  "sugar",
+  "fat",
+  "satFat",
+  "polyFat",
+  "monoFat",
+  "transFat",
+  "cholesterol",
+  "sodium",
+  "potassium",
+  "vitaminA",
+  "vitaminC",
+  "calcium",
+  "iron",
+];
+
+const nutrientLabels = {
+  protein: "Protein",
+  carbs: "Carbs",
+  fiber: "Fiber",
+  sugar: "Sugar",
+  fat: "Fat",
+  satFat: "Saturated Fat",
+  polyFat: "Polyunsaturated Fat",
+  monoFat: "Monounsaturated Fat",
+  transFat: "Trans Fat",
+  cholesterol: "Cholesterol",
+  sodium: "Sodium",
+  potassium: "Potassium",
+  vitaminA: "Vitamin A",
+  vitaminC: "Vitamin C",
+  calcium: "Calcium",
+  iron: "Iron",
+};
+
+const nutrientUnits = {
+  protein: "g",
+  carbs: "g",
+  fiber: "g",
+  sugar: "g",
+  fat: "g",
+  satFat: "g",
+  polyFat: "g",
+  monoFat: "g",
+  transFat: "g",
+  cholesterol: "mg",
+  sodium: "mg",
+  potassium: "mg",
+  vitaminA: "mcg",
+  vitaminC: "mg",
+  calcium: "mg",
+  iron: "mg",
+};
+
+const baseNutrientTargets = {
+  fiber: 30,
+  sugar: 50,
+  satFat: 20,
+  polyFat: 22,
+  monoFat: 44,
+  transFat: 2,
+  cholesterol: 300,
+  sodium: 2000,
+  potassium: 3500,
+  vitaminA: 900,
+  vitaminC: 90,
+  calcium: 1000,
+  iron: 18,
+};
+
+const nutrientInputIds = {
+  protein: "mealProtein",
+  carbs: "mealCarbs",
+  fiber: "mealFiber",
+  sugar: "mealSugar",
+  fat: "mealFat",
+  satFat: "mealSaturatedFat",
+  polyFat: "mealPolyunsaturatedFat",
+  monoFat: "mealMonounsaturatedFat",
+  transFat: "mealTransFat",
+  cholesterol: "mealCholesterol",
+  sodium: "mealSodium",
+  potassium: "mealPotassium",
+  vitaminA: "mealVitaminA",
+  vitaminC: "mealVitaminC",
+  calcium: "mealCalcium",
+  iron: "mealIron",
+};
+
+const nutrientFieldAliases = {
+  protein: ["protein"],
+  carbs: ["carbs", "carbohydrates", "carbohydrate"],
+  fiber: ["fiber"],
+  sugar: ["sugar", "sugars"],
+  fat: ["fat", "totalFat", "total_fat"],
+  satFat: ["satFat", "saturatedFat", "saturated_fat", "sat_fat"],
+  polyFat: ["polyFat", "polyunsaturatedFat", "polyunsaturated_fat", "poly_fat"],
+  monoFat: ["monoFat", "monounsaturatedFat", "monounsaturated_fat", "mono_fat"],
+  transFat: ["transFat", "trans_fat"],
+  cholesterol: ["cholesterol"],
+  sodium: ["sodium"],
+  potassium: ["potassium"],
+  vitaminA: ["vitaminA", "vitamin_a"],
+  vitaminC: ["vitaminC", "vitamin_c", "vitaminCMg"],
+  calcium: ["calcium", "calciumMg"],
+  iron: ["iron", "ironMg"],
+};
+
+function withNutritionDefaults(values) {
+  const source = values || {};
+  const normalized = { kcal: Number(source.kcal || 0) };
+  nutrientFields.forEach((field) => {
+    normalized[field] = Number(source[field] || 0);
+  });
+  return normalized;
+}
+
+function zeroNutritionTotals() {
+  return withNutritionDefaults({});
+}
+
+function getNutrientTarget(field) {
+  if (!state || !state.profile) return baseNutrientTargets[field] ?? null;
+  if (field === "protein") return Number(state.profile.macros?.proteinG || 0);
+  if (field === "carbs") return Number(state.profile.macros?.carbsG || 0);
+  if (field === "fat") return Number(state.profile.macros?.fatG || 0);
+  return baseNutrientTargets[field] ?? null;
+}
+
+function readNutrientValue(source, field) {
+  const aliases = nutrientFieldAliases[field] || [field];
+  for (const key of aliases) {
+    const value = Number(source?.[key]);
+    if (Number.isFinite(value)) return value;
+  }
+  return 0;
+}
+
+function normalizeNutrition(source) {
+  const normalized = { kcal: Number(source?.kcal || source?.calories || 0) };
+  nutrientFields.forEach((field) => {
+    normalized[field] = readNutrientValue(source, field);
+  });
+  return normalized;
+}
+
+function formatNutrientValue(field, value) {
+  const unit = nutrientUnits[field] || "";
+  const digits = unit === "g" ? 1 : 0;
+  return `${formatNum(Number(value || 0), digits)}${unit}`;
+}
+
 const builtInFoodDb = {
-  tofu: { kcal: 144, protein: 17.3, carbs: 2.8, fat: 8.7, fiber: 1.2, calcium: 350, iron: 3.4, vitaminC: 0 },
-  bread: { kcal: 265, protein: 9, carbs: 49, fat: 3.2, fiber: 2.7, calcium: 107, iron: 3.6, vitaminC: 0 },
-  egg: { kcal: 143, protein: 13, carbs: 0.7, fat: 9.5, fiber: 0, calcium: 56, iron: 1.8, vitaminC: 0 },
-  dal: { kcal: 116, protein: 9, carbs: 20, fat: 0.4, fiber: 8, calcium: 19, iron: 3.3, vitaminC: 1.5 },
-  rice: { kcal: 130, protein: 2.7, carbs: 28, fat: 0.3, fiber: 0.4, calcium: 10, iron: 1.2, vitaminC: 0 },
-  banana: { kcal: 89, protein: 1.1, carbs: 23, fat: 0.3, fiber: 2.6, calcium: 5, iron: 0.3, vitaminC: 8.7 },
-  milk: { kcal: 61, protein: 3.2, carbs: 5, fat: 3.3, fiber: 0, calcium: 113, iron: 0.03, vitaminC: 0 },
-  oats: { kcal: 389, protein: 17, carbs: 66, fat: 7, fiber: 10.6, calcium: 54, iron: 4.7, vitaminC: 0 },
-  dryfruits: { kcal: 520, protein: 10, carbs: 45, fat: 34, fiber: 7, calcium: 85, iron: 2.6, vitaminC: 1.2 },
-  roti: { kcal: 297, protein: 11, carbs: 58, fat: 3.6, fiber: 9.6, calcium: 29, iron: 3.9, vitaminC: 0 },
-  besan: { kcal: 387, protein: 22, carbs: 58, fat: 7, fiber: 10.8, calcium: 45, iron: 4.9, vitaminC: 0 },
+  tofu: { kcal: 144, protein: 17.3, carbs: 2.8, fiber: 1.2, sugar: 0.6, fat: 8.7, satFat: 1.3, polyFat: 4.9, monoFat: 1.9, transFat: 0, cholesterol: 0, sodium: 14, potassium: 237, vitaminA: 0, vitaminC: 0, calcium: 350, iron: 3.4 },
+  bread: { kcal: 265, protein: 9, carbs: 49, fiber: 2.7, sugar: 5, fat: 3.2, satFat: 0.7, polyFat: 1.4, monoFat: 0.8, transFat: 0.05, cholesterol: 0, sodium: 491, potassium: 115, vitaminA: 0, vitaminC: 0, calcium: 107, iron: 3.6 },
+  egg: { kcal: 143, protein: 13, carbs: 0.7, fiber: 0, sugar: 0.4, fat: 9.5, satFat: 3.1, polyFat: 1.9, monoFat: 3.6, transFat: 0, cholesterol: 372, sodium: 140, potassium: 126, vitaminA: 160, vitaminC: 0, calcium: 56, iron: 1.8 },
+  "egg curry": { kcal: 171, protein: 11.5, carbs: 5.7, fiber: 1.1, sugar: 2.1, fat: 11.2, satFat: 3.3, polyFat: 2.2, monoFat: 4.1, transFat: 0, cholesterol: 230, sodium: 330, potassium: 210, vitaminA: 120, vitaminC: 3.5, calcium: 52, iron: 2.1 },
+  dal: { kcal: 116, protein: 9, carbs: 20, fiber: 8, sugar: 1.8, fat: 0.4, satFat: 0.1, polyFat: 0.2, monoFat: 0.1, transFat: 0, cholesterol: 0, sodium: 2, potassium: 369, vitaminA: 8, vitaminC: 1.5, calcium: 19, iron: 3.3 },
+  rice: { kcal: 130, protein: 2.7, carbs: 28, fiber: 0.4, sugar: 0.1, fat: 0.3, satFat: 0.1, polyFat: 0.1, monoFat: 0.1, transFat: 0, cholesterol: 0, sodium: 1, potassium: 35, vitaminA: 0, vitaminC: 0, calcium: 10, iron: 1.2 },
+  banana: { kcal: 89, protein: 1.1, carbs: 23, fiber: 2.6, sugar: 12.2, fat: 0.3, satFat: 0.1, polyFat: 0.07, monoFat: 0.03, transFat: 0, cholesterol: 0, sodium: 1, potassium: 358, vitaminA: 3, vitaminC: 8.7, calcium: 5, iron: 0.3 },
+  milk: { kcal: 61, protein: 3.2, carbs: 5, fiber: 0, sugar: 5, fat: 3.3, satFat: 1.9, polyFat: 0.2, monoFat: 0.8, transFat: 0.1, cholesterol: 10, sodium: 43, potassium: 150, vitaminA: 46, vitaminC: 0, calcium: 113, iron: 0.03 },
+  oats: { kcal: 389, protein: 17, carbs: 66, fiber: 10.6, sugar: 1, fat: 7, satFat: 1.2, polyFat: 2.5, monoFat: 2.2, transFat: 0, cholesterol: 0, sodium: 2, potassium: 429, vitaminA: 0, vitaminC: 0, calcium: 54, iron: 4.7 },
+  dryfruits: { kcal: 520, protein: 10, carbs: 45, fiber: 7, sugar: 30, fat: 34, satFat: 3.6, polyFat: 10.2, monoFat: 16.7, transFat: 0, cholesterol: 0, sodium: 10, potassium: 540, vitaminA: 2, vitaminC: 1.2, calcium: 85, iron: 2.6 },
+  roti: { kcal: 297, protein: 11, carbs: 58, fiber: 9.6, sugar: 2.8, fat: 3.6, satFat: 0.7, polyFat: 1.3, monoFat: 0.8, transFat: 0, cholesterol: 0, sodium: 12, potassium: 405, vitaminA: 0, vitaminC: 0, calcium: 29, iron: 3.9 },
+  besan: { kcal: 387, protein: 22, carbs: 58, fiber: 10.8, sugar: 10.8, fat: 7, satFat: 0.7, polyFat: 2.9, monoFat: 1.6, transFat: 0, cholesterol: 0, sodium: 64, potassium: 846, vitaminA: 0, vitaminC: 0, calcium: 45, iron: 4.9 },
+  paneer: { kcal: 265, protein: 18.3, carbs: 1.2, fiber: 0, sugar: 0.5, fat: 20.8, satFat: 13, polyFat: 0.6, monoFat: 4.5, transFat: 0.8, cholesterol: 56, sodium: 22, potassium: 104, vitaminA: 210, vitaminC: 0, calcium: 208, iron: 0.7 },
+  chicken: { kcal: 239, protein: 27, carbs: 0, fiber: 0, sugar: 0, fat: 14, satFat: 3.8, polyFat: 3.2, monoFat: 6.4, transFat: 0.1, cholesterol: 88, sodium: 82, potassium: 223, vitaminA: 13, vitaminC: 0, calcium: 15, iron: 1.3 },
+  potato: { kcal: 87, protein: 1.9, carbs: 20.1, fiber: 1.8, sugar: 0.9, fat: 0.1, satFat: 0, polyFat: 0.1, monoFat: 0, transFat: 0, cholesterol: 0, sodium: 6, potassium: 379, vitaminA: 0, vitaminC: 13, calcium: 5, iron: 0.8 },
+  curd: { kcal: 63, protein: 3.5, carbs: 4.7, fiber: 0, sugar: 4.7, fat: 3.3, satFat: 2.1, polyFat: 0.1, monoFat: 0.9, transFat: 0.1, cholesterol: 13, sodium: 46, potassium: 141, vitaminA: 27, vitaminC: 0, calcium: 121, iron: 0.1 },
+  oil: { kcal: 884, protein: 0, carbs: 0, fiber: 0, sugar: 0, fat: 100, satFat: 14, polyFat: 34, monoFat: 43, transFat: 0.5, cholesterol: 0, sodium: 0, potassium: 0, vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 },
 };
 
 const adminDefaultState = {
@@ -253,6 +416,7 @@ let state = null;
 let appEventsBound = false;
 let authEventsBound = false;
 const gifCache = {};
+let activeSpeechRecognition = null;
 
 function clone(data) {
   if (typeof structuredClone === "function") return structuredClone(data);
@@ -303,17 +467,25 @@ function parseOptionalNumber(inputId) {
 
 function loadAuthStore() {
   const raw = localStorage.getItem(AUTH_KEY);
-  let parsed = { users: [], userStates: {}, activeUserId: null };
+  let parsed = { users: [], userStates: {}, activeUserId: null, pendingOtps: {} };
   if (raw) {
     try {
       parsed = JSON.parse(raw);
     } catch {
-      parsed = { users: [], userStates: {}, activeUserId: null };
+      parsed = { users: [], userStates: {}, activeUserId: null, pendingOtps: {} };
     }
   }
 
   if (!Array.isArray(parsed.users)) parsed.users = [];
   if (!parsed.userStates || typeof parsed.userStates !== "object") parsed.userStates = {};
+  if (!parsed.pendingOtps || typeof parsed.pendingOtps !== "object") parsed.pendingOtps = {};
+
+  const now = Date.now();
+  Object.keys(parsed.pendingOtps).forEach((email) => {
+    if (Number(parsed.pendingOtps[email]?.expiresAt || 0) < now) {
+      delete parsed.pendingOtps[email];
+    }
+  });
 
   return ensureAdminUser(parsed);
 }
@@ -395,19 +567,89 @@ function mergeState(baseState, savedState) {
   return merged;
 }
 
+function normalizeEmail(email) {
+  return String(email || "").trim().toLowerCase();
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
+}
+
+function deriveNameFromEmail(email) {
+  return normalizeEmail(email)
+    .split("@")[0]
+    .replace(/[._-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase()) || "Member";
+}
+
+function createOtpChallenge(email, purpose = "auth") {
+  const normalizedEmail = normalizeEmail(email);
+  const code = String(Math.floor(100000 + Math.random() * 900000));
+  authStore.pendingOtps[normalizedEmail] = {
+    code,
+    purpose,
+    expiresAt: Date.now() + OTP_EXPIRY_MS,
+    attemptsLeft: 5,
+    createdAt: Date.now(),
+  };
+  saveAuthStore();
+  return code;
+}
+
+function verifyOtpChallenge(email, otp, purpose = "auth") {
+  const normalizedEmail = normalizeEmail(email);
+  const challenge = authStore.pendingOtps[normalizedEmail];
+
+  if (!challenge) {
+    return { ok: false, message: "No active verification code. Please request a new one." };
+  }
+
+  if (challenge.purpose !== purpose) {
+    delete authStore.pendingOtps[normalizedEmail];
+    saveAuthStore();
+    return { ok: false, message: "Verification session mismatch. Start again." };
+  }
+
+  if (Date.now() > Number(challenge.expiresAt || 0)) {
+    delete authStore.pendingOtps[normalizedEmail];
+    saveAuthStore();
+    return { ok: false, message: "Code expired. Request a fresh code." };
+  }
+
+  const entered = String(otp || "").replace(/\D/g, "").slice(0, 6);
+  if (entered !== String(challenge.code)) {
+    challenge.attemptsLeft = Math.max(0, Number(challenge.attemptsLeft || 0) - 1);
+    if (challenge.attemptsLeft === 0) {
+      delete authStore.pendingOtps[normalizedEmail];
+      saveAuthStore();
+      return { ok: false, message: "Too many wrong attempts. Request a new code." };
+    }
+    saveAuthStore();
+    return {
+      ok: false,
+      message: `Incorrect code. ${challenge.attemptsLeft} attempt${challenge.attemptsLeft === 1 ? "" : "s"} left.`,
+    };
+  }
+
+  delete authStore.pendingOtps[normalizedEmail];
+  saveAuthStore();
+  return { ok: true };
+}
+
 function findUserByEmail(email) {
-  const lookup = (email || "").trim().toLowerCase();
+  const lookup = normalizeEmail(email);
   return authStore.users.find((u) => (u.email || "").toLowerCase() === lookup) || null;
 }
 
 function createUser({ name, email, password, provider }) {
+  const normalizedEmail = normalizeEmail(email);
   const user = {
     id: uid("user"),
     name: name?.trim() || "Member",
-    email: email.trim().toLowerCase(),
+    email: normalizedEmail,
     password: password || "",
     provider: provider || "email",
-    isAdmin: email.trim().toLowerCase() === ADMIN_EMAIL,
+    isAdmin: normalizedEmail === ADMIN_EMAIL,
     createdAt: new Date().toISOString(),
   };
 
@@ -550,7 +792,7 @@ function closePolicyModal() {
 }
 
 function openAbout() {
-  openPolicyModal("About Dad Bod", `<div class="policy-content"><p><strong>Dad Bod — Built Dream Physique</strong></p><p>Version 1.0.1</p><p>Dad Bod is your free, all-in-one fitness companion. Track calories, macros, micronutrients, workouts, weight, and progress photos — all without any subscription or premium wall.</p><p><strong>Key Features:</strong></p><ul><li>Complete calorie & macro tracking</li><li>Detailed micronutrient tracking (Fiber, Calcium, Iron, Vitamin C)</li><li>AI-powered meal estimation</li><li>Camera nutrition label scanning</li><li>Voice input for meal logging</li><li>Structured weekly workout plans</li><li>Weight trend tracking with charts</li><li>Progress photo timeline</li><li>Weekly meal planner</li></ul><p><strong>Developer:</strong> Satvik Pandey</p><p>© 2024-2026 Dad Bod. All rights reserved.</p></div>`);
+  openPolicyModal("About Dad Bod", `<div class="policy-content"><p><strong>Dad Bod — Built Dream Physique</strong></p><p>Version ${APP_VERSION}</p><p>Dad Bod is your free, all-in-one fitness companion. Track calories, macros, full nutrients, workouts, weight, and progress photos — all without any subscription or premium wall.</p><p><strong>Key Features:</strong></p><ul><li>Complete calorie and macro tracking</li><li>Full nutrient tracking: Protein, Carbs, Fiber, Sugar, Fat, Saturated Fat, Polyunsaturated Fat, Monounsaturated Fat, Trans Fat, Cholesterol, Sodium, Potassium, Vitamin A, Vitamin C, Calcium, Iron</li><li>AI-powered meal estimation from food descriptions</li><li>Camera nutrition label scanning</li><li>Voice input for meal logging</li><li>Structured weekly workout plans</li><li>Weight trend tracking with charts</li><li>Progress photo timeline</li><li>Weekly meal planner</li></ul><p><strong>Developer:</strong> Satvik Pandey</p><p>© 2024-2026 Dad Bod. All rights reserved.</p></div>`);
 }
 
 function openHelp() {
@@ -614,8 +856,14 @@ function logoutCurrentUser() {
 function handleSignInSubmit(e) {
   e.preventDefault();
 
-  const email = select("signInEmail")?.value.trim().toLowerCase();
+  const email = normalizeEmail(select("signInEmail")?.value);
   const password = select("signInPassword")?.value;
+
+  if (!isValidEmail(email)) {
+    showToast("Please enter a valid email address.", "error");
+    return;
+  }
+
   const user = findUserByEmail(email);
 
   if (!user) {
@@ -623,8 +871,8 @@ function handleSignInSubmit(e) {
     return;
   }
 
-  if (user.provider === "google") {
-    showToast("This account uses Google sign-in. Use Continue with Google.", "error");
+  if (String(user.provider || "").startsWith("google")) {
+    showToast("This account uses verified Google sign-in. Use Continue with Google.", "error");
     return;
   }
 
@@ -641,11 +889,16 @@ function handleSignUpSubmit(e) {
   e.preventDefault();
 
   const name = select("signUpName")?.value.trim();
-  const email = select("signUpEmail")?.value.trim().toLowerCase();
+  const email = normalizeEmail(select("signUpEmail")?.value);
   const password = select("signUpPassword")?.value || "";
 
   if (!name || !email) {
     showToast("Please enter name and email.", "error");
+    return;
+  }
+
+  if (!isValidEmail(email)) {
+    showToast("Please enter a valid email address.", "error");
     return;
   }
 
@@ -666,33 +919,56 @@ function handleSignUpSubmit(e) {
 
   const user = createUser({ name, email, password, provider: "email" });
   activateUser(user);
-  showToast("Welcome to Dad Bod, " + user.name + "! 💪", "success");
+  showToast("Welcome to Dad Bod, " + user.name + "!", "success");
 }
 
 function handleGoogleQuickSignIn() {
-  /* Show a styled prompt for Google email */
-  const email = prompt("Enter your Google email address:");
-  if (!email) return;
+  const emailInput = prompt("Enter your Google email address:");
+  if (!emailInput) return;
 
-  const trimmed = email.trim().toLowerCase();
-  if (!trimmed.includes("@") || !trimmed.includes(".")) {
+  const email = normalizeEmail(emailInput);
+  if (!isValidEmail(email)) {
     showToast("Please enter a valid email address.", "error");
     return;
   }
 
-  let user = findUserByEmail(trimmed);
-  if (user && user.provider !== "google") {
-    showToast("This email uses password sign-in. Please use Sign In tab.", "error");
+  const existing = findUserByEmail(email);
+  if (existing && existing.provider === "email") {
+    showToast("This email already uses password sign-in. Use Sign In tab.", "error");
     return;
   }
 
+  const otp = createOtpChallenge(email, "google");
+  const expiresInMinutes = Math.round(OTP_EXPIRY_MS / 60000);
+  showToast(`Verification code generated. Enter it within ${expiresInMinutes} min.`, "success");
+
+  const enteredOtp = prompt(`Enter 6-digit verification code for ${email}:\n\nDemo code: ${otp}`);
+  if (!enteredOtp) {
+    showToast("Google verification cancelled.", "error");
+    return;
+  }
+
+  const verifyResult = verifyOtpChallenge(email, enteredOtp, "google");
+  if (!verifyResult.ok) {
+    showToast(verifyResult.message, "error");
+    return;
+  }
+
+  let user = existing;
   if (!user) {
-    const fallbackName = trimmed.split("@")[0].replace(/[._]/g, " ").replace(/\b\w/g, c => c.toUpperCase());
-    user = createUser({ name: fallbackName, email: trimmed, password: "", provider: "google" });
+    user = createUser({
+      name: deriveNameFromEmail(email),
+      email,
+      password: "",
+      provider: "google-verified",
+    });
+  } else {
+    user.provider = "google-verified";
+    saveAuthStore();
   }
 
   activateUser(user);
-  showToast("Signed in as " + user.name, "success");
+  showToast("Google sign-in verified for " + user.name + ".", "success");
 }
 
 function calculateTargetsFromProfile() {
@@ -733,15 +1009,14 @@ function getDayMeals(date = todayDate()) {
 
 function dailyTotals(date = todayDate()) {
   const list = getDayMeals(date);
-  return list.reduce(
-    (acc, m) => ({
-      kcal: acc.kcal + Number(m.kcal || 0),
-      protein: acc.protein + Number(m.protein || 0),
-      carbs: acc.carbs + Number(m.carbs || 0),
-      fat: acc.fat + Number(m.fat || 0),
-    }),
-    { kcal: 0, protein: 0, carbs: 0, fat: 0 }
-  );
+  return list.reduce((acc, meal) => {
+    const nutrition = normalizeNutrition(meal);
+    acc.kcal += nutrition.kcal;
+    nutrientFields.forEach((field) => {
+      acc[field] += Number(nutrition[field] || 0);
+    });
+    return acc;
+  }, zeroNutritionTotals());
 }
 
 function ensureGymLogForDate(date = todayDate()) {
@@ -965,6 +1240,12 @@ function clearMealInputFields() {
   if (select("mealSlot")) select("mealSlot").value = "breakfast";
 }
 
+function getMealDisplayName(meal) {
+  const text = String(meal?.description || meal?.name || "Meal").trim();
+  if (text.length <= 90) return text;
+  return `${text.slice(0, 87)}...`;
+}
+
 function renderMealsList() {
   const meals = getDayMeals();
   const slots = ["breakfast", "lunch", "snacks", "dinner"];
@@ -985,17 +1266,30 @@ function renderMealsList() {
         items.length > 0
           ? items
               .map((m) => {
-                const micros = [];
-                if (m.fiber != null) micros.push(`Fiber ${formatNum(m.fiber, 1)}g`);
-                if (m.calcium != null) micros.push(`Calcium ${formatNum(m.calcium, 0)}mg`);
-                if (m.iron != null) micros.push(`Iron ${formatNum(m.iron, 1)}mg`);
-                if (m.vitaminC != null) micros.push(`Vit C ${formatNum(m.vitaminC, 1)}mg`);
+                const nutrition = normalizeNutrition(m);
+                const qty = Number(m.qty || 0);
+                const detailsFields = nutrientFields.filter(
+                  (field) => !["protein", "carbs", "fat"].includes(field)
+                );
+
+                const nutrientDetails = detailsFields
+                  .map(
+                    (field) =>
+                      `<span><b>${nutrientLabels[field]}:</b> ${formatNutrientValue(field, nutrition[field])}</span>`
+                  )
+                  .join("");
 
                 return `
                   <div class="meal-card">
-                    <h3>${escapeHtml(m.name)}</h3>
-                    <p class="meal-meta">${formatNum(m.kcal, 0)} kcal | P ${formatNum(m.protein, 0)}g | C ${formatNum(m.carbs, 0)}g | F ${formatNum(m.fat, 0)}g</p>
-                    ${micros.length ? `<p class="meal-meta">${micros.join(" | ")}</p>` : ""}
+                    <h3>${escapeHtml(getMealDisplayName(m))}</h3>
+                    <p class="meal-meta">
+                      ${qty > 0 ? `Qty ${formatNum(qty, 0)}g | ` : ""}
+                      ${formatNum(nutrition.kcal, 0)} kcal | P ${formatNum(nutrition.protein, 1)}g | C ${formatNum(nutrition.carbs, 1)}g | F ${formatNum(nutrition.fat, 1)}g
+                    </p>
+                    <details class="meal-nutrient-details">
+                      <summary>View full nutrients</summary>
+                      <div class="meal-nutrient-grid">${nutrientDetails}</div>
+                    </details>
                     <button class="btn-small" onclick="deleteMeal('${m.id}')">Delete</button>
                   </div>
                 `;
@@ -1013,71 +1307,326 @@ function renderMealsList() {
     .join("");
 }
 
+function renderNutrientSummary() {
+  const container = select("nutrientSummaryGrid");
+  if (!container) return;
+
+  const totals = dailyTotals();
+
+  container.innerHTML = nutrientFields
+    .map((field) => {
+      const value = Number(totals[field] || 0);
+      const target = Number(getNutrientTarget(field) || 0);
+      const unit = nutrientUnits[field] || "";
+      const digits = unit === "g" ? 1 : 0;
+      const progress = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
+
+      return `
+        <div class="nutrient-card">
+          <div class="nutrient-card-label">${nutrientLabels[field]}</div>
+          <div class="nutrient-card-value">${formatNum(value, digits)} <span>${unit}</span></div>
+          ${target > 0 ? `<div class="nutrient-card-target">Target ${formatNum(target, digits)} ${unit}</div>` : `<div class="nutrient-card-target">No daily target</div>`}
+          ${target > 0 ? `<div class="nutrient-progress"><span style="width:${progress}%"></span></div>` : ""}
+        </div>
+      `;
+    })
+    .join("");
+}
+
 function deleteMeal(id) {
   state.mealsByDate[todayDate()] = getDayMeals().filter((m) => m.id !== id);
   saveState();
   renderAll();
 }
 
-function estimateFromFoodDb(name, qty = 100) {
-  const text = name.toLowerCase();
-  const db = { ...builtInFoodDb, ...state.foodLibrary };
-  let found = null;
+const portionHintByKeyword = {
+  egg: 50,
+  roti: 40,
+  chapati: 40,
+  bread: 30,
+  banana: 118,
+  milk: 240,
+  oats: 40,
+  rice: 150,
+  dal: 150,
+  tofu: 120,
+  paneer: 100,
+  chicken: 120,
+  curd: 120,
+  potato: 150,
+  dryfruits: 30,
+  besan: 50,
+};
 
-  Object.keys(db).forEach((key) => {
-    if (text.includes(key) && !found) found = key;
+function findFoodPortionHint(foodKey) {
+  const key = String(foodKey || "").toLowerCase();
+  const hintKey = Object.keys(portionHintByKeyword).find((item) => key.includes(item));
+  return hintKey ? portionHintByKeyword[hintKey] : 100;
+}
+
+function inferQuantityFromDescription(description, fallback = null) {
+  const text = String(description || "").toLowerCase();
+
+  const unitMatch = text.match(/(\d+(?:\.\d+)?)\s*(kg|g|gram|grams|ml|l|litre|liter|cup|cups|tbsp|tablespoon|tsp|teaspoon)\b/i);
+  if (unitMatch) {
+    const value = Number(unitMatch[1]);
+    const unit = unitMatch[2].toLowerCase();
+    if (!Number.isFinite(value) || value <= 0) return fallback;
+    if (unit === "kg") return value * 1000;
+    if (unit === "l" || unit === "litre" || unit === "liter") return value * 1000;
+    if (unit === "cup" || unit === "cups") return value * 240;
+    if (unit === "tbsp" || unit === "tablespoon") return value * 15;
+    if (unit === "tsp" || unit === "teaspoon") return value * 5;
+    return value;
+  }
+
+  const countMatch = text.match(
+    /(\d+(?:\.\d+)?)\s*(egg|eggs|roti|rotis|chapati|chapatis|slice|slices|banana|bananas|piece|pieces)\b/i
+  );
+  if (countMatch) {
+    const count = Number(countMatch[1]);
+    const unit = countMatch[2].toLowerCase();
+    const perUnit =
+      unit.includes("egg") ? 50 :
+      unit.includes("roti") || unit.includes("chapati") ? 40 :
+      unit.includes("slice") ? 30 :
+      unit.includes("banana") ? 118 :
+      60;
+    return count * perUnit;
+  }
+
+  const halfMatch = text.match(/half\s+(egg|roti|chapati|banana|cup)/i);
+  if (halfMatch) {
+    const unit = halfMatch[1].toLowerCase();
+    const halfWeight =
+      unit.includes("egg") ? 25 :
+      unit.includes("roti") || unit.includes("chapati") ? 20 :
+      unit.includes("banana") ? 59 :
+      unit.includes("cup") ? 120 :
+      50;
+    return halfWeight;
+  }
+
+  if (Number.isFinite(Number(fallback)) && Number(fallback) > 0) return Number(fallback);
+  return null;
+}
+
+function scaleNutrition(per100, grams) {
+  const base = normalizeNutrition(per100);
+  const factor = Math.max(1, Number(grams || 100)) / 100;
+  const scaled = zeroNutritionTotals();
+  scaled.kcal = base.kcal * factor;
+  nutrientFields.forEach((field) => {
+    scaled[field] = Number(base[field] || 0) * factor;
+  });
+  return scaled;
+}
+
+function estimateUnknownFood(description, grams) {
+  const text = String(description || "").toLowerCase();
+  let profile = withNutritionDefaults({
+    kcal: 195,
+    protein: 9,
+    carbs: 22,
+    fiber: 2,
+    sugar: 3,
+    fat: 7,
+    satFat: 2,
+    polyFat: 1.2,
+    monoFat: 2.8,
+    transFat: 0.05,
+    cholesterol: 18,
+    sodium: 220,
+    potassium: 220,
+    vitaminA: 60,
+    vitaminC: 4,
+    calcium: 70,
+    iron: 1.5,
   });
 
-  if (!found) {
-    const grams = Number(qty) || 100;
+  if (/(salad|vegetable|veggie|soup)/i.test(text)) {
+    profile = withNutritionDefaults({
+      kcal: 85,
+      protein: 3.5,
+      carbs: 13,
+      fiber: 3.5,
+      sugar: 3.5,
+      fat: 1.8,
+      satFat: 0.3,
+      polyFat: 0.5,
+      monoFat: 0.6,
+      transFat: 0,
+      cholesterol: 0,
+      sodium: 130,
+      potassium: 280,
+      vitaminA: 180,
+      vitaminC: 14,
+      calcium: 55,
+      iron: 1.2,
+    });
+  } else if (/(chicken|fish|egg|paneer|tofu|dal|lentil|bean|protein)/i.test(text)) {
+    profile = withNutritionDefaults({
+      kcal: 170,
+      protein: 19,
+      carbs: 8,
+      fiber: 2,
+      sugar: 1.8,
+      fat: 7,
+      satFat: 2,
+      polyFat: 1.5,
+      monoFat: 2.8,
+      transFat: 0.05,
+      cholesterol: 55,
+      sodium: 180,
+      potassium: 320,
+      vitaminA: 90,
+      vitaminC: 4,
+      calcium: 95,
+      iron: 2.2,
+    });
+  } else if (/(fried|pakora|samosa|fries|chips|burger|pizza)/i.test(text)) {
+    profile = withNutritionDefaults({
+      kcal: 290,
+      protein: 8,
+      carbs: 24,
+      fiber: 2,
+      sugar: 3,
+      fat: 18,
+      satFat: 5,
+      polyFat: 4.5,
+      monoFat: 6.2,
+      transFat: 0.3,
+      cholesterol: 35,
+      sodium: 430,
+      potassium: 220,
+      vitaminA: 50,
+      vitaminC: 3,
+      calcium: 75,
+      iron: 1.4,
+    });
+  } else if (/(fruit|apple|orange|banana|papaya|berries|mango)/i.test(text)) {
+    profile = withNutritionDefaults({
+      kcal: 90,
+      protein: 1.2,
+      carbs: 23,
+      fiber: 2.8,
+      sugar: 14,
+      fat: 0.5,
+      satFat: 0.1,
+      polyFat: 0.1,
+      monoFat: 0.1,
+      transFat: 0,
+      cholesterol: 0,
+      sodium: 5,
+      potassium: 260,
+      vitaminA: 40,
+      vitaminC: 24,
+      calcium: 25,
+      iron: 0.6,
+    });
+  }
+
+  return scaleNutrition(profile, grams);
+}
+
+function findBestFoodMatch(text, db) {
+  const normalizedText = String(text || "").toLowerCase();
+  const keys = Object.keys(db).sort((a, b) => b.length - a.length);
+  return keys.find((key) => normalizedText.includes(key)) || null;
+}
+
+function estimateMealSegment(segmentText, db, overrideGrams = null) {
+  const text = String(segmentText || "").trim().toLowerCase();
+  const matchedKey = findBestFoodMatch(text, db);
+  const inferredGrams = inferQuantityFromDescription(
+    text,
+    matchedKey ? findFoodPortionHint(matchedKey) : 100
+  );
+  const grams = Math.max(1, Number(overrideGrams || inferredGrams || 100));
+
+  if (matchedKey) {
     return {
-      kcal: (200 * grams) / 100,
-      protein: (10 * grams) / 100,
-      carbs: (18 * grams) / 100,
-      fat: (6 * grams) / 100,
-      fiber: (2 * grams) / 100,
-      calcium: (40 * grams) / 100,
-      iron: (1 * grams) / 100,
-      vitaminC: (3 * grams) / 100,
+      grams,
+      nutrition: scaleNutrition(db[matchedKey], grams),
+      matched: true,
     };
   }
 
-  const per100 = db[found];
-  const factor = Number(qty) / 100;
   return {
-    kcal: (per100.kcal || 0) * factor,
-    protein: (per100.protein || 0) * factor,
-    carbs: (per100.carbs || 0) * factor,
-    fat: (per100.fat || 0) * factor,
-    fiber: (per100.fiber || 0) * factor,
-    calcium: (per100.calcium || 0) * factor,
-    iron: (per100.iron || 0) * factor,
-    vitaminC: (per100.vitaminC || 0) * factor,
+    grams,
+    nutrition: estimateUnknownFood(text, grams),
+    matched: false,
   };
 }
 
+function estimateFromFoodDb(description, qtyInput = null) {
+  const text = String(description || "").trim().toLowerCase();
+  const db = { ...builtInFoodDb, ...state.foodLibrary };
+
+  const explicitQty = Number(qtyInput);
+  const hasExplicitQty = Number.isFinite(explicitQty) && explicitQty > 0;
+
+  const segments = text
+    .split(/\+|,|\sand\s|\s&\s/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  if (!segments.length) {
+    return estimateUnknownFood(text, hasExplicitQty ? explicitQty : 100);
+  }
+
+  if (segments.length === 1) {
+    const segmentEstimate = estimateMealSegment(segments[0], db, hasExplicitQty ? explicitQty : null);
+    return segmentEstimate.nutrition;
+  }
+
+  const combined = zeroNutritionTotals();
+  let inferredTotalGrams = 0;
+
+  segments.forEach((segment) => {
+    const segmentEstimate = estimateMealSegment(segment, db);
+    inferredTotalGrams += segmentEstimate.grams;
+    combined.kcal += segmentEstimate.nutrition.kcal;
+    nutrientFields.forEach((field) => {
+      combined[field] += Number(segmentEstimate.nutrition[field] || 0);
+    });
+  });
+
+  if (hasExplicitQty && inferredTotalGrams > 0) {
+    const scale = explicitQty / inferredTotalGrams;
+    combined.kcal *= scale;
+    nutrientFields.forEach((field) => {
+      combined[field] *= scale;
+    });
+  }
+
+  return combined;
+}
+
 function fillMealFormFromEstimate(estimation) {
-  if (select("mealCalories")) select("mealCalories").value = Math.round(estimation.kcal || 0);
-  if (select("mealProtein")) select("mealProtein").value = Number(estimation.protein || 0).toFixed(1);
-  if (select("mealCarbs")) select("mealCarbs").value = Number(estimation.carbs || 0).toFixed(1);
-  if (select("mealFat")) select("mealFat").value = Number(estimation.fat || 0).toFixed(1);
-  if (select("mealFiber")) select("mealFiber").value = Number(estimation.fiber || 0).toFixed(1);
-  if (select("mealCalcium")) select("mealCalcium").value = Number(estimation.calcium || 0).toFixed(0);
-  if (select("mealIron")) select("mealIron").value = Number(estimation.iron || 0).toFixed(1);
-  if (select("mealVitaminC")) select("mealVitaminC").value = Number(estimation.vitaminC || 0).toFixed(1);
+  const normalized = normalizeNutrition(estimation);
+  if (select("mealCalories")) select("mealCalories").value = Math.round(normalized.kcal || 0);
+
+  nutrientFields.forEach((field) => {
+    const inputId = nutrientInputIds[field];
+    if (!inputId || !select(inputId)) return;
+    const unit = nutrientUnits[field] || "";
+    const digits = unit === "g" ? 1 : 0;
+    select(inputId).value = Number(normalized[field] || 0).toFixed(digits);
+  });
 }
 
 function estimateMealFromBtn() {
-  const name = select("mealName")?.value.trim();
-  if (!name) {
-    alert("Enter meal name first.");
+  const description = select("mealDescription")?.value.trim();
+  if (!description) {
+    alert("Enter food description first.");
     return;
   }
 
-  const qty = Number(select("mealQty")?.value || 100);
-  const estimation = estimateFromFoodDb(name, qty);
+  const qty = parseOptionalNumber("mealQty");
+  const estimation = estimateFromFoodDb(description, qty);
   fillMealFormFromEstimate(estimation);
-  setText("mealStatus", "Estimated using built-in food database.");
+  setText("mealStatus", "Estimated using improved built-in food intelligence.");
 }
 
 function extractJsonObject(text) {
@@ -1090,31 +1639,23 @@ function extractJsonObject(text) {
   return JSON.parse(match[0]);
 }
 
+function redirectToApiKeySetup(featureName) {
+  showTab("settings");
+  const input = select("apiKeyInput");
+  if (input) {
+    input.focus();
+    input.scrollIntoView({ behavior: "smooth", block: "center" });
+  }
+  setText("apiStatus", `${featureName} needs an API key. Paste key and tap Save AI Settings.`);
+}
+
 function ensureApiKey(featureName) {
   const key = (state.settings.apiKey || "").trim();
   if (key) return true;
 
-  const openGuide = confirm(
-    `${featureName} needs a free OpenRouter API key.\n\nPress OK to open key page, then paste your key.\nPress Cancel to paste key directly.`
-  );
-
-  if (openGuide) {
-    window.open("https://openrouter.ai/keys", "_blank");
-  }
-
-  const entered = prompt("Paste your OpenRouter key here (starts with sk-or-v1-):");
-  if (!entered) return false;
-
-  const normalized = entered.trim();
-  if (!normalized.startsWith("sk-or-v1-")) {
-    alert("That does not look like a valid OpenRouter key.");
-    return false;
-  }
-
-  state.settings.apiKey = normalized;
-  saveState();
-  renderApiSettings();
-  return true;
+  showToast(`${featureName} requires API key setup in Settings.`, "error");
+  redirectToApiKeySetup(featureName);
+  return false;
 }
 
 async function callOpenRouter(messages, modelOverride) {
@@ -1159,26 +1700,49 @@ async function callOpenRouter(messages, modelOverride) {
   return "";
 }
 
+function pickNumericValue(source, keys, fallback = 0) {
+  for (const key of keys) {
+    const value = Number(source?.[key]);
+    if (Number.isFinite(value)) return value;
+  }
+  return fallback;
+}
+
+function estimateCaloriesFromNutrition(nutrition) {
+  const protein = Number(nutrition.protein || 0);
+  const carbs = Number(nutrition.carbs || 0);
+  const fat = Number(nutrition.fat || 0);
+  return protein * 4 + carbs * 4 + fat * 9;
+}
+
 async function aiEstimateMeal() {
-  const name = select("mealName")?.value.trim();
-  if (!name) {
-    alert("Enter meal name first.");
+  const description = select("mealDescription")?.value.trim();
+  if (!description) {
+    alert("Enter food description first.");
     return;
   }
 
   if (!ensureApiKey("AI meal estimate")) return;
 
-  const qty = Number(select("mealQty")?.value || 100);
-  setText("mealStatus", "AI is estimating nutrition and micronutrients...");
+  const qtyInput = parseOptionalNumber("mealQty");
+  const qty = Number(qtyInput || inferQuantityFromDescription(description, 100) || 100);
+  setText("mealStatus", "AI is estimating full nutrition profile...");
 
   try {
-    const prompt = `Estimate nutrition for food item. Return strict JSON with keys: kcal, protein, carbs, fat, fiber, calciumMg, ironMg, vitaminCMg. Food: "${name}". Quantity grams: ${qty}.`; 
+    const prompt = `Estimate nutrition for this meal description:
+"${description}"
+
+Assume total quantity: ${qty} grams.
+Return strict JSON with only numeric fields:
+kcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg, confidence.
+No commentary.`;
+
     const raw = await callOpenRouter(
       [
         {
           role: "system",
           content:
-            "You are a nutrition estimation engine. Return only valid JSON object with numeric values and no extra text.",
+            "You are a nutrition estimation engine. Return only one JSON object with numeric values. No markdown, no explanations.",
         },
         {
           role: "user",
@@ -1190,23 +1754,79 @@ async function aiEstimateMeal() {
 
     const parsed = extractJsonObject(raw);
 
-    fillMealFormFromEstimate({
-      kcal: Number(parsed.kcal || 0),
-      protein: Number(parsed.protein || 0),
-      carbs: Number(parsed.carbs || 0),
-      fat: Number(parsed.fat || 0),
-      fiber: Number(parsed.fiber || 0),
-      calcium: Number(parsed.calciumMg || 0),
-      iron: Number(parsed.ironMg || 0),
-      vitaminC: Number(parsed.vitaminCMg || 0),
-    });
+    const aiNutrition = {
+      kcal: pickNumericValue(parsed, ["kcal", "calories"]),
+      protein: pickNumericValue(parsed, ["protein"]),
+      carbs: pickNumericValue(parsed, ["carbs", "carbohydrates"]),
+      fiber: pickNumericValue(parsed, ["fiber"]),
+      sugar: pickNumericValue(parsed, ["sugar", "sugars"]),
+      fat: pickNumericValue(parsed, ["fat", "totalFat"]),
+      satFat: pickNumericValue(parsed, ["saturatedFat", "satFat", "saturated_fat"]),
+      polyFat: pickNumericValue(parsed, ["polyunsaturatedFat", "polyFat", "polyunsaturated_fat"]),
+      monoFat: pickNumericValue(parsed, ["monounsaturatedFat", "monoFat", "monounsaturated_fat"]),
+      transFat: pickNumericValue(parsed, ["transFat", "trans_fat"]),
+      cholesterol: pickNumericValue(parsed, ["cholesterolMg", "cholesterol"]),
+      sodium: pickNumericValue(parsed, ["sodiumMg", "sodium"]),
+      potassium: pickNumericValue(parsed, ["potassiumMg", "potassium"]),
+      vitaminA: pickNumericValue(parsed, ["vitaminAMcg", "vitaminA"]),
+      vitaminC: pickNumericValue(parsed, ["vitaminCMg", "vitaminC"]),
+      calcium: pickNumericValue(parsed, ["calciumMg", "calcium"]),
+      iron: pickNumericValue(parsed, ["ironMg", "iron"]),
+    };
 
-    setText("mealStatus", "AI estimate ready. Review values and save meal.");
+    if (!aiNutrition.kcal) {
+      aiNutrition.kcal = estimateCaloriesFromNutrition(aiNutrition);
+    }
+
+    fillMealFormFromEstimate(aiNutrition);
+
+    const qtyInputEl = select("mealQty");
+    if (qtyInputEl && !qtyInputEl.value) {
+      qtyInputEl.value = Math.round(qty);
+    }
+
+    const confidence = pickNumericValue(parsed, ["confidence"], 0);
+    const confidenceText = confidence > 0 ? ` (confidence ${Math.round(confidence)}%)` : "";
+    setText("mealStatus", `AI estimate ready${confidenceText}. Review and save.`);
   } catch {
-    const fallback = estimateFromFoodDb(name, qty);
+    const fallback = estimateFromFoodDb(description, qty);
     fillMealFormFromEstimate(fallback);
     setText("mealStatus", "AI estimate failed. Used built-in estimate instead.");
   }
+}
+
+function extractMeasuredValue(text, patterns) {
+  for (const pattern of patterns) {
+    const match = String(text || "").match(pattern);
+    if (!match) continue;
+    const value = Number(String(match[1]).replace(/,/g, "."));
+    if (!Number.isFinite(value)) continue;
+    const unit = String(match[2] || "").toLowerCase().replace(/μ|µ/g, "u");
+    return { value, unit };
+  }
+  return null;
+}
+
+function toGrams(measure) {
+  if (!measure) return null;
+  if (measure.unit === "mg") return measure.value / 1000;
+  if (measure.unit === "mcg" || measure.unit === "ug") return measure.value / 1000000;
+  return measure.value;
+}
+
+function toMilligrams(measure) {
+  if (!measure) return null;
+  if (measure.unit === "g") return measure.value * 1000;
+  if (measure.unit === "mcg" || measure.unit === "ug") return measure.value / 1000;
+  return measure.value;
+}
+
+function toMicrograms(measure) {
+  if (!measure) return null;
+  if (measure.unit === "g") return measure.value * 1000000;
+  if (measure.unit === "mg") return measure.value * 1000;
+  if (measure.unit === "iu") return measure.value * 0.3;
+  return measure.value;
 }
 
 function parseNutritionLabel(text) {
@@ -1214,20 +1834,48 @@ function parseNutritionLabel(text) {
     .replace(/,/g, ".")
     .replace(/\s+/g, " ");
 
-  const extract = (regex) => {
-    const m = normalized.match(regex);
-    return m ? Number(m[1]) : null;
-  };
+  const normalizedForTotalFat = normalized
+    .replace(/saturated\s*fat/gi, "")
+    .replace(/polyunsaturated\s*fat/gi, "")
+    .replace(/monounsaturated\s*fat/gi, "")
+    .replace(/trans\s*fat/gi, "");
+
+  const caloriesMatch = extractMeasuredValue(normalized, [/(?:calories|energy)\s*[:\-]?\s*(\d+(?:\.\d+)?)/i]);
+  const proteinMatch = extractMeasuredValue(normalized, [/protein\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const carbsMatch = extractMeasuredValue(normalized, [/(?:carbohydrate|carbohydrates|carbs?)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const fiberMatch = extractMeasuredValue(normalized, [/fiber\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const sugarMatch = extractMeasuredValue(normalized, [/(?:total\s+)?sugars?\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const fatMatch = extractMeasuredValue(normalizedForTotalFat, [/(?:total\s+fat|\bfat\b)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const satFatMatch = extractMeasuredValue(normalized, [/(?:saturated\s*fat|sat\.?\s*fat)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const polyFatMatch = extractMeasuredValue(normalized, [/(?:polyunsaturated\s*fat|poly\.?\s*fat)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const monoFatMatch = extractMeasuredValue(normalized, [/(?:monounsaturated\s*fat|mono\.?\s*fat)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const transFatMatch = extractMeasuredValue(normalized, [/trans\s*fat\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(g|mg)?/i]);
+  const cholesterolMatch = extractMeasuredValue(normalized, [/cholesterol\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(mg|g)?/i]);
+  const sodiumMatch = extractMeasuredValue(normalized, [/sodium\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(mg|g)?/i]);
+  const potassiumMatch = extractMeasuredValue(normalized, [/potassium\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(mg|g)?/i]);
+  const vitaminAMatch = extractMeasuredValue(normalized, [/(?:vitamin\s*a|vit\.?\s*a)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(mcg|ug|mg|iu)?/i]);
+  const vitaminCMatch = extractMeasuredValue(normalized, [/(?:vitamin\s*c|vit\.?\s*c)\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(mg|g)?/i]);
+  const calciumMatch = extractMeasuredValue(normalized, [/calcium\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(mg|g)?/i]);
+  const ironMatch = extractMeasuredValue(normalized, [/iron\s*[:\-]?\s*(\d+(?:\.\d+)?)\s*(mg|g)?/i]);
 
   return {
-    kcal: extract(/(?:calories|energy)\s*[:]?\s*(\d+(?:\.\d+)?)/i),
-    protein: extract(/protein\s*[:]?\s*(\d+(?:\.\d+)?)/i),
-    carbs: extract(/(?:carbohydrate|carbs?)\s*[:]?\s*(\d+(?:\.\d+)?)/i),
-    fat: extract(/fat\s*[:]?\s*(\d+(?:\.\d+)?)/i),
-    fiber: extract(/fiber\s*[:]?\s*(\d+(?:\.\d+)?)/i),
-    calcium: extract(/calcium\s*[:]?\s*(\d+(?:\.\d+)?)/i),
-    iron: extract(/iron\s*[:]?\s*(\d+(?:\.\d+)?)/i),
-    vitaminC: extract(/vitamin\s*c\s*[:]?\s*(\d+(?:\.\d+)?)/i),
+    kcal: caloriesMatch ? caloriesMatch.value : null,
+    protein: toGrams(proteinMatch),
+    carbs: toGrams(carbsMatch),
+    fiber: toGrams(fiberMatch),
+    sugar: toGrams(sugarMatch),
+    fat: toGrams(fatMatch),
+    satFat: toGrams(satFatMatch),
+    polyFat: toGrams(polyFatMatch),
+    monoFat: toGrams(monoFatMatch),
+    transFat: toGrams(transFatMatch),
+    cholesterol: toMilligrams(cholesterolMatch),
+    sodium: toMilligrams(sodiumMatch),
+    potassium: toMilligrams(potassiumMatch),
+    vitaminA: toMicrograms(vitaminAMatch),
+    vitaminC: toMilligrams(vitaminCMatch),
+    calcium: toMilligrams(calciumMatch),
+    iron: toMilligrams(ironMatch),
   };
 }
 
@@ -1251,16 +1899,31 @@ async function handleLabelPhotoScan(e) {
       return;
     }
 
-    fillMealFormFromEstimate({
+    const labelEstimate = {
       kcal: parsed.kcal ?? 0,
       protein: parsed.protein ?? 0,
       carbs: parsed.carbs ?? 0,
-      fat: parsed.fat ?? 0,
       fiber: parsed.fiber ?? 0,
+      sugar: parsed.sugar ?? 0,
+      fat: parsed.fat ?? 0,
+      satFat: parsed.satFat ?? 0,
+      polyFat: parsed.polyFat ?? 0,
+      monoFat: parsed.monoFat ?? 0,
+      transFat: parsed.transFat ?? 0,
+      cholesterol: parsed.cholesterol ?? 0,
+      sodium: parsed.sodium ?? 0,
+      potassium: parsed.potassium ?? 0,
+      vitaminA: parsed.vitaminA ?? 0,
+      vitaminC: parsed.vitaminC ?? 0,
       calcium: parsed.calcium ?? 0,
       iron: parsed.iron ?? 0,
-      vitaminC: parsed.vitaminC ?? 0,
-    });
+    };
+
+    if (!labelEstimate.kcal) {
+      labelEstimate.kcal = estimateCaloriesFromNutrition(labelEstimate);
+    }
+
+    fillMealFormFromEstimate(labelEstimate);
 
     setText("mealStatus", "Label scanned. Verify and save meal.");
   } catch {
@@ -1271,76 +1934,167 @@ async function handleLabelPhotoScan(e) {
 function handleMealFormSubmit(e) {
   e.preventDefault();
 
-  const name = select("mealName")?.value.trim();
-  if (!name) {
-    alert("Please enter meal name.");
+  const description = select("mealDescription")?.value.trim();
+  if (!description) {
+    alert("Please enter food description.");
     return;
   }
 
-  const qty = Number(select("mealQty")?.value || 100);
+  const qtyInput = parseOptionalNumber("mealQty");
+  const qty = Number(qtyInput || inferQuantityFromDescription(description, 100) || 100);
 
   const manualKcal = parseOptionalNumber("mealCalories");
-  const manualProtein = parseOptionalNumber("mealProtein");
-  const manualCarbs = parseOptionalNumber("mealCarbs");
-  const manualFat = parseOptionalNumber("mealFat");
+  const estimated = normalizeNutrition(estimateFromFoodDb(description, qty));
 
-  const manualFiber = parseOptionalNumber("mealFiber");
-  const manualCalcium = parseOptionalNumber("mealCalcium");
-  const manualIron = parseOptionalNumber("mealIron");
-  const manualVitaminC = parseOptionalNumber("mealVitaminC");
+  const finalNutrition = {};
+  nutrientFields.forEach((field) => {
+    const inputId = nutrientInputIds[field];
+    const manualValue = inputId ? parseOptionalNumber(inputId) : null;
+    finalNutrition[field] = Number(manualValue ?? estimated[field] ?? 0);
+  });
 
-  const estimated = estimateFromFoodDb(name, qty);
-
-  const protein = manualProtein ?? estimated.protein;
-  const carbs = manualCarbs ?? estimated.carbs;
-  const fat = manualFat ?? estimated.fat;
-  const kcal = manualKcal ?? protein * 4 + carbs * 4 + fat * 9;
+  const kcal = Number(manualKcal ?? estimateCaloriesFromNutrition(finalNutrition));
 
   const meal = {
     id: uid("meal"),
     slot: select("mealSlot")?.value || "breakfast",
-    name,
+    name: description,
+    description,
     qty,
-    kcal: Number(kcal),
-    protein: Number(protein),
-    carbs: Number(carbs),
-    fat: Number(fat),
-    fiber: manualFiber ?? estimated.fiber,
-    calcium: manualCalcium ?? estimated.calcium,
-    iron: manualIron ?? estimated.iron,
-    vitaminC: manualVitaminC ?? estimated.vitaminC,
+    kcal,
   };
+
+  nutrientFields.forEach((field) => {
+    meal[field] = Number(finalNutrition[field] || 0);
+  });
 
   getDayMeals().push(meal);
   saveState();
   clearMealInputFields();
-  setText("mealStatus", "Meal saved successfully.");
+  setText("mealStatus", `Meal saved with full nutrient profile (${Math.round(qty)}g).`);
   renderAll();
 }
 
-function startVoiceInput(targetInputId = "mealName") {
+function getSpeechErrorMessage(errorCode) {
+  switch (errorCode) {
+    case "not-allowed":
+    case "service-not-allowed":
+      return "Microphone permission denied. Allow mic access in browser settings.";
+    case "audio-capture":
+      return "No microphone detected. Connect a microphone and retry.";
+    case "network":
+      return "Voice service network issue. Check internet and try again.";
+    case "no-speech":
+      return "No speech detected. Speak clearly and try again.";
+    case "aborted":
+      return "Voice capture stopped. Tap voice again to retry.";
+    default:
+      return "Could not capture voice. Try again in a quieter environment.";
+  }
+}
+
+async function startVoiceInput(targetInputId = "mealDescription") {
   const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRecognition) {
-    alert("Voice input not supported on this browser. Use Chrome.");
+    showToast("Voice input is not supported on this browser.", "error");
+    setText("mealStatus", "Voice input is not supported on this browser.");
     return;
   }
 
+  if (!window.isSecureContext && location.hostname !== "localhost") {
+    showToast("Voice input needs HTTPS.", "error");
+    setText("mealStatus", "Voice input requires HTTPS connection.");
+    return;
+  }
+
+  const input = select(targetInputId);
+  if (!input) return;
+
+  if (navigator.mediaDevices?.getUserMedia) {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      stream.getTracks().forEach((track) => track.stop());
+    } catch (error) {
+      const denied = error?.name === "NotAllowedError" || error?.name === "SecurityError";
+      const unavailable = error?.name === "NotFoundError";
+      const message = denied
+        ? "Microphone permission denied. Enable it and try again."
+        : unavailable
+          ? "No microphone device found."
+          : "Unable to access microphone.";
+      showToast(message, "error");
+      setText("mealStatus", message);
+      return;
+    }
+  }
+
+  if (activeSpeechRecognition) {
+    activeSpeechRecognition.stop();
+    activeSpeechRecognition = null;
+  }
+
   const recog = new SpeechRecognition();
+  activeSpeechRecognition = recog;
   recog.lang = "en-IN";
-  recog.interimResults = false;
+  recog.interimResults = true;
+  recog.continuous = false;
   recog.maxAlternatives = 1;
 
+  let finalTranscript = "";
+  let hadError = false;
+
+  setText("mealStatus", "Listening... describe your meal now.");
+
   recog.onresult = (event) => {
-    const text = event.results[0][0].transcript;
-    const input = select(targetInputId);
-    if (input) input.value = text;
+    let interim = "";
+    for (let i = event.resultIndex; i < event.results.length; i += 1) {
+      const transcript = event.results[i][0]?.transcript || "";
+      if (event.results[i].isFinal) {
+        finalTranscript += `${transcript} `;
+      } else {
+        interim += transcript;
+      }
+    }
+    if (interim.trim()) {
+      setText("mealStatus", `Listening... ${interim.trim()}`);
+    }
   };
 
-  recog.onerror = () => {
-    alert("Could not capture voice. Please try again.");
+  recog.onerror = (event) => {
+    hadError = true;
+    const message = getSpeechErrorMessage(event.error);
+    showToast(message, "error");
+    setText("mealStatus", message);
   };
 
-  recog.start();
+  recog.onend = () => {
+    if (activeSpeechRecognition === recog) {
+      activeSpeechRecognition = null;
+    }
+
+    if (hadError) return;
+
+    const transcript = finalTranscript.trim();
+    if (!transcript) {
+      const message = "No speech captured. Try again and speak a little louder.";
+      showToast(message, "error");
+      setText("mealStatus", message);
+      return;
+    }
+
+    input.value = transcript;
+    setText("mealStatus", "Voice captured. Review the description and estimate nutrition.");
+    showToast("Voice captured successfully.", "success");
+  };
+
+  try {
+    recog.start();
+  } catch {
+    activeSpeechRecognition = null;
+    const message = "Microphone is busy. Close other voice apps and retry.";
+    showToast(message, "error");
+    setText("mealStatus", message);
+  }
 }
 
 function renderWeeklyPlan() {
@@ -1737,7 +2491,13 @@ function renderApiSettings() {
 function handleApiFormSubmit(e) {
   e.preventDefault();
 
-  state.settings.apiKey = (select("apiKeyInput")?.value || "").trim();
+  const apiKey = (select("apiKeyInput")?.value || "").trim();
+  if (apiKey && !apiKey.startsWith("sk-or-v1-")) {
+    showToast("API key should start with sk-or-v1-", "error");
+    return;
+  }
+
+  state.settings.apiKey = apiKey;
   state.settings.aiModel = (select("aiModelInput")?.value || "openai/gpt-4o-mini").trim();
   if (!state.settings.aiModel) state.settings.aiModel = "openai/gpt-4o-mini";
 
@@ -1920,6 +2680,7 @@ function renderAll() {
   renderStreak();
   renderDietForm();
   renderMealsList();
+  renderNutrientSummary();
   renderWeeklyPlan();
   renderTodayWorkout();
   renderAbsCircuit();
@@ -1946,7 +2707,7 @@ function bindAppEvents() {
   select("profileForm")?.addEventListener("submit", handleProfileSubmit);
   select("autoTargetBtn")?.addEventListener("click", autoCalculateTargets);
   select("mealForm")?.addEventListener("submit", handleMealFormSubmit);
-  select("voiceBtn")?.addEventListener("click", () => startVoiceInput("mealName"));
+  select("voiceBtn")?.addEventListener("click", () => startVoiceInput("mealDescription"));
   select("estimateMealBtn")?.addEventListener("click", estimateMealFromBtn);
   select("aiEstimateMealBtn")?.addEventListener("click", aiEstimateMeal);
   select("labelPhotoInput")?.addEventListener("change", handleLabelPhotoScan);
