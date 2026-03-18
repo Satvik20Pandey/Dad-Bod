@@ -1845,9 +1845,9 @@ function bindAppEvents() {
   select("apiForm")?.addEventListener("submit", handleApiFormSubmit);
 
   select("importInput")?.addEventListener("change", importData);
-    select("getApiKeyBtn")?.addEventListener("click", () => {
-      window.open("https://openrouter.ai/keys", "_blank");
-    });
+  select("getApiKeyBtn")?.addEventListener("click", () => {
+    window.open("https://openrouter.ai/keys", "_blank");
+  });
 
   select("exportBtn")?.addEventListener("click", exportData);
   select("clearDayBtn")?.addEventListener("click", clearToday);

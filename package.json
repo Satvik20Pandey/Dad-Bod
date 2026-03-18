@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:dist",
-    "build:dist": "echo Web assets are already in dist folder",
+    "build:dist": "node scripts/build-dist.js",
     "build:android": "npx cap build android --release",
     "build:ios": "npx cap build ios --release",
     "sync": "npx cap sync",
