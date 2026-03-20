@@ -1,8 +1,48 @@
 const LEGACY_STATE_KEY = "transform_hq_v2";
 const AUTH_KEY = "dadbod_auth_v1";
-const ADMIN_EMAIL = "satvikofficial20@gmail.com";
-const ADMIN_PASSWORD = "Satvik123";
-const ADMIN_API_KEY = "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";
+const SECURITY_CONFIG_KEY = "dadbod_security_config_v1";
+
+function loadSecurityConfig() {
+  const blank = {
+    adminEmail: "",
+    adminPasskey: "",
+    bootstrapApiKey: "",
+  };
+
+  const fromWindow =
+    typeof window !== "undefined" && window.__DADBOD_SECURITY_CONFIG
+      ? window.__DADBOD_SECURITY_CONFIG
+      : null;
+
+  const fromStorageRaw =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(SECURITY_CONFIG_KEY)
+      : null;
+
+  let fromStorage = null;
+  if (fromStorageRaw) {
+    try {
+      fromStorage = JSON.parse(fromStorageRaw);
+    } catch {
+      fromStorage = null;
+    }
+  }
+
+  const source = (fromWindow && typeof fromWindow === "object" ? fromWindow : null)
+    || (fromStorage && typeof fromStorage === "object" ? fromStorage : null)
+    || blank;
+
+  return {
+    adminEmail: String(source.adminEmail || "").trim().toLowerCase(),
+    adminPasskey: String(source.adminPasskey || "").trim(),
+    bootstrapApiKey: String(source.bootstrapApiKey || "").trim(),
+  };
+}
+
+const securityConfig = loadSecurityConfig();
+const ADMIN_EMAIL = securityConfig.adminEmail;
+const ADMIN_PASSWORD = securityConfig.adminPasskey;
+const ADMIN_API_KEY = securityConfig.bootstrapApiKey;
 const TENOR_PUBLIC_KEY = "LIVDSRZULELA";
 
 const APP_NAME = "Dad Bod";
@@ -183,6 +223,14 @@ const eveningWorkoutTemplates = [
     ],
   },
 ];
+
+const eveningTreadmillFinisher = {
+  name: "Treadmill Walk (15 incline, 4 speed)",
+  sets: "30 min",
+  cues: "Steady incline walk. Keep chest up and hold rails only when needed.",
+  timerSec: 1800,
+  trackWeight: false,
+};
 
 const nutrientFields = [
   "protein",
@@ -433,7 +481,7 @@ const adminDefaultState = {
     },
   },
   settings: {
-    apiKey: ADMIN_API_KEY,
+    apiKey: ADMIN_API_KEY || "",
     aiModel: "openai/gpt-4o",
   },
   mealsByDate: {},
@@ -766,34 +814,36 @@ function saveAuthStore() {
 }
 
 function ensureAdminUser(store) {
-  let admin = store.users.find((u) => (u.email || "").toLowerCase() === ADMIN_EMAIL);
+  if (ADMIN_EMAIL) {
+    let admin = store.users.find((u) => normalizeEmail(u?.email) === ADMIN_EMAIL);
 
-  if (!admin) {
-    admin = {
-      id: uid("user"),
-      name: "Satvik",
-      email: ADMIN_EMAIL,
-      provider: "email-profile",
-      isAdmin: true,
-      createdAt: new Date().toISOString(),
-    };
-    store.users.push(admin);
-  }
-
-  admin.email = ADMIN_EMAIL;
-  admin.isAdmin = true;
-  admin.provider = "email-profile";
-  admin.name = admin.name || "Satvik";
-
-  if (!store.userStates[admin.id]) {
-    let adminState = clone(adminDefaultState);
-    const legacyRaw = localStorage.getItem(LEGACY_STATE_KEY);
-    if (legacyRaw) {
-      try {
-        adminState = mergeState(adminState, JSON.parse(legacyRaw));
-      } catch {}
+    if (!admin) {
+      admin = {
+        id: uid("user"),
+        name: "Satvik",
+        email: ADMIN_EMAIL,
+        provider: "email-profile",
+        isAdmin: true,
+        createdAt: new Date().toISOString(),
+      };
+      store.users.push(admin);
     }
-    store.userStates[admin.id] = adminState;
+
+    admin.email = ADMIN_EMAIL;
+    admin.isAdmin = true;
+    admin.provider = "email-profile";
+    admin.name = admin.name || "Satvik";
+
+    if (!store.userStates[admin.id]) {
+      let adminState = clone(adminDefaultState);
+      const legacyRaw = localStorage.getItem(LEGACY_STATE_KEY);
+      if (legacyRaw) {
+        try {
+          adminState = mergeState(adminState, JSON.parse(legacyRaw));
+        } catch {}
+      }
+      store.userStates[admin.id] = adminState;
+    }
   }
 
   if (store.activeUserId && !store.users.some((u) => u.id === store.activeUserId)) {
@@ -840,6 +890,11 @@ function normalizeEmail(email) {
   return String(email || "").trim().toLowerCase();
 }
 
+function isConfiguredAdminEmail(email) {
+  if (!ADMIN_EMAIL) return false;
+  return normalizeEmail(email) === ADMIN_EMAIL;
+}
+
 function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizeEmail(email));
 }
@@ -869,7 +924,7 @@ function createUser({ name, email, provider }) {
     email: normalizedEmail,
     password: "",
     provider: provider || "email-profile",
-    isAdmin: normalizedEmail === ADMIN_EMAIL,
+    isAdmin: isConfiguredAdminEmail(normalizedEmail),
     createdAt: new Date().toISOString(),
   };
 
@@ -892,7 +947,9 @@ function upsertUserProfile(name, email) {
 
   user.name = name?.trim() || user.name || deriveNameFromEmail(normalizedEmail);
   user.provider = "email-profile";
-  user.isAdmin = normalizedEmail === ADMIN_EMAIL;
+  if (!user.isAdmin) {
+    user.isAdmin = isConfiguredAdminEmail(normalizedEmail);
+  }
   user.email = normalizedEmail;
   saveAuthStore();
   return user;
@@ -1169,7 +1226,7 @@ function activateUser(user) {
     }
     state.profile.gymClosedDay = "Wednesday";
     state.profile.trainingStartDay = "Thursday";
-    if (!state.settings.apiKey) {
+    if (!state.settings.apiKey && ADMIN_API_KEY) {
       state.settings.apiKey = ADMIN_API_KEY;
     }
   }
@@ -1208,7 +1265,7 @@ function handleWelcomeSubmit(e) {
     return;
   }
 
-  if (email === ADMIN_EMAIL) {
+  if (isConfiguredAdminEmail(email) && ADMIN_PASSWORD) {
     const passkey = prompt("Admin passkey required for this Gmail ID:");
     if ((passkey || "") !== ADMIN_PASSWORD) {
       showToast("Incorrect admin passkey.", "error");
@@ -1361,9 +1418,17 @@ function buildWeeklyEveningSchedule(closedDay, trainingStartDay) {
     const template = eveningWorkoutTemplates[splitCursor % eveningWorkoutTemplates.length];
     splitCursor += 1;
 
+    const exercises = template.exercises.map((exercise) => ({ ...exercise }));
+    const hasTreadmill = exercises.some((exercise) =>
+      String(exercise?.name || "").toLowerCase().includes("treadmill")
+    );
+    if (!hasTreadmill) {
+      exercises.push({ ...eveningTreadmillFinisher });
+    }
+
     schedule[day] = {
       ...template,
-      exercises: template.exercises.map((exercise) => ({ ...exercise })),
+      exercises,
       isOff: false,
     };
   });
@@ -1667,7 +1732,8 @@ function renderTodayWorkout() {
     .map((ex, idx) => {
       const key = `${day}-${idx}`;
       const done = Boolean(log.exerciseDone[key]);
-      const load = Number(log.exerciseWeights?.[key] || 0);
+      const trackWeight = ex.trackWeight !== false;
+      const load = trackWeight ? Number(log.exerciseWeights?.[key] || 0) : 0;
       const timerSec = Math.max(20, Number(ex.timerSec || parseSetPrescription(ex.sets).secondsPerSet || 60));
 
       return `
@@ -1676,10 +1742,12 @@ function renderTodayWorkout() {
           <div>
             <h3>${escapeHtml(ex.name)}</h3>
             <p class="exercise-meta">${escapeHtml(ex.sets)} | ${escapeHtml(ex.cues)}</p>
-            <label style="display:block;margin-top:6px;">
-              <span class="label-text" style="margin-bottom:4px;">Weight Used (kg)</span>
-              <input type="number" min="0" step="0.5" value="${Number.isFinite(load) && load > 0 ? load : ""}" onclick="event.stopPropagation()" onchange="updateExerciseWeight('${day}', ${idx}, this.value)" placeholder="e.g., 35" />
-            </label>
+            ${trackWeight
+              ? `<label style="display:block;margin-top:6px;">
+                  <span class="label-text" style="margin-bottom:4px;">Weight Used (kg)</span>
+                  <input type="number" min="0" step="0.5" value="${Number.isFinite(load) && load > 0 ? load : ""}" onclick="event.stopPropagation()" onchange="updateExerciseWeight('${day}', ${idx}, this.value)" placeholder="e.g., 35" />
+                </label>`
+              : `<p class="muted" style="margin-top:6px;">Cardio finisher: no load entry needed.</p>`}
             <div class="btn-row" style="margin-top:6px;">
               <button type="button" class="btn-small guide-btn" onclick="event.stopPropagation(); openExerciseGuide('${encodeURIComponent(ex.name)}')">View GIF Guide</button>
               <button type="button" class="btn-small" onclick="event.stopPropagation(); startExerciseTimer('${encodeURIComponent(ex.name)}', ${timerSec})">Start ${Math.round(timerSec)}s Timer</button>
@@ -1800,20 +1868,29 @@ function showTab(tabName) {
     settings: "tabSettings",
   };
 
-  const contentId = map[tabName];
+  const activeTab = map[tabName] ? tabName : "home";
+  const contentId = map[activeTab];
 
-  document.querySelectorAll(".tab-content").forEach((el) => el.classList.remove("active"));
+  document.querySelectorAll(".tab-content").forEach((el) => {
+    const isActive = el.id === contentId;
+    el.classList.toggle("active", isActive);
+    el.hidden = !isActive;
+    el.setAttribute("aria-hidden", String(!isActive));
+  });
   document.querySelectorAll(".nav-btn").forEach((el) => el.classList.remove("active"));
 
   const content = select(contentId);
   if (content) content.classList.add("active");
 
   /* Match nav button - weekly-plan maps to diet nav btn */
-  const navTab = tabName === "weekly-plan" ? "diet" : tabName === "burn" ? "home" : tabName;
+  const navTab = activeTab === "weekly-plan" ? "diet" : activeTab === "burn" ? "home" : activeTab;
   const btn = document.querySelector(`[data-tab="${navTab}"]`);
   if (btn) btn.classList.add("active");
 
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  const shell = select("appShell");
+  if (shell) shell.classList.toggle("home-active", activeTab === "home");
+
+  window.scrollTo({ top: 0, behavior: "auto" });
 }
 
 function scrollToTab(tabName) {
@@ -4167,6 +4244,17 @@ function bindAppEvents() {
   select("settingsTerms")?.addEventListener("click", openTerms);
   select("settingsRate")?.addEventListener("click", () => {
     showToast("Thank you! Rating will be available on Play Store soon. ⭐");
+  });
+
+  const morningAccordion = select("morningSessionAccordion");
+  const eveningAccordion = select("eveningSessionAccordion");
+  [morningAccordion, eveningAccordion].forEach((accordion) => {
+    accordion?.addEventListener("toggle", () => {
+      if (!accordion.open) return;
+      [morningAccordion, eveningAccordion].forEach((other) => {
+        if (other && other !== accordion) other.open = false;
+      });
+    });
   });
 
   document.addEventListener("keydown", (event) => {

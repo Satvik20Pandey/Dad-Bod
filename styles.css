@@ -473,6 +473,10 @@ textarea {
   animation: fadeIn 0.4s ease;
 }
 
+#appShell:not(.home-active) .app-header {
+  display: none;
+}
+
 .header-top {
   display: flex;
   justify-content: space-between;
@@ -745,8 +749,105 @@ textarea {
 
 .tab-content.active {
   display: grid;
-  gap: 14px;
+  gap: 12px;
   animation: fadeIn 0.3s ease;
+}
+
+/* ---- Workout Session Accordions ---- */
+.session-accordion {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface-2);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.session-accordion summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px 14px;
+  user-select: none;
+}
+
+.session-accordion summary::-webkit-details-marker {
+  display: none;
+}
+
+.session-summary-main {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.session-summary-main h3 {
+  font-size: 0.95rem;
+  margin: 0;
+  color: var(--text);
+}
+
+.session-summary-main p {
+  margin: 2px 0 0;
+  color: var(--text-muted);
+  font-size: 0.76rem;
+}
+
+.session-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  font-size: 1rem;
+  background: linear-gradient(135deg, #FFF0F5, #FFE3EE);
+  border: 1px solid #FFD7E8;
+  flex-shrink: 0;
+}
+
+.session-badge.evening {
+  background: linear-gradient(135deg, #E8F4FF, #D8EAFF);
+  border-color: #CCE3FF;
+}
+
+.session-chevron {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  transition: transform var(--transition);
+}
+
+.session-accordion[open] .session-chevron {
+  transform: rotate(180deg);
+}
+
+.session-content {
+  border-top: 1px solid var(--border-light);
+  padding: 12px;
+  display: grid;
+  gap: 12px;
+  background: linear-gradient(180deg, #FFFFFF 0%, #FBFCFD 100%);
+}
+
+.session-subcard {
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  padding: 12px;
+}
+
+.session-subcard h3 {
+  margin-bottom: 8px;
+  font-size: 0.92rem;
+}
+
+#tabGym .form-grid {
+  gap: 10px;
+}
+
+#tabGym textarea {
+  min-height: 64px;
 }
 
 /* ---- Dashboard Grid ---- */
@@ -1013,10 +1114,10 @@ textarea {
   border: 1px solid var(--border);
   background: var(--surface);
   border-radius: var(--radius);
-  padding: 14px;
+  padding: 12px;
   display: grid;
   grid-template-columns: auto 1fr;
-  gap: 12px;
+  gap: 10px;
   align-items: start;
   transition: all var(--transition);
   cursor: pointer;
@@ -1043,7 +1144,7 @@ textarea {
 }
 
 .exercise-item h3 {
-  font-size: 0.92rem;
+  font-size: 0.9rem;
   font-weight: 600;
   color: var(--text);
 }
@@ -1663,6 +1764,11 @@ textarea {
    ============================================ */
 @media (min-width: 768px) {
   .app-content { width: min(600px, 100% - 32px); }
+
+  #tabGym .session-content .form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: end;
+  }
   
   .dashboard-grid-desktop {
     grid-template-columns: repeat(3, 1fr);

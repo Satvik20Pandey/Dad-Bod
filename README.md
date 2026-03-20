@@ -15,10 +15,24 @@ A premium mobile-first fitness and nutrition tracker with room-only workouts, me
 - Optional OpenRouter AI features with in-app API key shortcut
 - PWA support (manifest + service worker)
 
-## Admin Account
+## Optional Admin Bootstrap (Secure)
 
-- Email: satvikofficial20@gmail.com
-- Password: Satvik123
+No admin credentials are hardcoded in source.
+
+If you need an admin account bootstrap for local testing, configure runtime security values in browser local storage:
+
+```js
+localStorage.setItem(
+	"dadbod_security_config_v1",
+	JSON.stringify({
+		adminEmail: "your-admin@gmail.com",
+		adminPasskey: "your-strong-passkey",
+		bootstrapApiKey: ""
+	})
+);
+```
+
+Then reload the app.
 
 ## Quick Start (Web)
 

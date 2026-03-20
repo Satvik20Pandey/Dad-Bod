@@ -137,7 +137,6 @@
                     <div class="calorie-ring-sub" id="burnRingSub">Tap to edit</div>
                   </div>
                 </button>
-                </div>
               </div>
               <div class="macro-pills" id="macroPills">
                 <div class="macro-pill"><span class="macro-dot protein"></span> Protein: <b id="pillProtein">0g</b></div>
@@ -202,7 +201,7 @@
         </section>
 
         <!-- ===== BURN TAB ===== -->
-        <section id="tabBurn" class="tab-content">
+        <section id="tabBurn" class="tab-content" hidden>
           <article class="card">
             <div class="card-icon-title">
               <div class="card-icon" style="background:linear-gradient(135deg,#E8FFF4,#CCFFE5)">🔥</div>
@@ -230,7 +229,7 @@
         </section>
 
         <!-- ===== DIET TAB ===== -->
-        <section id="tabDiet" class="tab-content">
+        <section id="tabDiet" class="tab-content" hidden>
           <article class="card">
             <div class="card-icon-title">
               <div class="card-icon nutrition">🍽️</div>
@@ -310,7 +309,7 @@
         </section>
 
         <!-- ===== WEEKLY PLAN TAB ===== -->
-        <section id="tabWeeklyPlan" class="tab-content">
+        <section id="tabWeeklyPlan" class="tab-content" hidden>
           <article class="card">
             <div class="card-icon-title">
               <div class="card-icon" style="background:linear-gradient(135deg,#F0F4FF,#DCE5FF)">📅</div>
@@ -333,122 +332,143 @@
         </section>
 
         <!-- ===== GYM TAB ===== -->
-        <section id="tabGym" class="tab-content">
+        <section id="tabGym" class="tab-content" hidden>
           <article class="card">
-            <div class="card-icon-title">
+            <div class="card-icon-title" style="margin-bottom:8px;">
               <div class="card-icon workout">💪</div>
               <div>
-                <h2 style="margin-bottom:0">Evening Gym Session: <span id="todayWorkoutDayName"></span></h2>
+                <h2 style="margin-bottom:0">Workout Sessions</h2>
               </div>
             </div>
-            <form id="workoutPrefsForm" class="form-grid" style="margin-bottom:10px;">
-              <label>
-                <span class="label-text">Gym Closed Day</span>
-                <select id="gymClosedDay">
-                  <option value="Sunday">Sunday</option>
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                </select>
-              </label>
-              <label>
-                <span class="label-text">Gym Split Start Day</span>
-                <select id="trainingStartDay">
-                  <option value="Sunday">Sunday</option>
-                  <option value="Monday">Monday</option>
-                  <option value="Tuesday">Tuesday</option>
-                  <option value="Wednesday">Wednesday</option>
-                  <option value="Thursday">Thursday</option>
-                  <option value="Friday">Friday</option>
-                  <option value="Saturday">Saturday</option>
-                </select>
-              </label>
-              <button class="btn-secondary full-width" id="saveWorkoutPrefsBtn" type="submit">Save Workout Setup</button>
-            </form>
-            <p id="todayWorkoutNote" class="muted" style="margin-bottom:12px;"></p>
-            <p id="todayWorkoutCycle" class="muted" style="margin-bottom:12px;"></p>
-            <div id="todayExerciseList" class="exercise-checklist"></div>
-            <p id="workoutCompletionText" class="progress-info" style="margin-top:12px;"></p>
-            <div class="btn-row">
-              <button class="btn-secondary" id="exportStrengthBtn" type="button">📊 Export Strength CSV</button>
-            </div>
-          </article>
+            <p class="muted" style="margin-bottom:12px;">Open only one session at a time to keep the screen clean and focused.</p>
 
-          <article class="card">
-            <div class="card-icon-title">
-              <div class="card-icon" style="background:linear-gradient(135deg,#FFF0F5,#FFD6E7)">🌅</div>
-              <h2 style="margin-bottom:0">Morning Session (Home, No Equipment)</h2>
-            </div>
-            <form id="morningForm" class="form-grid">
-              <label>
-                <span class="label-text">Activity</span>
-                <select id="morningActivityType">
-                  <option value="running">🏃 Running</option>
-                  <option value="racing">⚡ Racing / Sprint Intervals</option>
-                  <option value="swimming">🏊 Swimming</option>
-                  <option value="walk">🚶 Brisk Walk</option>
-                  <option value="custom">✍️ Custom Activity</option>
-                  <option value="none">None Today</option>
-                </select>
-              </label>
-              <label>
-                <span class="label-text">Duration (min)</span>
-                <input type="number" id="morningMinutes" min="0" placeholder="20" />
-              </label>
-              <label>
-                <span class="label-text">Custom Activity Name (if custom)</span>
-                <input type="text" id="morningCustomActivity" placeholder="e.g., Skipping, Dance Cardio" />
-              </label>
-              <label>
-                <span class="label-text">Custom Intensity MET (optional)</span>
-                <input type="number" id="morningCustomMet" min="2" max="15" step="0.1" placeholder="6.5" />
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="morningDone" />
-                <span>Morning Session Done</span>
-              </label>
-              <label class="checkbox-label">
-                <input type="checkbox" id="absDone" />
-                <span>Abs Circuit Done</span>
-              </label>
-              <label>
-                <span class="label-text">Notes</span>
-                <textarea id="morningNotes" rows="2" placeholder="How did the session feel?"></textarea>
-              </label>
-              <button class="btn-secondary full-width" id="morningGuideBtn" type="button">🎥 View Activity GIF Guide</button>
-              <button class="btn-primary full-width" type="submit">Save Check-in</button>
-            </form>
-          </article>
+            <details class="session-accordion" id="morningSessionAccordion">
+              <summary>
+                <div class="session-summary-main">
+                  <span class="session-badge">🌅</span>
+                  <div>
+                    <h3>Morning Session (Home)</h3>
+                    <p>Cardio activity + advanced abs circuit</p>
+                  </div>
+                </div>
+                <span class="session-chevron" aria-hidden="true">⌄</span>
+              </summary>
 
-          <article class="card">
-            <div class="card-icon-title">
-              <div class="card-icon" style="background:linear-gradient(135deg,#F0FFF4,#C6F6D5)">🔥</div>
-              <h2 style="margin-bottom:0">Abs Circuit</h2>
-            </div>
-            <p class="muted" style="margin-bottom:10px;">Advanced daily core workout at home. Use checkboxes + timers + GIF guides.</p>
-            <div id="absExerciseList" class="exercise-checklist"></div>
-          </article>
+              <div class="session-content">
+                <form id="morningForm" class="form-grid">
+                  <label>
+                    <span class="label-text">Activity</span>
+                    <select id="morningActivityType">
+                      <option value="running">🏃 Running</option>
+                      <option value="racing">⚡ Racing / Sprint Intervals</option>
+                      <option value="swimming">🏊 Swimming</option>
+                      <option value="walk">🚶 Brisk Walk</option>
+                      <option value="custom">✍️ Custom Activity</option>
+                      <option value="none">None Today</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="label-text">Duration (min)</span>
+                    <input type="number" id="morningMinutes" min="0" placeholder="20" />
+                  </label>
+                  <label>
+                    <span class="label-text">Custom Activity Name (if custom)</span>
+                    <input type="text" id="morningCustomActivity" placeholder="e.g., Skipping, Dance Cardio" />
+                  </label>
+                  <label>
+                    <span class="label-text">Custom Intensity MET (optional)</span>
+                    <input type="number" id="morningCustomMet" min="2" max="15" step="0.1" placeholder="6.5" />
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="morningDone" />
+                    <span>Morning Session Done</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="absDone" />
+                    <span>Abs Circuit Done</span>
+                  </label>
+                  <label>
+                    <span class="label-text">Notes</span>
+                    <textarea id="morningNotes" rows="2" placeholder="How did the session feel?"></textarea>
+                  </label>
+                  <button class="btn-secondary full-width" id="morningGuideBtn" type="button">🎥 View Activity GIF Guide</button>
+                  <button class="btn-primary full-width" type="submit">Save Check-in</button>
+                </form>
 
-          <article class="card">
-            <div class="card-icon-title">
-              <div class="card-icon" style="background:linear-gradient(135deg,#F5F0FF,#E8DBFF)">⏱️</div>
-              <h2 style="margin-bottom:0">Workout Timer</h2>
-            </div>
-            <p id="timerExerciseLabel" class="muted" style="margin-bottom:6px;">No active timer. Tap Start Timer on any exercise.</p>
-            <div class="timer-value" id="timerDisplay">00:00</div>
-            <div class="btn-row" style="margin-top:10px;">
-              <button class="btn-secondary" type="button" id="timerPauseBtn">Pause</button>
-              <button class="btn-secondary" type="button" id="timerResumeBtn">Resume</button>
-              <button class="btn-ghost" type="button" id="timerResetBtn">Reset</button>
-            </div>
+                <div class="session-subcard">
+                  <h3>Abs Circuit</h3>
+                  <p class="muted" style="margin-bottom:10px;">Advanced daily core workout. Use checkboxes + timers + GIF guides.</p>
+                  <div id="absExerciseList" class="exercise-checklist"></div>
+                </div>
+
+                <div class="session-subcard">
+                  <h3>Workout Timer</h3>
+                  <p id="timerExerciseLabel" class="muted" style="margin-bottom:6px;">No active timer. Tap Start Timer on any exercise.</p>
+                  <div class="timer-value" id="timerDisplay">00:00</div>
+                  <div class="btn-row" style="margin-top:10px;">
+                    <button class="btn-secondary" type="button" id="timerPauseBtn">Pause</button>
+                    <button class="btn-secondary" type="button" id="timerResumeBtn">Resume</button>
+                    <button class="btn-ghost" type="button" id="timerResetBtn">Reset</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <details class="session-accordion" id="eveningSessionAccordion" style="margin-top:10px;">
+              <summary>
+                <div class="session-summary-main">
+                  <span class="session-badge evening">🌙</span>
+                  <div>
+                    <h3>Evening Gym Session: <span id="todayWorkoutDayName"></span></h3>
+                    <p>Strength split + treadmill finisher</p>
+                  </div>
+                </div>
+                <span class="session-chevron" aria-hidden="true">⌄</span>
+              </summary>
+
+              <div class="session-content">
+                <form id="workoutPrefsForm" class="form-grid" style="margin-bottom:10px;">
+                  <label>
+                    <span class="label-text">Gym Closed Day</span>
+                    <select id="gymClosedDay">
+                      <option value="Sunday">Sunday</option>
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="label-text">Gym Split Start Day</span>
+                    <select id="trainingStartDay">
+                      <option value="Sunday">Sunday</option>
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                    </select>
+                  </label>
+                  <button class="btn-secondary full-width" id="saveWorkoutPrefsBtn" type="submit">Save Workout Setup</button>
+                </form>
+
+                <p id="todayWorkoutNote" class="muted" style="margin-bottom:10px;"></p>
+                <p id="todayWorkoutCycle" class="muted" style="margin-bottom:10px;"></p>
+                <div id="todayExerciseList" class="exercise-checklist"></div>
+                <p id="workoutCompletionText" class="progress-info" style="margin-top:10px;"></p>
+                <div class="btn-row">
+                  <button class="btn-secondary" id="exportStrengthBtn" type="button">📊 Export Strength CSV</button>
+                </div>
+              </div>
+            </details>
           </article>
         </section>
 
         <!-- ===== PROGRESS TAB ===== -->
-        <section id="tabProgress" class="tab-content">
+        <section id="tabProgress" class="tab-content" hidden>
           <article class="card">
             <div class="card-icon-title">
               <div class="card-icon weight">📊</div>
@@ -503,7 +523,7 @@
         </section>
 
         <!-- ===== MORE TAB (Settings + Play Store pages) ===== -->
-        <section id="tabSettings" class="tab-content">
+        <section id="tabSettings" class="tab-content" hidden>
           <div class="settings-section">
             <!-- Goals -->
             <article class="card">
