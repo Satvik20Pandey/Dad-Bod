@@ -16,6 +16,7 @@ const ONBOARDING_QUOTES = [
   "The work you do today shows up next month.",
 ];
 
+const weekDays = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const daysOrder = ["Thursday", "Friday", "Saturday", "Sunday", "Monday", "Tuesday", "Wednesday"];
 
 const adminDailyDiet = {
@@ -54,135 +55,134 @@ function buildBlankWeeklyPlan() {
   return plan;
 }
 
+const morningActivityCatalog = {
+  running: {
+    label: "Running",
+    met: 8.8,
+    gifQuery: "running form cardio workout",
+  },
+  racing: {
+    label: "Racing / Sprint Intervals",
+    met: 11,
+    gifQuery: "sprint interval running form",
+  },
+  swimming: {
+    label: "Swimming",
+    met: 8.3,
+    gifQuery: "freestyle swimming technique",
+  },
+  walk: {
+    label: "Brisk Walk",
+    met: 4.3,
+    gifQuery: "brisk walking exercise form",
+  },
+  custom: {
+    label: "Custom Activity",
+    met: 6.5,
+    gifQuery: "home cardio workout",
+  },
+  none: {
+    label: "None Today",
+    met: 0,
+    gifQuery: "",
+  },
+};
+
 const absCircuit = [
   {
-    name: "Crunches",
-    sets: "3 x 15",
-    cues: "Lie on back, knees bent. Lift shoulders up and down with control.",
+    name: "Reverse Crunch",
+    sets: "4 x 15",
+    cues: "Control hips up. Do not swing legs.",
+    timerSec: 45,
   },
   {
-    name: "Bicycle Crunches",
-    sets: "3 x 20",
-    cues: "Bring opposite elbow and knee together with slow control.",
+    name: "V-Up",
+    sets: "4 x 12",
+    cues: "Lift chest and legs together, controlled lowering.",
+    timerSec: 45,
   },
   {
-    name: "Forearm Plank",
-    sets: "3 x 40 sec",
-    cues: "Keep body in straight line. Tight core and glutes.",
+    name: "Bicycle Crunch",
+    sets: "4 x 24",
+    cues: "Elbow to opposite knee, keep core braced.",
+    timerSec: 50,
   },
   {
     name: "Mountain Climbers",
-    sets: "3 x 30 sec",
-    cues: "Hands under shoulders. Alternate knees toward chest.",
+    sets: "4 x 35 sec",
+    cues: "Shoulders stacked over wrists, steady pace.",
+    timerSec: 35,
+  },
+  {
+    name: "Forearm Plank",
+    sets: "4 x 45 sec",
+    cues: "Neutral spine and glutes tight.",
+    timerSec: 45,
+  },
+  {
+    name: "Side Plank Hip Dip",
+    sets: "3 x 14 each",
+    cues: "Move from obliques, keep shoulder stable.",
+    timerSec: 40,
   },
   {
     name: "Dead Bug",
-    sets: "3 x 12 each side",
-    cues: "Lower opposite arm and leg while lower back stays on floor.",
-  },
-  {
-    name: "Lying Leg Raises",
-    sets: "3 x 12",
-    cues: "Raise straight legs, lower slowly without arching lower back.",
-  },
-  {
-    name: "Superman Hold",
-    sets: "3 x 30 sec",
-    cues: "Lift chest and legs, hold with glutes and back engaged.",
+    sets: "3 x 14 each",
+    cues: "Lower opposite arm-leg while back stays flat.",
+    timerSec: 45,
   },
   {
     name: "Hollow Body Hold",
-    sets: "3 x 25 sec",
-    cues: "Lower back pressed to floor, arms and legs extended.",
+    sets: "3 x 30 sec",
+    cues: "Ribs down, lower back pressed to floor.",
+    timerSec: 30,
   },
 ];
 
-const roomGymSplit = {
-  Thursday: {
-    title: "Push Foundation (No Equipment)",
-    note: "Room-only push strength. Use wall/table if needed.",
+const eveningWorkoutTemplates = [
+  {
+    key: "push",
+    title: "Chest + Triceps",
+    note: "Medium-advanced push day using common gym machines and free weights.",
     exercises: [
-      { name: "Incline Push-Up", sets: "4 x 10-15", cues: "Hands on table or bed edge, body straight." },
-      { name: "Knee Push-Up", sets: "3 x 10-12", cues: "Slow descent, chest close to floor." },
-      { name: "Pike Push-Up", sets: "3 x 8-10", cues: "Hips high, head moves between hands." },
-      { name: "Diamond Push-Up", sets: "3 x 6-10", cues: "Hands close, elbows track back." },
-      { name: "Plank Shoulder Tap", sets: "3 x 20 taps", cues: "Hips stable, no rocking." },
-      { name: "Forearm Plank", sets: "3 x 40 sec", cues: "Neutral spine, tight core." },
+      { name: "Barbell Bench Press", sets: "4 x 6-8", cues: "Scapula retracted, controlled eccentric.", timerSec: 120 },
+      { name: "Incline Dumbbell Press", sets: "3 x 8-10", cues: "Drive elbows down and in, full range.", timerSec: 105 },
+      { name: "Seated Machine Chest Press", sets: "3 x 10-12", cues: "Pause at stretch, smooth lockout.", timerSec: 90 },
+      { name: "Cable Fly", sets: "3 x 12-15", cues: "Soft elbows, squeeze chest at center.", timerSec: 75 },
+      { name: "Rope Triceps Pushdown", sets: "3 x 10-12", cues: "Elbows fixed, full extension.", timerSec: 75 },
+      { name: "Overhead Dumbbell Triceps Extension", sets: "3 x 10-12", cues: "Control bottom stretch and lockout.", timerSec: 90 },
     ],
   },
-  Friday: {
-    title: "Pull + Posture (No Equipment)",
-    note: "Back activation without machines or bands.",
+  {
+    key: "pull",
+    title: "Back + Biceps",
+    note: "Thick back focus with easy-to-find machines and cable stations.",
     exercises: [
-      { name: "Superman Pull-Down", sets: "3 x 12", cues: "Lift chest and pull elbows down like lat pull." },
-      { name: "Reverse Snow Angel", sets: "3 x 12", cues: "Lie face down, sweep arms wide with control." },
-      { name: "Prone Cobra Hold", sets: "3 x 30 sec", cues: "Squeeze shoulder blades, chin tucked." },
-      { name: "Bird Dog", sets: "3 x 10 each side", cues: "Reach opposite hand and leg, keep hips square." },
-      { name: "Back Widow", sets: "3 x 12", cues: "Press elbows to floor and lift chest." },
-      { name: "Self-Resistance Biceps Curl", sets: "3 x 12 each", cues: "Use opposite hand for resistance." },
+      { name: "Wide-Grip Lat Pulldown", sets: "4 x 8-10", cues: "Pull elbows to ribs, chest high.", timerSec: 105 },
+      { name: "Seated Cable Row", sets: "4 x 8-10", cues: "Neutral spine, hold squeeze 1 sec.", timerSec: 105 },
+      { name: "Chest-Supported Row Machine", sets: "3 x 10-12", cues: "Drive elbows behind body.", timerSec: 90 },
+      { name: "Single-Arm Dumbbell Row", sets: "3 x 10 each", cues: "Pull to hip, avoid torso twist.", timerSec: 90 },
+      { name: "Face Pull", sets: "3 x 12-15", cues: "Elbows high, external rotation at finish.", timerSec: 75 },
+      { name: "EZ-Bar Curl", sets: "3 x 8-10", cues: "No swinging, full elbow extension.", timerSec: 75 },
+      { name: "Incline Dumbbell Curl", sets: "3 x 10-12", cues: "Stretch at bottom, controlled up.", timerSec: 75 },
     ],
   },
-  Saturday: {
-    title: "Legs + Glutes",
-    note: "No-equipment leg day done inside your room.",
+  {
+    key: "legs-shoulders",
+    title: "Legs + Shoulders",
+    note: "Compound lower-body work plus complete shoulder coverage.",
     exercises: [
-      { name: "Bodyweight Squat", sets: "4 x 15", cues: "Sit back, knees track over toes." },
-      { name: "Reverse Lunge", sets: "3 x 10 each", cues: "Step back softly, chest tall." },
-      { name: "Glute Bridge", sets: "4 x 15", cues: "Drive hips up, squeeze glutes at top." },
-      { name: "Wall Sit", sets: "3 x 40 sec", cues: "Back flat against wall, knees near 90 degrees." },
-      { name: "Single-Leg Calf Raise", sets: "3 x 15 each", cues: "Use wall for balance if needed." },
-      { name: "Side Plank", sets: "3 x 25 sec each", cues: "Straight body line from shoulder to heel." },
+      { name: "Leg Press", sets: "4 x 10", cues: "Full depth without lower-back rounding.", timerSec: 120 },
+      { name: "Romanian Deadlift", sets: "4 x 8", cues: "Hip hinge and slow hamstring stretch.", timerSec: 120 },
+      { name: "Walking Lunges", sets: "3 x 12 each", cues: "Long stride, torso upright.", timerSec: 90 },
+      { name: "Seated Leg Curl", sets: "3 x 12", cues: "Pause hard at contraction.", timerSec: 75 },
+      { name: "Seated Calf Raise", sets: "4 x 12-15", cues: "Full stretch and full squeeze.", timerSec: 60 },
+      { name: "Seated Dumbbell Shoulder Press", sets: "4 x 8-10", cues: "Brace core, no overarch.", timerSec: 105 },
+      { name: "Dumbbell Lateral Raise", sets: "3 x 12-15", cues: "Raise to shoulder level with control.", timerSec: 60 },
+      { name: "Rear Delt Fly Machine", sets: "3 x 12-15", cues: "Lead with elbows, squeeze rear delts.", timerSec: 60 },
     ],
   },
-  Sunday: {
-    title: "Conditioning + Core",
-    note: "Fat-loss focused, low-space routine.",
-    exercises: [
-      { name: "Jumping Jacks", sets: "3 x 45 sec", cues: "Light feet, steady breathing." },
-      { name: "High Knees March", sets: "3 x 40 sec", cues: "Drive knees up, keep posture upright." },
-      { name: "Squat to Calf Raise", sets: "3 x 15", cues: "Stand tall and rise on toes each rep." },
-      { name: "Mountain Climbers", sets: "3 x 30 sec", cues: "Fast but controlled knee drive." },
-      { name: "Walkout to Plank", sets: "3 x 10", cues: "Hinge at hips and walk hands out slowly." },
-      { name: "Dead Bug", sets: "3 x 12 each", cues: "Keep lower back flat." },
-    ],
-  },
-  Monday: {
-    title: "Upper Body + Abs",
-    note: "Bodyweight hypertrophy without gym tools.",
-    exercises: [
-      { name: "Standard Push-Up", sets: "4 x 8-12", cues: "Full range and stable core." },
-      { name: "Wide Push-Up", sets: "3 x 8-12", cues: "Hands slightly wider than shoulders." },
-      { name: "Triceps Floor Extension", sets: "3 x 10-12", cues: "Hands near shoulders, press up slowly." },
-      { name: "Hollow Body Hold", sets: "3 x 25 sec", cues: "Lower back pressed down." },
-      { name: "Lying Leg Raises", sets: "3 x 12", cues: "No momentum. Slow lowering." },
-      { name: "Bicycle Crunches", sets: "3 x 20", cues: "Controlled twisting, no neck pull." },
-    ],
-  },
-  Tuesday: {
-    title: "Posterior Chain + Core",
-    note: "Protect knees and build hips, glutes, and back.",
-    exercises: [
-      { name: "Hip Hinge Good Morning", sets: "4 x 15", cues: "Hands behind head, hinge from hips." },
-      { name: "Single-Leg Glute Bridge", sets: "3 x 10 each", cues: "Keep pelvis level throughout." },
-      { name: "Hamstring Walkout", sets: "3 x 8", cues: "Start in bridge and step heels out slowly." },
-      { name: "Side Lunge", sets: "3 x 10 each", cues: "Sit into hip, opposite leg straight." },
-      { name: "Superman Hold", sets: "3 x 30 sec", cues: "Lift chest and legs slightly off floor." },
-      { name: "Bird Dog Knee Tap", sets: "3 x 12 each", cues: "Bring elbow and knee together under body." },
-    ],
-  },
-  Wednesday: {
-    title: "Recovery Mobility",
-    note: "Easy session to recover and stay active at home.",
-    exercises: [
-      { name: "March In Place", sets: "8 min", cues: "Steady pace and nasal breathing." },
-      { name: "Cat Cow", sets: "2 x 10", cues: "Slow spinal flexion and extension." },
-      { name: "Open Book Thoracic Rotation", sets: "2 x 8 each", cues: "Follow hand with eyes." },
-      { name: "Hip Flexor Stretch", sets: "2 x 30 sec each", cues: "Tuck pelvis and feel front hip stretch." },
-      { name: "Childs Pose Breathing", sets: "2 x 60 sec", cues: "Long inhale and exhale, relax shoulders." },
-      { name: "Ankle Mobility Rocks", sets: "2 x 12 each", cues: "Knee over toes with heel down." },
-    ],
-  },
-};
+];
 
 const nutrientFields = [
   "protein",
@@ -308,12 +308,44 @@ function zeroNutritionTotals() {
   return withNutritionDefaults({});
 }
 
+function calculateDynamicNutrientTargets(profile) {
+  const calorieTarget = Math.max(
+    1200,
+    Number(profile?.calorieTarget || profile?.recommendedCalories || 2000)
+  );
+  const currentWeight = Math.max(30, Number(profile?.currentWeight || 70));
+  const goalWeight = Math.max(30, Number(profile?.goalWeight || currentWeight));
+  const goalMode =
+    goalWeight > currentWeight ? "gain" : goalWeight < currentWeight ? "loss" : "maintain";
+
+  const fatTarget = Math.max(35, Number(profile?.macros?.fatG || 0));
+  const kcalScale = Math.min(1.35, Math.max(0.82, calorieTarget / 2200));
+
+  return {
+    ...baseNutrientTargets,
+    fiber: Math.max(25, Math.round((calorieTarget / 1000) * 14)),
+    sugar: Math.max(20, Math.round((calorieTarget * (goalMode === "loss" ? 0.08 : 0.1)) / 4)),
+    satFat: Math.max(10, Math.round((calorieTarget * 0.1) / 9)),
+    polyFat: Math.max(8, Math.round(fatTarget * 0.25)),
+    monoFat: Math.max(12, Math.round(fatTarget * 0.4)),
+    transFat: 0,
+    cholesterol: goalMode === "loss" ? 250 : goalMode === "gain" ? 330 : 300,
+    sodium: Math.round(Math.max(1800, Math.min(2800, 1800 + currentWeight * 6))),
+    potassium: Math.round(Math.max(3000, Math.min(5000, currentWeight * 45))),
+    vitaminA: Math.round(Math.max(700, Math.min(1300, 900 * kcalScale))),
+    vitaminC: Math.round(Math.max(75, Math.min(180, 90 * kcalScale + (goalMode === "loss" ? 10 : 0)))),
+    calcium: goalMode === "gain" ? 1100 : 1000,
+    iron: Math.round(Math.max(10, Math.min(18, 11 + (goalWeight - currentWeight) * 0.05))),
+  };
+}
+
 function getNutrientTarget(field) {
   if (!state || !state.profile) return baseNutrientTargets[field] ?? null;
+  const dynamicTargets = state.profile.nutrientTargets || calculateDynamicNutrientTargets(state.profile);
   if (field === "protein") return Number(state.profile.macros?.proteinG || 0);
   if (field === "carbs") return Number(state.profile.macros?.carbsG || 0);
   if (field === "fat") return Number(state.profile.macros?.fatG || 0);
-  return baseNutrientTargets[field] ?? null;
+  return Number(dynamicTargets[field] ?? baseNutrientTargets[field] ?? 0);
 }
 
 function readNutrientValue(source, field) {
@@ -386,9 +418,11 @@ const adminDefaultState = {
     adminPlanVersion: 2,
     weeklyLoss: 1,
     goalMode: "loss",
+    gymClosedDay: "Wednesday",
+    trainingStartDay: "Thursday",
     calorieTarget: 1800,
     recommendedCalories: 1800,
-    manualCalorieTarget: 1800,
+    manualCalorieTarget: 0,
     maintenanceCalories: 2460,
     deficitCalories: 1800,
     surplusCalories: 0,
@@ -400,7 +434,7 @@ const adminDefaultState = {
   },
   settings: {
     apiKey: ADMIN_API_KEY,
-    aiModel: "openai/gpt-4o-vision",
+    aiModel: "openai/gpt-4o",
   },
   mealsByDate: {},
   foodLibrary: {},
@@ -420,6 +454,8 @@ const genericDefaultState = {
     heightCm: 170,
     weeklyLoss: 0.5,
     goalMode: "loss",
+    gymClosedDay: "Sunday",
+    trainingStartDay: "Monday",
     calorieTarget: 1900,
     recommendedCalories: 1900,
     manualCalorieTarget: 0,
@@ -453,6 +489,8 @@ let appEventsBound = false;
 let onboardingEventsBound = false;
 const gifCache = {};
 let activeSpeechRecognition = null;
+let activeWorkoutTimer = null;
+let workoutTimerInterval = null;
 
 const exerciseGifQueryOverrides = {
   "mountain climbers": "mountain climbers plank core exercise workout",
@@ -1027,12 +1065,16 @@ function renderStreak() {
 /* ---- Calorie Ring ---- */
 function renderCalorieRing() {
   const totals = dailyTotals();
+  const burn = calculateDailyBurn();
   const target = Number(state.profile.calorieTarget || 2000);
   const eaten = totals.kcal;
   const remaining = Math.max(0, target - eaten);
   const pct = Math.min(1, eaten / target);
+  const burnTarget = Math.max(1200, Number(state.profile.maintenanceCalories || 2200));
+  const burnPct = Math.min(1, burn.total / burnTarget);
   const circumference = 2 * Math.PI * 78; // ~490
   const offset = circumference * (1 - pct);
+  const burnOffset = circumference * (1 - burnPct);
 
   const ring = select("calorieRing");
   if (ring) {
@@ -1040,8 +1082,20 @@ function renderCalorieRing() {
     ring.style.strokeDashoffset = offset;
   }
 
+  const burnRing = select("burnRing");
+  if (burnRing) {
+    burnRing.style.strokeDasharray = circumference;
+    burnRing.style.strokeDashoffset = burnOffset;
+  }
+
   const val = select("calorieRingValue");
   if (val) val.textContent = formatNum(remaining, 0);
+
+  const burnVal = select("burnRingValue");
+  if (burnVal) burnVal.textContent = formatNum(burn.total, 0);
+
+  const burnSub = select("burnRingSub");
+  if (burnSub) burnSub.textContent = `${formatNum(burn.total, 0)} / ${formatNum(burnTarget, 0)} kcal`;
 
   const pp = select("pillProtein");
   const pc = select("pillCarbs");
@@ -1113,6 +1167,8 @@ function activateUser(user) {
       state.weeklyPlan = buildAdminWeeklyPlan();
       state.profile.adminPlanVersion = 2;
     }
+    state.profile.gymClosedDay = "Wednesday";
+    state.profile.trainingStartDay = "Thursday";
     if (!state.settings.apiKey) {
       state.settings.apiKey = ADMIN_API_KEY;
     }
@@ -1220,6 +1276,15 @@ function calculateTargetsFromProfile() {
     fatG: Math.max(35, fatG),
     carbsG: Math.max(80, carbsG),
   };
+
+  if (!weekDays.includes(state.profile.gymClosedDay)) {
+    state.profile.gymClosedDay = currentUser?.isAdmin ? "Wednesday" : "Sunday";
+  }
+  if (!weekDays.includes(state.profile.trainingStartDay)) {
+    state.profile.trainingStartDay = currentUser?.isAdmin ? "Thursday" : "Monday";
+  }
+
+  state.profile.nutrientTargets = calculateDynamicNutrientTargets(state.profile);
 }
 
 function updateDateTime() {
@@ -1246,27 +1311,249 @@ function dailyTotals(date = todayDate()) {
   }, zeroNutritionTotals());
 }
 
-function ensureGymLogForDate(date = todayDate()) {
-  if (!state.gymLogsByDate[date]) {
-    state.gymLogsByDate[date] = {
-      morningActivityType: "walk",
-      morningMinutes: 0,
-      morningDone: false,
-      absDone: false,
-      morningNotes: "",
-      exerciseDone: {},
+function dayNameFromDate(dateValue = todayDate()) {
+  const date = new Date(`${dateValue}T12:00:00`);
+  if (Number.isNaN(date.getTime())) return currentDayName();
+  return date.toLocaleDateString(undefined, { weekday: "long" });
+}
+
+function getWeekdayIndex(day) {
+  const idx = weekDays.indexOf(day);
+  return idx >= 0 ? idx : 0;
+}
+
+function orderedWeekFromStart(startDay) {
+  const startIdx = getWeekdayIndex(startDay);
+  return [...weekDays.slice(startIdx), ...weekDays.slice(0, startIdx)];
+}
+
+function getWorkoutPreferences() {
+  const fallbackClosed = currentUser?.isAdmin ? "Wednesday" : "Sunday";
+  const fallbackStart = currentUser?.isAdmin ? "Thursday" : "Monday";
+
+  const closedDay = weekDays.includes(state.profile.gymClosedDay)
+    ? state.profile.gymClosedDay
+    : fallbackClosed;
+  const trainingStartDay = weekDays.includes(state.profile.trainingStartDay)
+    ? state.profile.trainingStartDay
+    : fallbackStart;
+
+  return { closedDay, trainingStartDay };
+}
+
+function buildWeeklyEveningSchedule(closedDay, trainingStartDay) {
+  const schedule = {};
+  const orderedDays = orderedWeekFromStart(trainingStartDay);
+  let splitCursor = 0;
+
+  orderedDays.forEach((day) => {
+    if (day === closedDay) {
+      schedule[day] = {
+        key: "off",
+        title: "Gym Closed Day",
+        note: "Recovery day. No evening gym workout scheduled.",
+        exercises: [],
+        isOff: true,
+      };
+      return;
+    }
+
+    const template = eveningWorkoutTemplates[splitCursor % eveningWorkoutTemplates.length];
+    splitCursor += 1;
+
+    schedule[day] = {
+      ...template,
+      exercises: template.exercises.map((exercise) => ({ ...exercise })),
+      isOff: false,
     };
-  }
-  return state.gymLogsByDate[date];
+  });
+
+  return schedule;
+}
+
+function getEveningWorkoutForDay(day = currentDayName()) {
+  const { closedDay, trainingStartDay } = getWorkoutPreferences();
+  const schedule = buildWeeklyEveningSchedule(closedDay, trainingStartDay);
+  return schedule[day] || schedule[trainingStartDay] || eveningWorkoutTemplates[0];
 }
 
 function findTodayWorkout() {
-  const day = currentDayName();
-  return roomGymSplit[day] || roomGymSplit.Thursday;
+  return getEveningWorkoutForDay(currentDayName());
+}
+
+function ensureGymLogForDate(date = todayDate()) {
+  if (!state.gymLogsByDate[date]) {
+    state.gymLogsByDate[date] = {
+      morningActivityType: "running",
+      morningMinutes: 20,
+      morningDone: false,
+      absDone: false,
+      morningNotes: "",
+      morningCustomActivity: "",
+      morningCustomMet: 6.5,
+      exerciseDone: {},
+      exerciseWeights: {},
+      steps: 0,
+      sleepHours: 0,
+    };
+  }
+
+  const log = state.gymLogsByDate[date];
+  if (!log.exerciseDone || typeof log.exerciseDone !== "object") log.exerciseDone = {};
+  if (!log.exerciseWeights || typeof log.exerciseWeights !== "object") log.exerciseWeights = {};
+  if (!Number.isFinite(Number(log.steps))) log.steps = 0;
+  if (!Number.isFinite(Number(log.sleepHours))) log.sleepHours = 0;
+  if (!log.morningActivityType) log.morningActivityType = "running";
+  if (!Number.isFinite(Number(log.morningCustomMet))) log.morningCustomMet = 6.5;
+
+  return log;
+}
+
+function parseSetPrescription(text) {
+  const value = String(text || "").toLowerCase();
+  const setsMatch = value.match(/(\d+)\s*x/);
+  const sets = setsMatch ? Math.max(1, Number(setsMatch[1])) : 1;
+
+  const secMatch = value.match(/(\d+(?:\.\d+)?)\s*sec/);
+  if (secMatch) {
+    return {
+      sets,
+      secondsPerSet: Number(secMatch[1]) || 30,
+      repsPerSet: null,
+    };
+  }
+
+  const minMatch = value.match(/(\d+(?:\.\d+)?)\s*min/);
+  if (minMatch) {
+    return {
+      sets,
+      secondsPerSet: (Number(minMatch[1]) || 1) * 60,
+      repsPerSet: null,
+    };
+  }
+
+  const repMatch = value.match(/x\s*(\d+)(?:\s*-\s*(\d+))?/);
+  if (repMatch) {
+    const low = Number(repMatch[1]) || 10;
+    const high = Number(repMatch[2] || repMatch[1]) || low;
+    return {
+      sets,
+      secondsPerSet: null,
+      repsPerSet: Math.max(4, (low + high) / 2),
+    };
+  }
+
+  return {
+    sets,
+    secondsPerSet: 45,
+    repsPerSet: null,
+  };
+}
+
+function estimateExerciseCalories(exercise, bodyWeightKg, loadKg = 0) {
+  const parsed = parseSetPrescription(exercise?.sets || "");
+  const sets = Math.max(1, Number(parsed.sets || 1));
+  const loadFactor = 1 + Math.min(1.8, Math.max(0, Number(loadKg || 0)) / 60);
+
+  let minutes = 0;
+  if (parsed.secondsPerSet) {
+    minutes = (sets * parsed.secondsPerSet) / 60;
+  } else if (parsed.repsPerSet) {
+    minutes = Math.max(3, (sets * parsed.repsPerSet) / 12 + sets * 1.2);
+  } else {
+    minutes = Math.max(3, sets * 2.5);
+  }
+
+  const met = 5.6 + Math.min(2.4, Math.max(0, Number(loadKg || 0)) / 40);
+  const kcal = (met * 3.5 * Math.max(30, Number(bodyWeightKg || 70)) * minutes) / 200;
+  return Math.max(0, kcal * loadFactor);
+}
+
+function estimateMorningCalories(log, bodyWeightKg) {
+  if (!log.morningDone) return 0;
+  const minutes = Math.max(0, Number(log.morningMinutes || 0));
+  if (minutes <= 0) return 0;
+
+  const activityType = log.morningActivityType || "running";
+  const defaultConfig = morningActivityCatalog[activityType] || morningActivityCatalog.running;
+  const customMet = Number(log.morningCustomMet || 0);
+  const met = activityType === "custom" && customMet >= 2 ? customMet : Number(defaultConfig.met || 0);
+
+  return (Math.max(2, met) * 3.5 * Math.max(30, Number(bodyWeightKg || 70)) * minutes) / 200;
+}
+
+function estimateAbsCalories(log, bodyWeightKg) {
+  const completedKeys = absCircuit
+    .map((_, idx) => `abs-${idx}`)
+    .filter((key) => Boolean(log.exerciseDone?.[key]));
+
+  if (!completedKeys.length && !log.absDone) return 0;
+
+  const indexes = completedKeys.length
+    ? completedKeys.map((key) => Number(key.split("-")[1])).filter((n) => Number.isFinite(n))
+    : absCircuit.map((_, idx) => idx);
+
+  return indexes.reduce((sum, idx) => {
+    const exercise = absCircuit[idx];
+    if (!exercise) return sum;
+    const load = 0;
+    return sum + estimateExerciseCalories(exercise, bodyWeightKg, load);
+  }, 0);
+}
+
+function estimateEveningCalories(dayName, log, bodyWeightKg) {
+  const workout = getEveningWorkoutForDay(dayName);
+  if (!workout || workout.isOff) return 0;
+
+  return workout.exercises.reduce((sum, exercise, idx) => {
+    const key = `${dayName}-${idx}`;
+    if (!log.exerciseDone?.[key]) return sum;
+    const load = Number(log.exerciseWeights?.[key] || 0);
+    return sum + estimateExerciseCalories(exercise, bodyWeightKg, load);
+  }, 0);
+}
+
+function estimateStepsCalories(steps, bodyWeightKg) {
+  return Math.max(0, Number(steps || 0)) * Math.max(30, Number(bodyWeightKg || 70)) * 0.0005;
+}
+
+function estimateSleepCalories(hours, profile) {
+  const sleepHours = Math.max(0, Number(hours || 0));
+  if (!sleepHours) return 0;
+
+  const currentWeight = Math.max(30, Number(profile?.currentWeight || 70));
+  const age = Math.max(10, Number(profile?.age || 24));
+  const heightCm = Math.max(120, Number(profile?.heightCm || 170));
+  const bmr = Math.max(1100, Math.round(10 * currentWeight + 6.25 * heightCm - 5 * age + 5));
+  return (bmr / 24) * sleepHours * 0.95;
+}
+
+function calculateDailyBurn(date = todayDate()) {
+  const log = ensureGymLogForDate(date);
+  const dayName = dayNameFromDate(date);
+  const bodyWeightKg = Math.max(30, Number(state.profile.currentWeight || 70));
+
+  const morning = estimateMorningCalories(log, bodyWeightKg);
+  const abs = estimateAbsCalories(log, bodyWeightKg);
+  const evening = estimateEveningCalories(dayName, log, bodyWeightKg);
+  const steps = estimateStepsCalories(log.steps, bodyWeightKg);
+  const sleep = estimateSleepCalories(log.sleepHours, state.profile);
+  const total = morning + abs + evening + steps + sleep;
+
+  return {
+    morning,
+    abs,
+    evening,
+    steps,
+    sleep,
+    total,
+    dayName,
+  };
 }
 
 function renderHeaderStats() {
   const totals = dailyTotals();
+  const burn = calculateDailyBurn();
   const target = state.profile;
   const latestWeight = state.weightEntries.length
     ? state.weightEntries[state.weightEntries.length - 1].weight
@@ -1286,8 +1573,8 @@ function renderHeaderStats() {
       <b>${formatNum(totals.protein, 0)} / ${formatNum(target.macros.proteinG, 0)} g</b>
     </div>
     <div class="stat-item">
-      <div class="stat-item-label">Goal</div>
-      <b>${formatNum(target.goalWeight, 1)} kg</b>
+      <div class="stat-item-label">Burnt</div>
+      <b>${formatNum(burn.total, 0)} kcal</b>
     </div>
   `;
 
@@ -1302,7 +1589,7 @@ function renderDashboard() {
     ? state.weightEntries[state.weightEntries.length - 1].weight
     : target.currentWeight;
 
-  const todayWorkout = findTodayWorkout();
+  const todayWorkout = getEveningWorkoutForDay();
   const log = ensureGymLogForDate();
   const today = currentDayName();
 
@@ -1350,31 +1637,53 @@ function renderDashboard() {
 
   const completed = todayWorkout.exercises.filter((_, idx) => Boolean(log.exerciseDone?.[`${today}-${idx}`])).length;
   setText("todayWorkoutTitle", todayWorkout.title);
-  setText("todayExerciseCount", `${completed}/${todayWorkout.exercises.length} exercises`);
+  if (todayWorkout.isOff) {
+    setText("todayExerciseCount", "Gym closed day");
+  } else {
+    setText("todayExerciseCount", `${completed}/${todayWorkout.exercises.length} exercises`);
+  }
 }
 
 function renderTodayWorkout() {
   const day = currentDayName();
-  const workout = roomGymSplit[day] || roomGymSplit.Thursday;
+  const { closedDay, trainingStartDay } = getWorkoutPreferences();
+  const workout = getEveningWorkoutForDay(day);
   const log = ensureGymLogForDate();
 
   setText("todayWorkoutDayName", day);
   setText("todayWorkoutNote", workout.note);
+  setText("todayWorkoutCycle", `Cycle: ${trainingStartDay} start | Gym closed: ${closedDay}`);
 
   const list = select("todayExerciseList");
   if (!list) return;
+
+  if (workout.isOff) {
+    list.innerHTML = `<p class="muted">No evening gym workout today. Recover, hydrate, and prepare for next split day.</p>`;
+    setText("workoutCompletionText", "Recovery day");
+    return;
+  }
 
   list.innerHTML = workout.exercises
     .map((ex, idx) => {
       const key = `${day}-${idx}`;
       const done = Boolean(log.exerciseDone[key]);
+      const load = Number(log.exerciseWeights?.[key] || 0);
+      const timerSec = Math.max(20, Number(ex.timerSec || parseSetPrescription(ex.sets).secondsPerSet || 60));
+
       return `
         <div class="exercise-item ${done ? "done" : ""}" onclick="toggleExercise('${day}', ${idx})">
           <input type="checkbox" ${done ? "checked" : ""} onclick="event.stopPropagation()" onchange="toggleExercise('${day}', ${idx})" />
           <div>
             <h3>${escapeHtml(ex.name)}</h3>
             <p class="exercise-meta">${escapeHtml(ex.sets)} | ${escapeHtml(ex.cues)}</p>
-            <button type="button" class="btn-small guide-btn" onclick="event.stopPropagation(); openExerciseGuide('${encodeURIComponent(ex.name)}')">View GIF Guide</button>
+            <label style="display:block;margin-top:6px;">
+              <span class="label-text" style="margin-bottom:4px;">Weight Used (kg)</span>
+              <input type="number" min="0" step="0.5" value="${Number.isFinite(load) && load > 0 ? load : ""}" onclick="event.stopPropagation()" onchange="updateExerciseWeight('${day}', ${idx}, this.value)" placeholder="e.g., 35" />
+            </label>
+            <div class="btn-row" style="margin-top:6px;">
+              <button type="button" class="btn-small guide-btn" onclick="event.stopPropagation(); openExerciseGuide('${encodeURIComponent(ex.name)}')">View GIF Guide</button>
+              <button type="button" class="btn-small" onclick="event.stopPropagation(); startExerciseTimer('${encodeURIComponent(ex.name)}', ${timerSec})">Start ${Math.round(timerSec)}s Timer</button>
+            </div>
           </div>
         </div>
       `;
@@ -1391,8 +1700,25 @@ function toggleExercise(day, idx) {
   log.exerciseDone[key] = !log.exerciseDone[key];
   saveState();
   renderTodayWorkout();
+  renderCalorieRing();
   renderHeaderStats();
   renderDashboard();
+  renderBurnPage();
+}
+
+function updateExerciseWeight(day, idx, rawValue) {
+  const log = ensureGymLogForDate();
+  const key = `${day}-${idx}`;
+  const value = Number(rawValue || 0);
+  if (Number.isFinite(value) && value > 0) {
+    log.exerciseWeights[key] = value;
+  } else {
+    delete log.exerciseWeights[key];
+  }
+  saveState();
+  renderCalorieRing();
+  renderHeaderStats();
+  renderBurnPage();
 }
 
 function renderAbsCircuit() {
@@ -1404,31 +1730,69 @@ function renderAbsCircuit() {
     .map((ex, idx) => {
       const key = `abs-${idx}`;
       const done = Boolean(log.exerciseDone[key]);
+      const timerSec = Math.max(20, Number(ex.timerSec || parseSetPrescription(ex.sets).secondsPerSet || 45));
       return `
         <div class="exercise-item ${done ? "done" : ""}" onclick="toggleAbsExercise(${idx})">
           <input type="checkbox" ${done ? "checked" : ""} onclick="event.stopPropagation()" onchange="toggleAbsExercise(${idx})" />
           <div>
             <h3>${escapeHtml(ex.name)}</h3>
             <p class="exercise-meta">${escapeHtml(ex.sets)} | ${escapeHtml(ex.cues)}</p>
-            <button type="button" class="btn-small guide-btn" onclick="event.stopPropagation(); openAbsGuide('${encodeURIComponent(ex.name)}')">View GIF Guide</button>
+            <div class="btn-row" style="margin-top:6px;">
+              <button type="button" class="btn-small guide-btn" onclick="event.stopPropagation(); openAbsGuide('${encodeURIComponent(ex.name)}')">View GIF Guide</button>
+              <button type="button" class="btn-small" onclick="event.stopPropagation(); startExerciseTimer('${encodeURIComponent(ex.name)}', ${timerSec})">Start ${Math.round(timerSec)}s Timer</button>
+            </div>
           </div>
         </div>
       `;
     })
     .join("");
+
 }
 
 function toggleAbsExercise(idx) {
   const log = ensureGymLogForDate();
   const key = `abs-${idx}`;
   log.exerciseDone[key] = !log.exerciseDone[key];
+  const completedAbs = absCircuit.filter((_, i) => Boolean(log.exerciseDone?.[`abs-${i}`])).length;
+  log.absDone = completedAbs === absCircuit.length && absCircuit.length > 0;
   saveState();
   renderAbsCircuit();
+  renderCalorieRing();
+  renderHeaderStats();
+  renderBurnPage();
+}
+
+function renderWorkoutPreferences() {
+  const { closedDay, trainingStartDay } = getWorkoutPreferences();
+  if (select("gymClosedDay")) select("gymClosedDay").value = closedDay;
+  if (select("trainingStartDay")) select("trainingStartDay").value = trainingStartDay;
+}
+
+function handleWorkoutPrefsSubmit(e) {
+  e.preventDefault();
+  const closedDay = select("gymClosedDay")?.value;
+  const trainingStartDay = select("trainingStartDay")?.value;
+
+  if (weekDays.includes(closedDay)) {
+    state.profile.gymClosedDay = closedDay;
+  }
+  if (weekDays.includes(trainingStartDay)) {
+    state.profile.trainingStartDay = trainingStartDay;
+  }
+
+  saveState();
+  renderTodayWorkout();
+  renderDashboard();
+  renderCalorieRing();
+  renderHeaderStats();
+  renderBurnPage();
+  showToast("Workout setup updated.", "success");
 }
 
 function showTab(tabName) {
   const map = {
     home: "tabHome",
+    burn: "tabBurn",
     diet: "tabDiet",
     "weekly-plan": "tabWeeklyPlan",
     gym: "tabGym",
@@ -1445,7 +1809,7 @@ function showTab(tabName) {
   if (content) content.classList.add("active");
 
   /* Match nav button - weekly-plan maps to diet nav btn */
-  const navTab = tabName === "weekly-plan" ? "diet" : tabName;
+  const navTab = tabName === "weekly-plan" ? "diet" : tabName === "burn" ? "home" : tabName;
   const btn = document.querySelector(`[data-tab="${navTab}"]`);
   if (btn) btn.classList.add("active");
 
@@ -1889,27 +2253,184 @@ function applyMealSpecificSanityAdjustments(description, nutrition, gramsHint) {
   return adjusted;
 }
 
-function estimateMealSegment(segmentText, db, overrideGrams = null) {
-  const text = normalizeFoodKey(segmentText);
-  const matchedKey = findBestFoodMatch(text, db);
-  const inferredGrams = inferQuantityFromDescription(
-    text,
-    matchedKey ? findFoodPortionHint(matchedKey) : 100
-  );
-  const grams = Math.max(1, Number(overrideGrams || inferredGrams || 100));
+function addNutritionTotals(target, addition) {
+  const dest = target || zeroNutritionTotals();
+  const source = normalizeNutrition(addition || {});
+  dest.kcal += Number(source.kcal || 0);
+  nutrientFields.forEach((field) => {
+    dest[field] += Number(source[field] || 0);
+  });
+  return dest;
+}
 
-  if (matchedKey) {
-    return {
+function deriveCountBasedFoodConfig(unitText) {
+  const unit = String(unitText || "").toLowerCase();
+  if (unit.includes("egg")) return { foodLookup: "egg", gramsPerUnit: 50 };
+  if (unit.includes("roti") || unit.includes("chapati")) return { foodLookup: "roti", gramsPerUnit: 40 };
+  if (unit.includes("slice")) return { foodLookup: "bread", gramsPerUnit: 30 };
+  if (unit.includes("banana")) return { foodLookup: "banana", gramsPerUnit: 118 };
+  return null;
+}
+
+function extractCountBasedComponents(segmentText, db) {
+  let working = String(segmentText || "");
+  const components = [];
+
+  const countPattern = /(\d+(?:\.\d+)?)\s*(eggs?|rotis?|chapatis?|slices?|bananas?)\b/gi;
+  working = working.replace(countPattern, (fullMatch, countText, unitText) => {
+    const config = deriveCountBasedFoodConfig(unitText);
+    const count = Number(countText);
+    if (!config || !Number.isFinite(count) || count <= 0) return " ";
+
+    const matchedKey = findBestFoodMatch(config.foodLookup, db);
+    if (!matchedKey || !db[matchedKey]) return " ";
+
+    const grams = Math.max(1, count * config.gramsPerUnit);
+    components.push({
+      source: "dataset",
+      label: `${count} ${unitText}`,
       grams,
+      matchedKey,
       nutrition: scaleNutrition(db[matchedKey], grams),
-      matched: true,
-    };
-  }
+    });
+
+    return " ";
+  });
 
   return {
-    grams,
-    nutrition: estimateUnknownFood(text, grams),
-    matched: false,
+    components,
+    remainder: working.replace(/\s+/g, " ").trim(),
+  };
+}
+
+function summarizeMealComponents(components) {
+  const knownTotals = zeroNutritionTotals();
+  const unknownComponents = [];
+  let totalGrams = 0;
+
+  (components || []).forEach((component) => {
+    const grams = Math.max(0, Number(component?.grams || 0));
+    totalGrams += grams;
+
+    if (component?.source === "dataset") {
+      addNutritionTotals(knownTotals, component.nutrition);
+    } else {
+      unknownComponents.push({
+        label: String(component?.label || "unknown component"),
+        grams,
+      });
+    }
+  });
+
+  return { knownTotals, unknownComponents, totalGrams };
+}
+
+function buildHybridMealComponents(description, qtyInput, db) {
+  const rawText = String(description || "").trim();
+  const explicitQty = Number(qtyInput);
+  const hasExplicitQty = Number.isFinite(explicitQty) && explicitQty > 0;
+
+  const components = [];
+  let workingText = rawText;
+  const normalizedText = normalizeFoodKey(rawText);
+
+  const eggCountMatch = normalizedText.match(/(\d+(?:\.\d+)?)\s*eggs?\b/i);
+  const eggCount = eggCountMatch ? Number(eggCountMatch[1]) : 0;
+
+  if (/egg curry/.test(normalizedText) && eggCount > 0) {
+    const eggKey = findBestFoodMatch("egg", db) || "egg";
+    const eggGrams = eggCount * 50;
+
+    if (db[eggKey]) {
+      components.push({
+        source: "dataset",
+        label: `eggs (${eggCount})`,
+        grams: eggGrams,
+        matchedKey: eggKey,
+        nutrition: scaleNutrition(db[eggKey], eggGrams),
+      });
+    }
+
+    const inferredMealQty = Number(
+      inferQuantityFromDescription(rawText, hasExplicitQty ? explicitQty : eggGrams + 160) ||
+        (hasExplicitQty ? explicitQty : eggGrams + 160)
+    );
+    const gravyGrams = Math.max(60, inferredMealQty - eggGrams);
+
+    components.push({
+      source: "unknown",
+      label: "egg curry gravy",
+      grams: gravyGrams,
+    });
+
+    workingText = workingText
+      .replace(/(\d+(?:\.\d+)?)\s*eggs?\b/gi, " ")
+      .replace(/egg curry/gi, "curry gravy")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  const segments = splitMealDescription(workingText);
+  segments.forEach((segment) => {
+    const { components: countedComponents, remainder } = extractCountBasedComponents(segment, db);
+    countedComponents.forEach((component) => components.push(component));
+
+    const segmentText = String(remainder || "").trim();
+    if (!segmentText) return;
+
+    const matchedKey = findBestFoodMatch(segmentText, db);
+    const grams = Math.max(
+      1,
+      Number(inferQuantityFromDescription(segmentText, matchedKey ? findFoodPortionHint(matchedKey) : 100) || 100)
+    );
+
+    if (matchedKey && db[matchedKey]) {
+      components.push({
+        source: "dataset",
+        label: segmentText,
+        grams,
+        matchedKey,
+        nutrition: scaleNutrition(db[matchedKey], grams),
+      });
+      return;
+    }
+
+    components.push({
+      source: "unknown",
+      label: segmentText,
+      grams,
+    });
+  });
+
+  if (!components.length) {
+    const grams = Math.max(1, Number(hasExplicitQty ? explicitQty : inferQuantityFromDescription(rawText, 100) || 100));
+    components.push({
+      source: "unknown",
+      label: rawText || "meal",
+      grams,
+    });
+  }
+
+  const preScaleSummary = summarizeMealComponents(components);
+  if (hasExplicitQty && preScaleSummary.totalGrams > 0) {
+    const scale = explicitQty / preScaleSummary.totalGrams;
+    components.forEach((component) => {
+      component.grams = Math.max(1, Number(component.grams || 0) * scale);
+      if (component.source === "dataset" && component.nutrition) {
+        component.nutrition.kcal *= scale;
+        nutrientFields.forEach((field) => {
+          component.nutrition[field] *= scale;
+        });
+      }
+    });
+  }
+
+  const summary = summarizeMealComponents(components);
+  return {
+    components,
+    knownTotals: summary.knownTotals,
+    unknownComponents: summary.unknownComponents,
+    totalGrams: hasExplicitQty ? explicitQty : summary.totalGrams,
   };
 }
 
@@ -1918,55 +2439,23 @@ function estimateFromFoodDb(description, qtyInput = null) {
   if (!foodDatasetLoaded && !foodDatasetLoadPromise) {
     loadFoodDatasetIfNeeded().catch(() => {});
   }
+
   const db = getMergedFoodDb();
-
-  const explicitQty = Number(qtyInput);
-  const hasExplicitQty = Number.isFinite(explicitQty) && explicitQty > 0;
-
-  const segments = splitMealDescription(text);
-
-  if (!segments.length) {
-    return applyMealSpecificSanityAdjustments(
-      text,
-      estimateUnknownFood(text, hasExplicitQty ? explicitQty : 100),
-      hasExplicitQty ? explicitQty : 100
-    );
-  }
-
-  if (segments.length === 1) {
-    const segmentEstimate = estimateMealSegment(segments[0], db, hasExplicitQty ? explicitQty : null);
-    return applyMealSpecificSanityAdjustments(
-      text,
-      segmentEstimate.nutrition,
-      hasExplicitQty ? explicitQty : segmentEstimate.grams
-    );
-  }
+  const hybrid = buildHybridMealComponents(text, qtyInput, db);
 
   const combined = zeroNutritionTotals();
-  let inferredTotalGrams = 0;
+  addNutritionTotals(combined, hybrid.knownTotals);
 
-  segments.forEach((segment) => {
-    const segmentEstimate = estimateMealSegment(segment, db);
-    inferredTotalGrams += segmentEstimate.grams;
-    combined.kcal += segmentEstimate.nutrition.kcal;
-    nutrientFields.forEach((field) => {
-      combined[field] += Number(segmentEstimate.nutrition[field] || 0);
-    });
+  hybrid.unknownComponents.forEach((component) => {
+    addNutritionTotals(combined, estimateUnknownFood(component.label, component.grams));
   });
 
-  if (hasExplicitQty && inferredTotalGrams > 0) {
-    const scale = explicitQty / inferredTotalGrams;
-    combined.kcal *= scale;
-    nutrientFields.forEach((field) => {
-      combined[field] *= scale;
-    });
-  }
-
-  return applyMealSpecificSanityAdjustments(
-    text,
-    combined,
-    hasExplicitQty ? explicitQty : inferredTotalGrams
+  const gramsHint = Math.max(
+    1,
+    Number(hybrid.totalGrams || inferQuantityFromDescription(text, qtyInput || 100) || qtyInput || 100)
   );
+
+  return applyMealSpecificSanityAdjustments(text, combined, gramsHint);
 }
 
 function fillMealFormFromEstimate(estimation) {
@@ -2085,6 +2574,63 @@ function estimateCaloriesFromNutrition(nutrition) {
   return protein * 4 + carbs * 4 + fat * 9;
 }
 
+function parseAiNutritionPayload(parsed) {
+  return {
+    kcal: pickNumericValue(parsed, ["kcal", "calories"]),
+    protein: pickNumericValue(parsed, ["protein"]),
+    carbs: pickNumericValue(parsed, ["carbs", "carbohydrates"]),
+    fiber: pickNumericValue(parsed, ["fiber"]),
+    sugar: pickNumericValue(parsed, ["sugar", "sugars"]),
+    fat: pickNumericValue(parsed, ["fat", "totalFat"]),
+    satFat: pickNumericValue(parsed, ["saturatedFat", "satFat", "saturated_fat"]),
+    polyFat: pickNumericValue(parsed, ["polyunsaturatedFat", "polyFat", "polyunsaturated_fat"]),
+    monoFat: pickNumericValue(parsed, ["monounsaturatedFat", "monoFat", "monounsaturated_fat"]),
+    transFat: pickNumericValue(parsed, ["transFat", "trans_fat"]),
+    cholesterol: pickNumericValue(parsed, ["cholesterolMg", "cholesterol"]),
+    sodium: pickNumericValue(parsed, ["sodiumMg", "sodium"]),
+    potassium: pickNumericValue(parsed, ["potassiumMg", "potassium"]),
+    vitaminA: pickNumericValue(parsed, ["vitaminAMcg", "vitaminA"]),
+    vitaminC: pickNumericValue(parsed, ["vitaminCMg", "vitaminC"]),
+    calcium: pickNumericValue(parsed, ["calciumMg", "calcium"]),
+    iron: pickNumericValue(parsed, ["ironMg", "iron"]),
+  };
+}
+
+function buildHybridCompositionPrompt(hybrid, description, db) {
+  const knownComponents = hybrid.components
+    .filter((component) => component.source === "dataset")
+    .map((component, idx) => `${idx + 1}. ${component.label} -> dataset key "${component.matchedKey}", qty ${formatNum(component.grams, 0)}g`)
+    .join("\n");
+
+  const unknownComponents = hybrid.unknownComponents
+    .map((component, idx) => `${idx + 1}. ${component.label}, qty ${formatNum(component.grams, 0)}g`)
+    .join("\n");
+
+  const references = buildFoodReferenceSnippet(description, hybrid.totalGrams, db);
+  const knownTotals = normalizeNutrition(hybrid.knownTotals);
+
+  return `Meal description:
+"${description}"
+
+Total quantity: ${formatNum(hybrid.totalGrams, 0)} grams.
+
+Known components already computed from dataset (do NOT recalculate these):
+${knownComponents || "none"}
+
+Known dataset subtotal already fixed:
+${JSON.stringify(knownTotals)}
+
+Unknown components requiring estimation:
+${unknownComponents || "none"}
+
+Reference foods from merged dataset:
+${references}
+
+Return ONLY nutrition totals for UNKNOWN components as strict JSON with numeric fields:
+kcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg, confidence.
+No explanation.`;
+}
+
 async function aiEstimateMeal() {
   const description = select("mealDescription")?.value.trim();
   if (!description) {
@@ -2097,38 +2643,31 @@ async function aiEstimateMeal() {
   await loadFoodDatasetIfNeeded();
 
   const qtyInput = parseOptionalNumber("mealQty");
-  const qty = Number(qtyInput || inferQuantityFromDescription(description, 100) || 100);
-  setText("mealStatus", "AI is estimating full nutrition profile using merged food dataset references...");
+  const db = getMergedFoodDb();
+  const hybrid = buildHybridMealComponents(description, qtyInput, db);
+  const qty = Number(hybrid.totalGrams || qtyInput || inferQuantityFromDescription(description, 100) || 100);
+
+  setText("mealStatus", "AI is estimating unknown meal components and merging with dataset nutrients...");
 
   try {
-    const db = getMergedFoodDb();
-    const foodReferences = buildFoodReferenceSnippet(description, qty, db);
+    if (!hybrid.unknownComponents.length) {
+      const correctedDatasetOnly = applyMealSpecificSanityAdjustments(description, hybrid.knownTotals, qty);
+      fillMealFormFromEstimate(correctedDatasetOnly);
+      if (select("mealQty") && !select("mealQty").value) {
+        select("mealQty").value = Math.round(qty);
+      }
+      setText("mealStatus", "All components matched dataset directly. Estimate is dataset-only.");
+      return;
+    }
 
-    const prompt = `You are finalizing nutrition for this meal description:
-"${description}"
-
-Total quantity: ${qty} grams.
-
-Reference foods from verified Indian dataset:
-${foodReferences}
-
-Rules:
-1) Use meal context words like restaurant, homemade, curry, fried, grilled.
-2) Handle multi-item meals and quantity text intelligently.
-3) Keep macros realistic by edible mass.
-4) For "egg curry with N eggs", protein should roughly align with N eggs plus small gravy protein.
-5) Your JSON numbers are final.
-
-Return strict JSON with only numeric fields:
-kcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg, confidence.
-No commentary.`;
+    const prompt = buildHybridCompositionPrompt(hybrid, description, db);
 
     const raw = await callOpenRouter(
       [
         {
           role: "system",
           content:
-            "You are a nutrition estimation engine for Indian foods. Use provided references, apply context from description, and return exactly one JSON object with numeric values only.",
+            "You are a nutrition estimation engine for Indian foods. Estimate only unknown components using meal context and keep outputs physically realistic.",
         },
         {
           role: "user",
@@ -2140,27 +2679,12 @@ No commentary.`;
 
     const parsed = extractJsonObject(raw);
 
-    const aiNutrition = {
-      kcal: pickNumericValue(parsed, ["kcal", "calories"]),
-      protein: pickNumericValue(parsed, ["protein"]),
-      carbs: pickNumericValue(parsed, ["carbs", "carbohydrates"]),
-      fiber: pickNumericValue(parsed, ["fiber"]),
-      sugar: pickNumericValue(parsed, ["sugar", "sugars"]),
-      fat: pickNumericValue(parsed, ["fat", "totalFat"]),
-      satFat: pickNumericValue(parsed, ["saturatedFat", "satFat", "saturated_fat"]),
-      polyFat: pickNumericValue(parsed, ["polyunsaturatedFat", "polyFat", "polyunsaturated_fat"]),
-      monoFat: pickNumericValue(parsed, ["monounsaturatedFat", "monoFat", "monounsaturated_fat"]),
-      transFat: pickNumericValue(parsed, ["transFat", "trans_fat"]),
-      cholesterol: pickNumericValue(parsed, ["cholesterolMg", "cholesterol"]),
-      sodium: pickNumericValue(parsed, ["sodiumMg", "sodium"]),
-      potassium: pickNumericValue(parsed, ["potassiumMg", "potassium"]),
-      vitaminA: pickNumericValue(parsed, ["vitaminAMcg", "vitaminA"]),
-      vitaminC: pickNumericValue(parsed, ["vitaminCMg", "vitaminC"]),
-      calcium: pickNumericValue(parsed, ["calciumMg", "calcium"]),
-      iron: pickNumericValue(parsed, ["ironMg", "iron"]),
-    };
+    const unknownEstimated = parseAiNutritionPayload(parsed);
+    const combinedNutrition = zeroNutritionTotals();
+    addNutritionTotals(combinedNutrition, hybrid.knownTotals);
+    addNutritionTotals(combinedNutrition, unknownEstimated);
 
-    const corrected = applyMealSpecificSanityAdjustments(description, aiNutrition, qty);
+    const corrected = applyMealSpecificSanityAdjustments(description, combinedNutrition, qty);
 
     fillMealFormFromEstimate(corrected);
 
@@ -2171,12 +2695,13 @@ No commentary.`;
 
     const confidence = pickNumericValue(parsed, ["confidence"], 0);
     const confidenceText = confidence > 0 ? ` (confidence ${Math.round(confidence)}%)` : "";
-    const sourceText = foodDatasetLoaded ? "dataset-guided AI" : "AI";
-    setText("mealStatus", `${sourceText} estimate ready${confidenceText}. Review and save.`);
+    const knownCount = hybrid.components.filter((component) => component.source === "dataset").length;
+    const unknownCount = hybrid.unknownComponents.length;
+    setText("mealStatus", `Hybrid estimate ready${confidenceText}: dataset components ${knownCount}, AI-estimated components ${unknownCount}.`);
   } catch {
     const fallback = estimateFromFoodDb(description, qty);
     fillMealFormFromEstimate(fallback);
-    setText("mealStatus", "AI estimate failed. Used dataset estimate instead.");
+    setText("mealStatus", "AI estimate failed. Used dataset + heuristic composition estimate instead.");
   }
 }
 
@@ -2391,8 +2916,124 @@ function getSpeechErrorMessage(errorCode) {
   }
 }
 
+async function startNativeVoiceInput(targetInputId = "mealDescription") {
+  const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
+  const speechPlugin = window.Capacitor?.Plugins?.SpeechRecognition;
+  const input = select(targetInputId);
+  if (!isNativeApp || !speechPlugin || !input) return false;
+
+  try {
+    const availability = await speechPlugin.available();
+    if (!availability?.available) {
+      const message = "Speech recognition is not available on this device.";
+      showToast(message, "error");
+      setText("mealStatus", message);
+      return true;
+    }
+
+    const hasPermissionResult = await speechPlugin.hasPermission();
+    let granted = Boolean(hasPermissionResult?.permission);
+    if (!granted) {
+      const requested = await speechPlugin.requestPermission();
+      granted = Boolean(requested?.permission);
+    }
+
+    if (!granted) {
+      const message = "Microphone permission denied. Enable it in app permissions.";
+      showToast(message, "error");
+      setText("mealStatus", message);
+      return true;
+    }
+
+    setText("mealStatus", "Listening with native microphone... speak your meal now.");
+
+    const transcript = await new Promise((resolve, reject) => {
+      let settled = false;
+      let timer = null;
+      let listener = null;
+
+      const cleanup = async () => {
+        if (timer) clearTimeout(timer);
+        try {
+          await speechPlugin.stop();
+        } catch {}
+        if (listener?.remove) {
+          try {
+            await listener.remove();
+          } catch {}
+        }
+      };
+
+      const resolveOnce = async (value) => {
+        if (settled) return;
+        settled = true;
+        await cleanup();
+        resolve(value);
+      };
+
+      const rejectOnce = async (error) => {
+        if (settled) return;
+        settled = true;
+        await cleanup();
+        reject(error);
+      };
+
+      (async () => {
+        try {
+          listener = await speechPlugin.addListener("partialResults", (event) => {
+            const first = String(event?.matches?.[0] || "").trim();
+            if (first) {
+              resolveOnce(first);
+            }
+          });
+
+          timer = setTimeout(() => {
+            rejectOnce(new Error("no-speech"));
+          }, 14000);
+
+          const started = await speechPlugin.start({
+            language: "en-IN",
+            maxResults: 1,
+            partialResults: true,
+            popup: true,
+            prompt: "Describe your meal",
+          });
+
+          const direct = String(started?.matches?.[0] || "").trim();
+          if (direct) {
+            resolveOnce(direct);
+          }
+        } catch (error) {
+          rejectOnce(error);
+        }
+      })();
+    });
+
+    const finalText = String(transcript || "").trim();
+    if (!finalText) {
+      const message = "No speech captured. Try again and speak clearly.";
+      showToast(message, "error");
+      setText("mealStatus", message);
+      return true;
+    }
+
+    input.value = finalText;
+    setText("mealStatus", "Voice captured with native recognizer.");
+    showToast("Voice captured successfully.", "success");
+    return true;
+  } catch (error) {
+    console.warn("Native speech recognition failed", error);
+    const message = "Native speech recognition failed. Trying browser voice fallback.";
+    setText("mealStatus", message);
+    return false;
+  }
+}
+
 async function startVoiceInput(targetInputId = "mealDescription") {
   const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
+
+  const nativeHandled = await startNativeVoiceInput(targetInputId);
+  if (nativeHandled) return;
 
   if (!isNativeApp && !window.isSecureContext && location.hostname !== "localhost") {
     showToast("Voice input needs HTTPS.", "error");
@@ -2616,24 +3257,94 @@ function handleMorningSubmit(e) {
   e.preventDefault();
   const log = ensureGymLogForDate();
 
-  log.morningActivityType = select("morningActivityType")?.value || "walk";
+  log.morningActivityType = select("morningActivityType")?.value || "running";
   log.morningMinutes = Number(select("morningMinutes")?.value || 0);
   log.morningDone = Boolean(select("morningDone")?.checked);
   log.absDone = Boolean(select("absDone")?.checked);
   log.morningNotes = select("morningNotes")?.value || "";
+  log.morningCustomActivity = String(select("morningCustomActivity")?.value || "").trim();
+  log.morningCustomMet = Number(select("morningCustomMet")?.value || 6.5);
 
   saveState();
+  renderCalorieRing();
+  renderHeaderStats();
+  renderDashboard();
+  renderBurnPage();
   showToast("Morning check-in saved! 🌅", "success");
 }
 
 function renderMorningForm() {
   const log = ensureGymLogForDate();
 
-  if (select("morningActivityType")) select("morningActivityType").value = log.morningActivityType || "walk";
+  if (select("morningActivityType")) select("morningActivityType").value = log.morningActivityType || "running";
   if (select("morningMinutes")) select("morningMinutes").value = log.morningMinutes || "";
   if (select("morningDone")) select("morningDone").checked = Boolean(log.morningDone);
   if (select("absDone")) select("absDone").checked = Boolean(log.absDone);
   if (select("morningNotes")) select("morningNotes").value = log.morningNotes || "";
+  if (select("morningCustomActivity")) select("morningCustomActivity").value = log.morningCustomActivity || "";
+  if (select("morningCustomMet")) select("morningCustomMet").value = log.morningCustomMet || "";
+}
+
+function openMorningActivityGuide() {
+  const log = ensureGymLogForDate();
+  const activityType = select("morningActivityType")?.value || log.morningActivityType || "running";
+  const config = morningActivityCatalog[activityType] || morningActivityCatalog.running;
+  const customActivityInput = String(select("morningCustomActivity")?.value || log.morningCustomActivity || "").trim();
+
+  const label =
+    activityType === "custom" && customActivityInput
+      ? customActivityInput
+      : config.label;
+
+  openExerciseModal({
+    name: label,
+    sets: `${Math.max(0, Number(log.morningMinutes || 20)) || 20} min`,
+    cues: "Warm up first, keep posture upright, and maintain controlled breathing.",
+    gifQuery: config.gifQuery,
+  });
+}
+
+function handleBurnSubmit(e) {
+  e.preventDefault();
+
+  const selectedDate = select("burnDate")?.value || todayDate();
+  const log = ensureGymLogForDate(selectedDate);
+
+  log.steps = Math.max(0, Number(select("stepCount")?.value || 0));
+  log.sleepHours = Math.max(0, Number(select("sleepHours")?.value || 0));
+
+  saveState();
+  renderCalorieRing();
+  renderHeaderStats();
+  renderBurnPage(selectedDate);
+  showToast("Burn tracker updated.", "success");
+}
+
+function renderBurnPage(date = null) {
+  const selectedDate = date || select("burnDate")?.value || todayDate();
+  const log = ensureGymLogForDate(selectedDate);
+
+  if (select("burnDate")) select("burnDate").value = selectedDate;
+  if (select("stepCount")) select("stepCount").value = log.steps || "";
+  if (select("sleepHours")) select("sleepHours").value = log.sleepHours || "";
+
+  const burn = calculateDailyBurn(selectedDate);
+  const summary = select("burnSummaryGrid");
+  if (summary) {
+    summary.innerHTML = `
+      <div class="summary-box"><div>Morning Session</div><div>${formatNum(burn.morning, 0)} kcal</div></div>
+      <div class="summary-box"><div>Abs Circuit</div><div>${formatNum(burn.abs, 0)} kcal</div></div>
+      <div class="summary-box"><div>Evening Session</div><div>${formatNum(burn.evening, 0)} kcal</div></div>
+      <div class="summary-box"><div>Steps Burn</div><div>${formatNum(burn.steps, 0)} kcal</div></div>
+      <div class="summary-box"><div>Sleep Burn</div><div>${formatNum(burn.sleep, 0)} kcal</div></div>
+      <div class="summary-box"><div>Total Burn</div><div>${formatNum(burn.total, 0)} kcal</div></div>
+    `;
+  }
+
+  const insight = select("burnInsight");
+  if (insight) {
+    insight.textContent = `${burn.dayName}: calories burnt includes completed morning/evening workouts, abs, steps, and sleep.`;
+  }
 }
 
 function handleWeightSubmit(e) {
@@ -3063,6 +3774,142 @@ function clearToday() {
   renderAll();
 }
 
+function formatTimerClock(totalSeconds) {
+  const seconds = Math.max(0, Math.round(Number(totalSeconds || 0)));
+  const mins = Math.floor(seconds / 60);
+  const secs = seconds % 60;
+  return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+function renderWorkoutTimer() {
+  if (!activeWorkoutTimer) {
+    setText("timerExerciseLabel", "No active timer. Tap Start Timer on any exercise.");
+    setText("timerDisplay", "00:00");
+    return;
+  }
+
+  const stateLabel = activeWorkoutTimer.paused ? "paused" : "running";
+  setText("timerExerciseLabel", `${activeWorkoutTimer.label} (${stateLabel})`);
+  setText("timerDisplay", formatTimerClock(activeWorkoutTimer.remainingSec));
+}
+
+function clearWorkoutTimerState() {
+  if (workoutTimerInterval) {
+    clearInterval(workoutTimerInterval);
+    workoutTimerInterval = null;
+  }
+  activeWorkoutTimer = null;
+  renderWorkoutTimer();
+}
+
+function startExerciseTimer(encodedName, seconds) {
+  const label = decodeURIComponent(encodedName || "Exercise");
+  const durationSec = Math.max(10, Math.round(Number(seconds || 45)));
+
+  if (workoutTimerInterval) {
+    clearInterval(workoutTimerInterval);
+    workoutTimerInterval = null;
+  }
+
+  activeWorkoutTimer = {
+    label,
+    remainingSec: durationSec,
+    paused: false,
+  };
+
+  renderWorkoutTimer();
+
+  workoutTimerInterval = setInterval(() => {
+    if (!activeWorkoutTimer || activeWorkoutTimer.paused) return;
+    activeWorkoutTimer.remainingSec -= 1;
+    if (activeWorkoutTimer.remainingSec <= 0) {
+      clearWorkoutTimerState();
+      showToast(`${label} timer complete.`, "success");
+      return;
+    }
+    renderWorkoutTimer();
+  }, 1000);
+}
+
+function pauseWorkoutTimer() {
+  if (!activeWorkoutTimer) return;
+  activeWorkoutTimer.paused = true;
+  renderWorkoutTimer();
+}
+
+function resumeWorkoutTimer() {
+  if (!activeWorkoutTimer) return;
+  activeWorkoutTimer.paused = false;
+  renderWorkoutTimer();
+}
+
+function resetWorkoutTimer() {
+  clearWorkoutTimerState();
+}
+
+function exportStrengthCsv() {
+  const rows = [];
+  const entries = Object.entries(state.gymLogsByDate || {}).sort((a, b) => a[0].localeCompare(b[0]));
+
+  entries.forEach(([date, log]) => {
+    const dayName = dayNameFromDate(date);
+    const workout = getEveningWorkoutForDay(dayName);
+    if (!workout || workout.isOff) return;
+
+    workout.exercises.forEach((exercise, idx) => {
+      const key = `${dayName}-${idx}`;
+      const done = Boolean(log?.exerciseDone?.[key]);
+      const loadKg = Number(log?.exerciseWeights?.[key] || 0);
+      const parsed = parseSetPrescription(exercise.sets);
+      const reps = Number(parsed.repsPerSet || 0);
+      const estOneRm = loadKg > 0 && reps > 0 ? loadKg * (1 + reps / 30) : 0;
+
+      rows.push({
+        date,
+        day: dayName,
+        split: workout.title,
+        exercise: exercise.name,
+        setsReps: exercise.sets,
+        weightKg: loadKg > 0 ? formatNum(loadKg, 1) : "",
+        completed: done ? "Yes" : "No",
+        estOneRmKg: estOneRm > 0 ? formatNum(estOneRm, 1) : "",
+      });
+    });
+  });
+
+  if (!rows.length) {
+    showToast("No strength workout data available yet.", "error");
+    return;
+  }
+
+  const toCell = (value) => `"${String(value ?? "").replace(/"/g, '""')}"`;
+  const header = ["Date", "Day", "Split", "Exercise", "Prescription", "Weight (kg)", "Completed", "Est. 1RM (kg)"];
+  const lines = [header.map(toCell).join(",")];
+
+  rows.forEach((row) => {
+    lines.push([
+      row.date,
+      row.day,
+      row.split,
+      row.exercise,
+      row.setsReps,
+      row.weightKg,
+      row.completed,
+      row.estOneRmKg,
+    ].map(toCell).join(","));
+  });
+
+  const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `dad-bod-strength-${todayDate()}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+
+  showToast("Strength CSV exported for Excel.", "success");
+}
+
 function openExerciseGuide(encodedName) {
   const exerciseName = decodeURIComponent(encodedName || "");
   const workout = findTodayWorkout();
@@ -3126,7 +3973,7 @@ function openExerciseModal(exercise) {
     gifEl.alt = `${exercise.name} guide`;
   }
 
-  const query = getExerciseSearchQuery(exercise.name);
+  const query = exercise.gifQuery || getExerciseSearchQuery(exercise.name);
   const videoBtn = select("modalVideoBtn");
   if (videoBtn) videoBtn.dataset.query = query;
 
@@ -3235,9 +4082,12 @@ function renderAll() {
   renderMealsList();
   renderNutrientSummary();
   renderWeeklyPlan();
+  renderWorkoutPreferences();
   renderTodayWorkout();
   renderAbsCircuit();
   renderMorningForm();
+  renderBurnPage();
+  renderWorkoutTimer();
 
   if (select("weightDate")) select("weightDate").value = todayDate();
   if (select("photoDate") && !select("photoDate").value) select("photoDate").value = todayDate();
@@ -3272,7 +4122,17 @@ function bindAppEvents() {
   select("planWizardBtn")?.addEventListener("click", startWeeklyPlanWizard);
   select("planVoiceBtn")?.addEventListener("click", startWeeklyVoiceFill);
 
+  select("workoutPrefsForm")?.addEventListener("submit", handleWorkoutPrefsSubmit);
   select("morningForm")?.addEventListener("submit", handleMorningSubmit);
+  select("morningGuideBtn")?.addEventListener("click", openMorningActivityGuide);
+  select("burnForm")?.addEventListener("submit", handleBurnSubmit);
+  select("burnDate")?.addEventListener("change", () => renderBurnPage(select("burnDate")?.value || todayDate()));
+
+  select("exportStrengthBtn")?.addEventListener("click", exportStrengthCsv);
+  select("timerPauseBtn")?.addEventListener("click", pauseWorkoutTimer);
+  select("timerResumeBtn")?.addEventListener("click", resumeWorkoutTimer);
+  select("timerResetBtn")?.addEventListener("click", resetWorkoutTimer);
+
   select("weightForm")?.addEventListener("submit", handleWeightSubmit);
   select("photoForm")?.addEventListener("submit", handlePhotoSubmit);
   select("aiPhotoAnalyzeBtn")?.addEventListener("click", analyzePhotoWithAI);
@@ -3325,6 +4185,8 @@ function exposeWindowActions() {
   window.scrollToTab = scrollToTab;
   window.toggleExercise = toggleExercise;
   window.toggleAbsExercise = toggleAbsExercise;
+  window.updateExerciseWeight = updateExerciseWeight;
+  window.startExerciseTimer = startExerciseTimer;
   window.startEditMeal = startEditMeal;
   window.cancelEditMeal = cancelEditMeal;
   window.deleteMeal = deleteMeal;

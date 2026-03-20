@@ -75,7 +75,6 @@
               <img src="assets/icon.svg" alt="Dad Bod" class="header-logo-small" />
               <div>
                 <h1 id="brandTitle">Dad Bod</h1>
-                <p class="tagline" id="brandTagline">Built Dream Physique</p>
               </div>
             </div>
             <div class="header-actions">
@@ -101,21 +100,43 @@
           <!-- Calorie Ring -->
           <article class="card">
             <div class="calorie-ring-section">
-              <div class="calorie-ring-wrapper">
-                <svg width="180" height="180" viewBox="0 0 180 180">
-                  <defs>
-                    <linearGradient id="calorieGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                      <stop offset="0%" stop-color="#FF6B35" />
-                      <stop offset="100%" stop-color="#FF8F5E" />
-                    </linearGradient>
-                  </defs>
-                  <circle class="calorie-ring-bg" cx="90" cy="90" r="78" />
-                  <circle class="calorie-ring-fill" id="calorieRing" cx="90" cy="90" r="78"
-                    stroke-dasharray="490" stroke-dashoffset="490" />
-                </svg>
-                <div class="calorie-ring-center">
-                  <div class="calorie-ring-value" id="calorieRingValue">0</div>
-                  <div class="calorie-ring-label">remaining</div>
+              <div class="ring-row">
+                <div class="calorie-ring-wrapper">
+                  <svg width="180" height="180" viewBox="0 0 180 180">
+                    <defs>
+                      <linearGradient id="calorieGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#FF6B35" />
+                        <stop offset="100%" stop-color="#FF8F5E" />
+                      </linearGradient>
+                    </defs>
+                    <circle class="calorie-ring-bg" cx="90" cy="90" r="78" />
+                    <circle class="calorie-ring-fill" id="calorieRing" cx="90" cy="90" r="78"
+                      stroke-dasharray="490" stroke-dashoffset="490" />
+                  </svg>
+                  <div class="calorie-ring-center">
+                    <div class="calorie-ring-value" id="calorieRingValue">0</div>
+                    <div class="calorie-ring-label">remaining</div>
+                  </div>
+                </div>
+
+                <button class="calorie-ring-wrapper burn-ring-wrapper" type="button" onclick="scrollToTab('burn')" aria-label="Open calorie burn tracker">
+                  <svg width="180" height="180" viewBox="0 0 180 180">
+                    <defs>
+                      <linearGradient id="burnGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stop-color="#00C896" />
+                        <stop offset="100%" stop-color="#4A90D9" />
+                      </linearGradient>
+                    </defs>
+                    <circle class="calorie-ring-bg" cx="90" cy="90" r="78" />
+                    <circle class="calorie-ring-fill burn-ring-fill" id="burnRing" cx="90" cy="90" r="78"
+                      stroke-dasharray="490" stroke-dashoffset="490" />
+                  </svg>
+                  <div class="calorie-ring-center">
+                    <div class="calorie-ring-value" id="burnRingValue">0</div>
+                    <div class="calorie-ring-label">burnt</div>
+                    <div class="calorie-ring-sub" id="burnRingSub">Tap to edit</div>
+                  </div>
+                </button>
                 </div>
               </div>
               <div class="macro-pills" id="macroPills">
@@ -136,6 +157,9 @@
             </button>
             <button class="quick-action-btn" onclick="scrollToTab('progress')">
               <span>⚖️</span> Weight
+            </button>
+            <button class="quick-action-btn" onclick="scrollToTab('burn')">
+              <span>🔥</span> Burn
             </button>
           </div>
 
@@ -175,6 +199,34 @@
               <button class="btn-primary full-width" onclick="scrollToTab('gym')">Start Workout</button>
             </article>
           </div>
+        </section>
+
+        <!-- ===== BURN TAB ===== -->
+        <section id="tabBurn" class="tab-content">
+          <article class="card">
+            <div class="card-icon-title">
+              <div class="card-icon" style="background:linear-gradient(135deg,#E8FFF4,#CCFFE5)">🔥</div>
+              <h2 style="margin-bottom:0">Calories Burnt Tracker</h2>
+            </div>
+            <p class="muted" style="margin-bottom:10px;">Set your daily steps and sleep. Morning/evening session burns are auto-added from workout completion.</p>
+            <form id="burnForm" class="form-grid">
+              <label>
+                <span class="label-text">Date</span>
+                <input type="date" id="burnDate" />
+              </label>
+              <label>
+                <span class="label-text">Steps Walked Today</span>
+                <input type="number" id="stepCount" min="0" step="100" placeholder="e.g., 8500" />
+              </label>
+              <label>
+                <span class="label-text">Sleep Hours</span>
+                <input type="number" id="sleepHours" min="0" max="24" step="0.1" placeholder="e.g., 7.5" />
+              </label>
+              <button class="btn-primary full-width" type="submit">Save Burn Inputs</button>
+            </form>
+            <div id="burnSummaryGrid" class="summary-grid" style="margin-top:12px;"></div>
+            <p id="burnInsight" class="muted" style="margin-top:8px;"></p>
+          </article>
         </section>
 
         <!-- ===== DIET TAB ===== -->
@@ -286,33 +338,73 @@
             <div class="card-icon-title">
               <div class="card-icon workout">💪</div>
               <div>
-                <h2 style="margin-bottom:0">Today: <span id="todayWorkoutDayName"></span></h2>
+                <h2 style="margin-bottom:0">Evening Gym Session: <span id="todayWorkoutDayName"></span></h2>
               </div>
             </div>
+            <form id="workoutPrefsForm" class="form-grid" style="margin-bottom:10px;">
+              <label>
+                <span class="label-text">Gym Closed Day</span>
+                <select id="gymClosedDay">
+                  <option value="Sunday">Sunday</option>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-text">Gym Split Start Day</span>
+                <select id="trainingStartDay">
+                  <option value="Sunday">Sunday</option>
+                  <option value="Monday">Monday</option>
+                  <option value="Tuesday">Tuesday</option>
+                  <option value="Wednesday">Wednesday</option>
+                  <option value="Thursday">Thursday</option>
+                  <option value="Friday">Friday</option>
+                  <option value="Saturday">Saturday</option>
+                </select>
+              </label>
+              <button class="btn-secondary full-width" id="saveWorkoutPrefsBtn" type="submit">Save Workout Setup</button>
+            </form>
             <p id="todayWorkoutNote" class="muted" style="margin-bottom:12px;"></p>
+            <p id="todayWorkoutCycle" class="muted" style="margin-bottom:12px;"></p>
             <div id="todayExerciseList" class="exercise-checklist"></div>
             <p id="workoutCompletionText" class="progress-info" style="margin-top:12px;"></p>
+            <div class="btn-row">
+              <button class="btn-secondary" id="exportStrengthBtn" type="button">📊 Export Strength CSV</button>
+            </div>
           </article>
 
           <article class="card">
             <div class="card-icon-title">
               <div class="card-icon" style="background:linear-gradient(135deg,#FFF0F5,#FFD6E7)">🌅</div>
-              <h2 style="margin-bottom:0">Morning Session</h2>
+              <h2 style="margin-bottom:0">Morning Session (Home, No Equipment)</h2>
             </div>
             <form id="morningForm" class="form-grid">
               <label>
                 <span class="label-text">Activity</span>
                 <select id="morningActivityType">
+                  <option value="running">🏃 Running</option>
+                  <option value="racing">⚡ Racing / Sprint Intervals</option>
+                  <option value="swimming">🏊 Swimming</option>
                   <option value="walk">🚶 Brisk Walk</option>
-                  <option value="march">🏃 March In Place</option>
-                  <option value="jog">🏃 Light Jog In Place</option>
-                  <option value="mobility">🧘 Mobility Flow</option>
+                  <option value="custom">✍️ Custom Activity</option>
                   <option value="none">None Today</option>
                 </select>
               </label>
               <label>
                 <span class="label-text">Duration (min)</span>
                 <input type="number" id="morningMinutes" min="0" placeholder="20" />
+              </label>
+              <label>
+                <span class="label-text">Custom Activity Name (if custom)</span>
+                <input type="text" id="morningCustomActivity" placeholder="e.g., Skipping, Dance Cardio" />
+              </label>
+              <label>
+                <span class="label-text">Custom Intensity MET (optional)</span>
+                <input type="number" id="morningCustomMet" min="2" max="15" step="0.1" placeholder="6.5" />
               </label>
               <label class="checkbox-label">
                 <input type="checkbox" id="morningDone" />
@@ -326,6 +418,7 @@
                 <span class="label-text">Notes</span>
                 <textarea id="morningNotes" rows="2" placeholder="How did the session feel?"></textarea>
               </label>
+              <button class="btn-secondary full-width" id="morningGuideBtn" type="button">🎥 View Activity GIF Guide</button>
               <button class="btn-primary full-width" type="submit">Save Check-in</button>
             </form>
           </article>
@@ -335,8 +428,22 @@
               <div class="card-icon" style="background:linear-gradient(135deg,#F0FFF4,#C6F6D5)">🔥</div>
               <h2 style="margin-bottom:0">Abs Circuit</h2>
             </div>
-            <p class="muted" style="margin-bottom:10px;">No equipment needed. Tap for form guide.</p>
+            <p class="muted" style="margin-bottom:10px;">Advanced daily core workout at home. Use checkboxes + timers + GIF guides.</p>
             <div id="absExerciseList" class="exercise-checklist"></div>
+          </article>
+
+          <article class="card">
+            <div class="card-icon-title">
+              <div class="card-icon" style="background:linear-gradient(135deg,#F5F0FF,#E8DBFF)">⏱️</div>
+              <h2 style="margin-bottom:0">Workout Timer</h2>
+            </div>
+            <p id="timerExerciseLabel" class="muted" style="margin-bottom:6px;">No active timer. Tap Start Timer on any exercise.</p>
+            <div class="timer-value" id="timerDisplay">00:00</div>
+            <div class="btn-row" style="margin-top:10px;">
+              <button class="btn-secondary" type="button" id="timerPauseBtn">Pause</button>
+              <button class="btn-secondary" type="button" id="timerResumeBtn">Resume</button>
+              <button class="btn-ghost" type="button" id="timerResetBtn">Reset</button>
+            </div>
           </article>
         </section>
 

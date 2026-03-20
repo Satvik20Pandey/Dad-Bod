@@ -620,12 +620,37 @@ textarea {
   padding: 20px 0 10px;
 }
 
+.ring-row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  width: 100%;
+  justify-items: center;
+}
+
 .calorie-ring-wrapper {
   position: relative;
-  width: 180px;
-  height: 180px;
+  width: min(180px, 42vw);
+  height: min(180px, 42vw);
   display: grid;
   place-items: center;
+}
+
+.burn-ring-wrapper {
+  border: 0;
+  background: linear-gradient(145deg, rgba(0, 200, 150, 0.08), rgba(74, 144, 217, 0.06));
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.burn-ring-wrapper:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-sm);
+}
+
+.burn-ring-fill {
+  stroke: url(#burnGradient);
 }
 
 .calorie-ring-wrapper svg {
@@ -671,6 +696,13 @@ textarea {
   color: var(--text-muted);
   font-weight: 500;
   margin-top: 2px;
+}
+
+.calorie-ring-sub {
+  margin-top: 2px;
+  font-size: 0.62rem;
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .macro-pills {
@@ -771,7 +803,7 @@ textarea {
 /* ---- Quick Actions Row ---- */
 .quick-actions {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 10px;
 }
 
@@ -1231,6 +1263,14 @@ textarea {
   accent-color: var(--accent);
 }
 
+.timer-value {
+  font-family: "Outfit", sans-serif;
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  color: var(--secondary);
+}
+
 /* ---- Settings Section ---- */
 .settings-section {
   display: grid;
@@ -1643,13 +1683,14 @@ textarea {
   .nav-btn small { font-size: 0.6rem; }
   .user-pill { font-size: 0.68rem; padding: 5px 10px; }
   
-  .quick-actions { grid-template-columns: repeat(3, 1fr); gap: 6px; }
+  .quick-actions { grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .quick-action-btn { padding: 10px 6px; font-size: 0.72rem; }
 }
 
 @media (max-width: 360px) {
   .header-stats { grid-template-columns: repeat(2, 1fr); }
-  .calorie-ring-wrapper { width: 150px; height: 150px; }
+  .ring-row { grid-template-columns: 1fr; }
+  .calorie-ring-wrapper { width: 170px; height: 170px; }
   .calorie-ring-value { font-size: 1.6rem; }
 }
 
