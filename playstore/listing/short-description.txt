@@ -1,1 +1,0 @@
-Smart fitness tracker for meals, workouts, calories, and progress photos.

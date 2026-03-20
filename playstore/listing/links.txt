@@ -1,9 +1,0 @@
-✅ VERIFIED WORKING LINKS (GitHub Pages - Deployed):
-https://satvik20pandey.github.io/Dad-Bod/
-https://satvik20pandey.github.io/Dad-Bod/assets/privacy-policy.html
-https://satvik20pandey.github.io/Dad-Bod/assets/support.html
-
-Alternate URL set (Vercel - if deploying):
-https://<your-vercel-domain>/
-https://<your-vercel-domain>/assets/privacy-policy.html
-https://<your-vercel-domain>/assets/support.html

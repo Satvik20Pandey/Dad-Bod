@@ -1,7 +1,0 @@
-Version 1.0.2
-- Fixed tab isolation so each tab shows only its own page content
-- Redesigned Workout tab into compact Morning and Evening session accordions
-- Added daily evening treadmill finisher (30 min, incline 15, speed 4)
-- Improved workout UI density for faster logging with less scrolling
-- Strengthened app security by removing hardcoded admin/API credentials from source
-- Updated Play Store asset pack and submission documentation
