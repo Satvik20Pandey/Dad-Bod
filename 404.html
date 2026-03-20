@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Redirecting...</title>
+  <script>
+    // Redirect all 404s to the actual files if they exist
+    // This ensures GitHub Pages serves our HTML files correctly
+    const path = window.location.pathname;
+    if (path.includes('/assets/') && (path.includes('privacy-policy') || path.includes('support'))) {
+      // File should exist, don't redirect
+      window.location.href = '/Dad-Bod' + path;
+    } else {
+      // Default to home for actual 404s
+      window.location.href = '/Dad-Bod/';
+    }
+  </script>
+</head>
+<body>
+  <p>Redirecting...</p>
+</body>
+</html>
