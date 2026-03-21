@@ -6,81 +6,153 @@
     <title>Dad Bod Privacy Policy</title>
     <style>
       :root {
-        --bg: #f8fafb;
+        --bg: #f5f8ff;
         --surface: #ffffff;
-        --text: #0f1419;
-        --muted: #536471;
-        --border: #e8ecf0;
+        --text: #121a26;
+        --muted: #4f6077;
+        --border: #dce4ef;
         --primary: #ff6b35;
       }
-      * { box-sizing: border-box; }
+
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         margin: 0;
-        font-family: Arial, sans-serif;
-        background: linear-gradient(145deg, #fff9f5 0%, #f0f4ff 50%, #f0fff8 100%);
+        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
         color: var(--text);
-        line-height: 1.6;
+        line-height: 1.65;
+        background: radial-gradient(circle at 0% 0%, #fff4ee 0%, transparent 35%),
+          radial-gradient(circle at 100% 100%, #eef6ff 0%, transparent 40%), var(--bg);
       }
+
       main {
-        max-width: 860px;
-        margin: 24px auto;
+        max-width: 900px;
+        margin: 28px auto;
         background: var(--surface);
         border: 1px solid var(--border);
         border-radius: 18px;
-        padding: 24px;
+        padding: 28px;
       }
-      h1, h2 { margin: 0 0 12px; }
-      h1 { font-size: 1.7rem; }
-      h2 { font-size: 1.1rem; margin-top: 20px; }
-      p, li { color: var(--muted); }
-      .meta { color: var(--primary); font-weight: 700; }
-      a { color: var(--primary); }
+
+      h1,
+      h2 {
+        margin: 0 0 10px;
+      }
+
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      h2 {
+        margin-top: 20px;
+        font-size: 1.15rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+      }
+
+      .meta {
+        color: var(--primary);
+        font-weight: 700;
+      }
+
+      a {
+        color: var(--primary);
+      }
+
+      @media (max-width: 640px) {
+        main {
+          margin: 12px;
+          padding: 18px;
+        }
+      }
     </style>
   </head>
   <body>
     <main>
       <h1>Dad Bod Privacy Policy</h1>
-      <p class="meta">Last updated: March 20, 2026</p>
+      <p class="meta">Last updated: March 22, 2026</p>
 
-      <h2>Overview</h2>
+      <h2>1. Who We Are</h2>
       <p>
-        Dad Bod is designed to keep your data on your device. Core tracking data, including meals,
-        workouts, weight logs, and progress records, is stored locally in app storage.
+        Dad Bod is a fitness and nutrition tracking app published by Satvik Pandey. This Privacy
+        Policy explains how data is handled when you use the app.
       </p>
 
-      <h2>Data We Process</h2>
+      <h2>2. Information We Process</h2>
       <ul>
-        <li>Account profile details you enter (name, email)</li>
-        <li>Health and fitness data you log (nutrition, workouts, weight, photos)</li>
-        <li>Optional AI inputs when you choose AI features</li>
+        <li>Profile details you enter, such as name and email.</li>
+        <li>Fitness and health entries you create, such as meals, workouts, weight, and photos.</li>
+        <li>Optional voice input and text prompts if you choose those features.</li>
+        <li>Optional API key details you provide for AI features (stored locally on your device).</li>
       </ul>
 
-      <h2>How Data Is Used</h2>
+      <h2>3. How We Use Information</h2>
       <ul>
-        <li>To provide fitness and nutrition tracking features</li>
-        <li>To generate progress insights and workout planning</li>
-        <li>To support optional AI meal and photo analysis only when you trigger it</li>
+        <li>To provide nutrition, workout, and progress-tracking functionality.</li>
+        <li>To generate summaries, insights, and charts in the app.</li>
+        <li>To process optional AI features only when you trigger those actions.</li>
       </ul>
 
-      <h2>Third-Party Services</h2>
+      <h2>4. Where Data Is Stored</h2>
       <p>
-        If you enable optional AI features, relevant input text may be sent to the AI provider using
-        your own API key. Exercise media lookups can use Tenor for GIF guides.
+        Core app data is stored locally on your device (for example, browser/app local storage).
+        Dad Bod does not run a mandatory central account server for core tracking features.
       </p>
 
-      <h2>Data Sharing</h2>
+      <h2>5. Third-Party Services</h2>
+      <p>Dad Bod may interact with third-party services only for optional features you use:</p>
+      <ul>
+        <li>
+          AI processing providers (for example, OpenRouter-connected models) when you submit AI
+          prompts or analysis requests.
+        </li>
+        <li>Tenor (or similar media providers) for exercise GIF/media lookup.</li>
+      </ul>
       <p>
-        Dad Bod does not sell personal data. Data is not shared with advertisers.
+        Those providers may process data according to their own privacy policies. Review their
+        policies before using those features.
       </p>
 
-      <h2>Data Deletion</h2>
+      <h2>6. Data Sharing and Selling</h2>
       <p>
-        You can clear app data from within the app or by uninstalling the app.
+        Dad Bod does not sell your personal data. We do not share personal information with data
+        brokers or advertisers for targeted advertising.
       </p>
 
-      <h2>Contact</h2>
+      <h2>7. Children’s Privacy</h2>
       <p>
-        For privacy requests, contact:
+        Dad Bod is not intended for children under 13 without parent or guardian supervision and
+        consent. If you believe a child provided personal data without permission, contact us and
+        we will help remove it from the device workflow where possible.
+      </p>
+
+      <h2>8. Your Choices and Data Deletion</h2>
+      <ul>
+        <li>You can edit or delete entries directly in the app.</li>
+        <li>You can clear app data in your device settings.</li>
+        <li>You can uninstall the app to remove locally stored app data.</li>
+      </ul>
+
+      <h2>9. Security</h2>
+      <p>
+        We use reasonable measures to protect information handled by the app. No method of storage
+        or transmission is fully guaranteed to be secure.
+      </p>
+
+      <h2>10. Changes to This Policy</h2>
+      <p>
+        We may update this policy from time to time. Updates will be posted on this page with a
+        revised "Last updated" date.
+      </p>
+
+      <h2>11. Contact</h2>
+      <p>
+        If you have privacy questions or requests, contact:
         <a href="mailto:satvikofficial20@gmail.com">satvikofficial20@gmail.com</a>
       </p>
     </main>
