@@ -27,10 +27,21 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Prepare static artifact
+        run: |
+          mkdir -p pages
+          cp index.html pages/
+          cp app.js pages/
+          cp styles.css pages/
+          cp manifest.webmanifest pages/
+          cp service-worker.js pages/
+          cp privacy-policy.html pages/
+          cp -r assets pages/assets
+
       - name: Upload static artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: ./pages
 
       - name: Deploy to GitHub Pages
         id: deployment
