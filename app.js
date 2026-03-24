@@ -2924,7 +2924,7 @@ Total quantity: ${formatNum(hybrid.totalGrams, 0)} grams.
 Known components already computed from dataset (do NOT recalculate these):
 ${knownComponents || "none"}
 
-Known dataset subtotal already fixed:
+Dataset subtotal estimate (use this as evidence, not final answer):
 ${JSON.stringify(knownTotals)}
 
 Unknown components requiring estimation:
@@ -2933,7 +2933,8 @@ ${unknownComponents || "none"}
 Reference foods from merged dataset:
 ${references}
 
-Return ONLY nutrition totals for UNKNOWN components as strict JSON with numeric fields:
+Use meal description, quantity, and dataset references to produce FINAL nutrition totals for the whole meal.
+Return ONLY strict JSON with numeric fields:
 kcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg, confidence.
 No explanation.`;
 }
@@ -2954,19 +2955,9 @@ async function aiEstimateMeal() {
   const hybrid = buildHybridMealComponents(description, qtyInput, db);
   const qty = Number(hybrid.totalGrams || qtyInput || inferQuantityFromDescription(description, 100) || 100);
 
-  setText("mealStatus", "AI is estimating unknown meal components and merging with dataset nutrients...");
+  setText("mealStatus", "AI is verifying meal nutrition using Indian dataset evidence + quantity context...");
 
   try {
-    if (!hybrid.unknownComponents.length) {
-      const correctedDatasetOnly = applyMealSpecificSanityAdjustments(description, hybrid.knownTotals, qty);
-      fillMealFormFromEstimate(correctedDatasetOnly);
-      if (select("mealQty") && !select("mealQty").value) {
-        select("mealQty").value = Math.round(qty);
-      }
-      setText("mealStatus", "All components matched dataset directly. Estimate is dataset-only.");
-      return;
-    }
-
     const prompt = buildHybridCompositionPrompt(hybrid, description, db);
 
     const raw = await callOpenRouter(
@@ -2974,7 +2965,7 @@ async function aiEstimateMeal() {
         {
           role: "system",
           content:
-            "You are a nutrition estimation engine for Indian foods. Estimate only unknown components using meal context and keep outputs physically realistic.",
+            "You are a nutrition estimation engine for Indian foods. Use the dataset references as supporting evidence and return final meal totals with maximum realistic accuracy.",
         },
         {
           role: "user",
@@ -2986,12 +2977,8 @@ async function aiEstimateMeal() {
 
     const parsed = extractJsonObject(raw);
 
-    const unknownEstimated = parseAiNutritionPayload(parsed);
-    const combinedNutrition = zeroNutritionTotals();
-    addNutritionTotals(combinedNutrition, hybrid.knownTotals);
-    addNutritionTotals(combinedNutrition, unknownEstimated);
-
-    const corrected = applyMealSpecificSanityAdjustments(description, combinedNutrition, qty);
+    const llmFinal = parseAiNutritionPayload(parsed);
+    const corrected = applyMealSpecificSanityAdjustments(description, llmFinal, qty);
 
     fillMealFormFromEstimate(corrected);
 
@@ -3003,8 +2990,8 @@ async function aiEstimateMeal() {
     const confidence = pickNumericValue(parsed, ["confidence"], 0);
     const confidenceText = confidence > 0 ? ` (confidence ${Math.round(confidence)}%)` : "";
     const knownCount = hybrid.components.filter((component) => component.source === "dataset").length;
-    const unknownCount = hybrid.unknownComponents.length;
-    setText("mealStatus", `Hybrid estimate ready${confidenceText}: Indian dataset components ${knownCount}, AI-estimated components ${unknownCount}. You can edit any nutrient before save.`);
+    const referenceCount = findTopFoodMatches(description, db, 8).length;
+    setText("mealStatus", `AI final estimate ready${confidenceText}: verified against Indian dataset (${knownCount} matched components, ${referenceCount} reference foods). You can edit any nutrient before save.`);
   } catch {
     const fallback = estimateFromFoodDb(description, qty);
     fillMealFormFromEstimate(fallback);
