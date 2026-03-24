@@ -97,7 +97,7 @@ npx vercel --prod
 ## Project Structure
 
 - `index.html` - App shell and tabs
-- `app-new.js` - Main app logic
+- `app.js` - Main app logic
 - `styles.css` - Premium responsive UI
 - `assets/icon.svg` - Improved DB brand logo
 - `scripts/build-dist.js` - Dist sync helper for Capacitor

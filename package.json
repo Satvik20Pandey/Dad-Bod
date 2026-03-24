@@ -2,7 +2,7 @@
   "name": "diet-plan-and-body-tracker",
   "version": "1.0.2",
   "description": "A mobile-first transformation app with a modern fitness app UI, inspired by MyFitnessPal. Tracks diet, gym progress, weight, and body photos with intelligent form guides and exercise GIFs.",
-  "main": "app-new.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:dist",

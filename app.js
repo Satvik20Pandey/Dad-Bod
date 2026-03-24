@@ -48,6 +48,7 @@ const TENOR_PUBLIC_KEY = "LIVDSRZULELA";
 const APP_NAME = "Dad Bod";
 const APP_TAGLINE = "Built Dream Physique";
 const APP_VERSION = "1.0.2";
+const API_PROMPT_STORAGE_KEY = "dadbod_api_prompt_v1";
 
 const ONBOARDING_QUOTES = [
   "One day or day one. You decide.",
@@ -486,6 +487,7 @@ const adminDefaultState = {
   },
   mealsByDate: {},
   foodLibrary: {},
+  foodHistory: [],
   weeklyPlan: buildAdminWeeklyPlan(),
   gymLogsByDate: {},
   weightEntries: [],
@@ -522,6 +524,7 @@ const genericDefaultState = {
   },
   mealsByDate: {},
   foodLibrary: {},
+  foodHistory: [],
   weeklyPlan: buildBlankWeeklyPlan(),
   gymLogsByDate: {},
   weightEntries: [],
@@ -539,9 +542,15 @@ const gifCache = {};
 let activeSpeechRecognition = null;
 let activeWorkoutTimer = null;
 let workoutTimerInterval = null;
+let lastWorkoutTimerPreset = null;
+let mealSuggestionResults = [];
+let mealSuggestionActiveIndex = -1;
 
 const exerciseGifQueryOverrides = {
-  "mountain climbers": "mountain climbers plank core exercise workout",
+  "mountain climbers": "mountain climber abs core plank exercise form",
+  "v up": "v up abs exercise form",
+  "dead bug": "dead bug core stability exercise form",
+  "hollow body hold": "hollow body hold gymnastics core exercise form",
   "march in place": "march in place cardio exercise indoor",
   "high knees march": "high knees march in place exercise form",
 };
@@ -875,6 +884,7 @@ function mergeState(baseState, savedState) {
     foodLibrary: {
       ...(savedState?.foodLibrary || {}),
     },
+    foodHistory: Array.isArray(savedState?.foodHistory) ? savedState.foodHistory : [],
     gymLogsByDate: {
       ...(savedState?.gymLogsByDate || {}),
     },
@@ -884,6 +894,33 @@ function mergeState(baseState, savedState) {
   };
 
   return merged;
+}
+
+function ensureFoodHistory() {
+  if (!Array.isArray(state.foodHistory)) state.foodHistory = [];
+  return state.foodHistory;
+}
+
+function normalizeMealPhrase(value) {
+  return String(value || "")
+    .toLowerCase()
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function loadApiPromptTracker() {
+  const raw = localStorage.getItem(API_PROMPT_STORAGE_KEY);
+  if (!raw) return {};
+  try {
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function saveApiPromptTracker(data) {
+  localStorage.setItem(API_PROMPT_STORAGE_KEY, JSON.stringify(data || {}));
 }
 
 function normalizeEmail(email) {
@@ -1238,10 +1275,12 @@ function activateUser(user) {
   updateBranding();
   showTab("home");
   renderAll();
+  showDailyApiPromptIfNeeded();
 }
 
 function logoutCurrentUser() {
   closeExerciseModal();
+  closeApiPromptModal(false);
   currentUser = null;
   state = null;
   authStore.activeUserId = null;
@@ -1911,12 +1950,156 @@ function renderDietForm() {
     cancelBtn.disabled = !editing;
     cancelBtn.style.opacity = editing ? "1" : "0.65";
   }
+
+  renderMealSuggestions([]);
+}
+
+function renderMealSuggestions(items, preserveIndex = false) {
+  const box = select("mealSuggestionBox");
+  if (!box) return;
+
+  mealSuggestionResults = Array.isArray(items) ? items : [];
+  if (!mealSuggestionResults.length) {
+    mealSuggestionActiveIndex = -1;
+  } else if (!preserveIndex || mealSuggestionActiveIndex < 0 || mealSuggestionActiveIndex >= mealSuggestionResults.length) {
+    mealSuggestionActiveIndex = 0;
+  }
+
+  if (!mealSuggestionResults.length) {
+    box.innerHTML = "";
+    box.classList.add("hidden");
+    return;
+  }
+
+  box.innerHTML = mealSuggestionResults
+    .map((item, idx) => {
+      const activeClass = idx === mealSuggestionActiveIndex ? " active" : "";
+      return `
+        <button type="button" class="meal-suggestion-item${activeClass}" data-suggestion-index="${idx}">
+          <span class="meal-suggestion-title">${escapeHtml(item.description)}</span>
+          <span class="meal-suggestion-meta">${formatNum(item.kcal, 0)} kcal | P ${formatNum(item.protein, 1)}g | C ${formatNum(item.carbs, 1)}g | F ${formatNum(item.fat, 1)}g</span>
+        </button>
+      `;
+    })
+    .join("");
+
+  box.classList.remove("hidden");
+}
+
+function hideMealSuggestions() {
+  renderMealSuggestions([]);
+}
+
+function getMealSuggestions(inputText) {
+  const query = normalizeMealPhrase(inputText);
+  if (!query || query.length < 3) return [];
+
+  const history = ensureFoodHistory();
+  const historyMatches = history
+    .filter((entry) => {
+      const normalized = normalizeMealPhrase(entry?.description);
+      return normalized.startsWith(query) || normalized.includes(query);
+    })
+    .sort((a, b) => Number(b.lastUsedAt || 0) - Number(a.lastUsedAt || 0));
+
+  const mapped = historyMatches.slice(0, 8).map((entry) => ({
+    description: String(entry.description || ""),
+    qty: Number(entry.qty || 0),
+    kcal: Number(entry.kcal || 0),
+    protein: Number(entry.protein || 0),
+    carbs: Number(entry.carbs || 0),
+    fat: Number(entry.fat || 0),
+    nutrients: withNutritionDefaults(entry.nutrients || entry),
+  }));
+
+  return mapped;
+}
+
+function applyMealSuggestion(item) {
+  if (!item) return;
+
+  if (select("mealDescription")) select("mealDescription").value = item.description || "";
+  if (select("mealQty") && Number(item.qty || 0) > 0) {
+    select("mealQty").value = Math.round(Number(item.qty || 0));
+  }
+
+  fillMealFormFromEstimate(withNutritionDefaults(item.nutrients || item));
+  hideMealSuggestions();
+  setText("mealStatus", "Autofilled from your recent food history. Review and save.");
+}
+
+function persistMealHistoryEntry(meal) {
+  if (!meal) return;
+  const description = String(meal.description || meal.name || "").trim();
+  if (!description) return;
+
+  const history = ensureFoodHistory();
+  const key = normalizeMealPhrase(description);
+  const now = Date.now();
+  const existing = history.find((entry) => normalizeMealPhrase(entry?.description) === key);
+
+  const nutrients = {};
+  nutrientFields.forEach((field) => {
+    nutrients[field] = Number(meal[field] || 0);
+  });
+
+  const payload = {
+    description,
+    qty: Math.max(1, Number(meal.qty || 100)),
+    kcal: Number(meal.kcal || 0),
+    protein: Number(meal.protein || 0),
+    carbs: Number(meal.carbs || 0),
+    fat: Number(meal.fat || 0),
+    nutrients,
+    lastUsedAt: now,
+  };
+
+  if (existing) {
+    Object.assign(existing, payload);
+  } else {
+    history.push(payload);
+  }
+
+  if (history.length > 120) {
+    history.sort((a, b) => Number(b.lastUsedAt || 0) - Number(a.lastUsedAt || 0));
+    state.foodHistory = history.slice(0, 120);
+  }
+}
+
+function handleMealDescriptionInput() {
+  const text = select("mealDescription")?.value || "";
+  renderMealSuggestions(getMealSuggestions(text));
+}
+
+function handleMealDescriptionKeydown(event) {
+  if (!mealSuggestionResults.length) return;
+
+  if (event.key === "ArrowDown") {
+    event.preventDefault();
+    mealSuggestionActiveIndex = (mealSuggestionActiveIndex + 1) % mealSuggestionResults.length;
+    renderMealSuggestions(mealSuggestionResults, true);
+    return;
+  }
+
+  if (event.key === "ArrowUp") {
+    event.preventDefault();
+    mealSuggestionActiveIndex = (mealSuggestionActiveIndex - 1 + mealSuggestionResults.length) % mealSuggestionResults.length;
+    renderMealSuggestions(mealSuggestionResults, true);
+    return;
+  }
+
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    const pick = mealSuggestionResults[mealSuggestionActiveIndex] || mealSuggestionResults[0];
+    if (pick) applyMealSuggestion(pick);
+  }
 }
 
 function clearMealInputFields() {
   select("mealForm")?.reset();
   if (select("mealSlot")) select("mealSlot").value = "breakfast";
   state.editingMealId = null;
+  hideMealSuggestions();
   setText("mealStatus", "");
 
   const submitBtn = select("mealSubmitBtn");
@@ -2585,6 +2768,50 @@ function redirectToApiKeySetup(featureName) {
   setText("apiStatus", `${featureName} needs an API key. Paste key and tap Save AI Settings.`);
 }
 
+function closeApiPromptModal(markShown = true) {
+  const modal = select("apiPromptModal");
+  if (modal) {
+    modal.classList.add("hidden");
+    modal.setAttribute("aria-hidden", "true");
+  }
+  document.body.classList.remove("modal-open");
+
+  if (!markShown || !currentUser) return;
+
+  const tracker = loadApiPromptTracker();
+  tracker[currentUser.id] = {
+    date: todayDate(),
+    closedAt: Date.now(),
+  };
+  saveApiPromptTracker(tracker);
+}
+
+function openApiPromptModal() {
+  const modal = select("apiPromptModal");
+  if (!modal) return;
+  modal.classList.remove("hidden");
+  modal.setAttribute("aria-hidden", "false");
+  document.body.classList.add("modal-open");
+}
+
+function showDailyApiPromptIfNeeded() {
+  if (!currentUser || !state) return;
+  if ((state.settings.apiKey || "").trim()) return;
+
+  const tracker = loadApiPromptTracker();
+  const record = tracker[currentUser.id];
+  if (record?.date === todayDate()) return;
+
+  setTimeout(() => {
+    openApiPromptModal();
+  }, 900);
+}
+
+function handleApiPromptGoToSetup() {
+  closeApiPromptModal(true);
+  redirectToApiKeySetup("Advanced AI features");
+}
+
 function ensureApiKey(featureName) {
   const key = (state.settings.apiKey || "").trim();
   if (key) return true;
@@ -2940,7 +3167,11 @@ function handleMealFormSubmit(e) {
     finalNutrition[field] = Number(manualValue ?? estimated[field] ?? 0);
   });
 
-  const kcal = Number(manualKcal ?? estimateCaloriesFromNutrition(finalNutrition));
+  const correctedNutrition = applyMealSpecificSanityAdjustments(description, {
+    ...finalNutrition,
+    kcal: Number(manualKcal ?? estimateCaloriesFromNutrition(finalNutrition)),
+  }, qty);
+  const kcal = Number(manualKcal ?? correctedNutrition.kcal ?? estimateCaloriesFromNutrition(correctedNutrition));
 
   const editingId = state.editingMealId;
   const existingMeal = editingId ? getDayMeals().find((m) => m.id === editingId) : null;
@@ -2955,7 +3186,7 @@ function handleMealFormSubmit(e) {
   };
 
   nutrientFields.forEach((field) => {
-    meal[field] = Number(finalNutrition[field] || 0);
+    meal[field] = Number(correctedNutrition[field] || 0);
   });
 
   if (existingMeal) {
@@ -2963,6 +3194,8 @@ function handleMealFormSubmit(e) {
   } else {
     getDayMeals().push(meal);
   }
+
+  persistMealHistoryEntry(meal);
 
   saveState();
 
@@ -2993,6 +3226,15 @@ function getSpeechErrorMessage(errorCode) {
   }
 }
 
+function readPermissionGranted(result) {
+  if (!result) return false;
+  if (typeof result.permission === "boolean") return result.permission;
+  if (typeof result.permission === "string") return result.permission.toLowerCase() === "granted";
+  if (typeof result.speechRecognition === "string") return result.speechRecognition.toLowerCase() === "granted";
+  if (typeof result.granted === "boolean") return result.granted;
+  return false;
+}
+
 async function startNativeVoiceInput(targetInputId = "mealDescription") {
   const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
   const speechPlugin = window.Capacitor?.Plugins?.SpeechRecognition;
@@ -3008,11 +3250,22 @@ async function startNativeVoiceInput(targetInputId = "mealDescription") {
       return true;
     }
 
-    const hasPermissionResult = await speechPlugin.hasPermission();
-    let granted = Boolean(hasPermissionResult?.permission);
+    let hasPermissionResult = null;
+    if (typeof speechPlugin.hasPermission === "function") {
+      hasPermissionResult = await speechPlugin.hasPermission();
+    } else if (typeof speechPlugin.checkPermissions === "function") {
+      hasPermissionResult = await speechPlugin.checkPermissions();
+    }
+
+    let granted = readPermissionGranted(hasPermissionResult);
     if (!granted) {
-      const requested = await speechPlugin.requestPermission();
-      granted = Boolean(requested?.permission);
+      let requested = null;
+      if (typeof speechPlugin.requestPermission === "function") {
+        requested = await speechPlugin.requestPermission();
+      } else if (typeof speechPlugin.requestPermissions === "function") {
+        requested = await speechPlugin.requestPermissions();
+      }
+      granted = readPermissionGranted(requested);
     }
 
     if (!granted) {
@@ -3066,7 +3319,7 @@ async function startNativeVoiceInput(targetInputId = "mealDescription") {
 
           timer = setTimeout(() => {
             rejectOnce(new Error("no-speech"));
-          }, 14000);
+          }, 18000);
 
           const started = await speechPlugin.start({
             language: "en-IN",
@@ -3563,7 +3816,7 @@ function compressDataUrlImage(dataUrl, maxSide = 1280, quality = 0.84) {
 
 async function fileToOptimizedDataUrl(file) {
   const raw = await fileToDataUrl(file);
-  return compressDataUrlImage(raw, 1280, 0.84);
+  return compressDataUrlImage(raw, 1024, 0.8);
 }
 
 function normalizePhotoDate(value) {
@@ -3584,25 +3837,40 @@ async function analyzePhotoDataUrlWithAI(dataUrl, contextText = "") {
     ? `Analyze this fitness progress photo. Context: ${contextText}. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.`
     : "Analyze this fitness progress photo and give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.";
 
-  const result = await callOpenRouter(
-    [
-      {
-        role: "system",
-        content:
-          "You are a fitness coach. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.",
-      },
-      {
-        role: "user",
-        content: [
-          { type: "text", text: prompt },
-          { type: "image_url", image_url: { url: dataUrl } },
-        ],
-      },
-    ],
-    state.settings.aiModel || "openai/gpt-4o"
-  );
+  const preferredModel = (state.settings.aiModel || "").trim() || "openai/gpt-4o";
+  const modelCandidates = [preferredModel, "openai/gpt-4o", "openai/gpt-4o-mini"]
+    .filter(Boolean)
+    .filter((value, idx, arr) => arr.indexOf(value) === idx);
 
-  return result || "AI did not return text. Please try again.";
+  let lastError = null;
+  for (const model of modelCandidates) {
+    try {
+      const result = await callOpenRouter(
+        [
+          {
+            role: "system",
+            content:
+              "You are a fitness coach. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.",
+          },
+          {
+            role: "user",
+            content: [
+              { type: "text", text: prompt },
+              { type: "image_url", image_url: { url: dataUrl } },
+            ],
+          },
+        ],
+        model
+      );
+
+      if (result && String(result).trim()) return result;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError) throw lastError;
+  return "AI did not return text. Please try again.";
 }
 
 async function analyzePhotoWithAI() {
@@ -3802,6 +4070,9 @@ function handleApiFormSubmit(e) {
   if (!state.settings.aiModel) state.settings.aiModel = "openai/gpt-4o";
 
   saveState();
+  if (apiKey) {
+    closeApiPromptModal(true);
+  }
   renderApiSettings();
   showToast("AI settings saved!", "success");
 }
@@ -3859,15 +4130,32 @@ function formatTimerClock(totalSeconds) {
 }
 
 function renderWorkoutTimer() {
+  const startBtn = select("timerStartBtn");
+  const pauseBtn = select("timerPauseBtn");
+  const resumeBtn = select("timerResumeBtn");
+  const resetBtn = select("timerResetBtn");
+
   if (!activeWorkoutTimer) {
     setText("timerExerciseLabel", "No active timer. Tap Start Timer on any exercise.");
     setText("timerDisplay", "00:00");
+    if (startBtn) startBtn.textContent = lastWorkoutTimerPreset ? "Start Last Timer" : "Start";
+    if (pauseBtn) pauseBtn.disabled = true;
+    if (resumeBtn) resumeBtn.disabled = true;
+    if (resetBtn) resetBtn.disabled = true;
+    if (startBtn) startBtn.disabled = false;
     return;
   }
 
   const stateLabel = activeWorkoutTimer.paused ? "paused" : "running";
   setText("timerExerciseLabel", `${activeWorkoutTimer.label} (${stateLabel})`);
   setText("timerDisplay", formatTimerClock(activeWorkoutTimer.remainingSec));
+  if (startBtn) {
+    startBtn.textContent = activeWorkoutTimer.paused ? "Restart" : "Restart";
+    startBtn.disabled = false;
+  }
+  if (pauseBtn) pauseBtn.disabled = activeWorkoutTimer.paused;
+  if (resumeBtn) resumeBtn.disabled = !activeWorkoutTimer.paused;
+  if (resetBtn) resetBtn.disabled = false;
 }
 
 function clearWorkoutTimerState() {
@@ -3883,6 +4171,8 @@ function startExerciseTimer(encodedName, seconds) {
   const label = decodeURIComponent(encodedName || "Exercise");
   const durationSec = Math.max(10, Math.round(Number(seconds || 45)));
 
+  lastWorkoutTimerPreset = { label, durationSec };
+
   if (workoutTimerInterval) {
     clearInterval(workoutTimerInterval);
     workoutTimerInterval = null;
@@ -3890,6 +4180,7 @@ function startExerciseTimer(encodedName, seconds) {
 
   activeWorkoutTimer = {
     label,
+    initialSec: durationSec,
     remainingSec: durationSec,
     paused: false,
   };
@@ -3906,6 +4197,20 @@ function startExerciseTimer(encodedName, seconds) {
     }
     renderWorkoutTimer();
   }, 1000);
+}
+
+function startCurrentWorkoutTimer() {
+  if (activeWorkoutTimer) {
+    startExerciseTimer(encodeURIComponent(activeWorkoutTimer.label), activeWorkoutTimer.initialSec || activeWorkoutTimer.remainingSec || 45);
+    return;
+  }
+
+  if (lastWorkoutTimerPreset) {
+    startExerciseTimer(encodeURIComponent(lastWorkoutTimerPreset.label), lastWorkoutTimerPreset.durationSec);
+    return;
+  }
+
+  startExerciseTimer(encodeURIComponent("Workout Timer"), 45);
 }
 
 function pauseWorkoutTimer() {
@@ -4189,6 +4494,25 @@ function bindAppEvents() {
   select("autoTargetBtn")?.addEventListener("click", autoCalculateTargets);
   select("mealForm")?.addEventListener("submit", handleMealFormSubmit);
   select("mealCancelEditBtn")?.addEventListener("click", cancelEditMeal);
+  select("mealDescription")?.addEventListener("input", handleMealDescriptionInput);
+  select("mealDescription")?.addEventListener("keydown", handleMealDescriptionKeydown);
+  select("mealDescription")?.addEventListener("focus", handleMealDescriptionInput);
+  select("mealDescription")?.addEventListener("blur", () => {
+    setTimeout(() => {
+      hideMealSuggestions();
+    }, 120);
+  });
+  select("mealSuggestionBox")?.addEventListener("click", (event) => {
+    const target = event.target;
+    const btn = target && typeof target.closest === "function"
+      ? target.closest("[data-suggestion-index]")
+      : null;
+    if (!btn) return;
+    const idx = Number(btn.getAttribute("data-suggestion-index"));
+    if (!Number.isFinite(idx)) return;
+    const selected = mealSuggestionResults[idx];
+    if (selected) applyMealSuggestion(selected);
+  });
   select("voiceBtn")?.addEventListener("click", () => startVoiceInput("mealDescription"));
   select("estimateMealBtn")?.addEventListener("click", estimateMealFromBtn);
   select("aiEstimateMealBtn")?.addEventListener("click", aiEstimateMeal);
@@ -4206,6 +4530,7 @@ function bindAppEvents() {
   select("burnDate")?.addEventListener("change", () => renderBurnPage(select("burnDate")?.value || todayDate()));
 
   select("exportStrengthBtn")?.addEventListener("click", exportStrengthCsv);
+  select("timerStartBtn")?.addEventListener("click", startCurrentWorkoutTimer);
   select("timerPauseBtn")?.addEventListener("click", pauseWorkoutTimer);
   select("timerResumeBtn")?.addEventListener("click", resumeWorkoutTimer);
   select("timerResetBtn")?.addEventListener("click", resetWorkoutTimer);
@@ -4237,6 +4562,11 @@ function bindAppEvents() {
   select("policyModalDoneBtn")?.addEventListener("click", closePolicyModal);
   select("policyModalBackdrop")?.addEventListener("click", closePolicyModal);
 
+  select("apiPromptCloseBtn")?.addEventListener("click", () => closeApiPromptModal(true));
+  select("apiPromptDismissBtn")?.addEventListener("click", () => closeApiPromptModal(true));
+  select("apiPromptSetupBtn")?.addEventListener("click", handleApiPromptGoToSetup);
+  select("apiPromptBackdrop")?.addEventListener("click", () => closeApiPromptModal(true));
+
   /* Settings items */
   select("settingsAbout")?.addEventListener("click", openAbout);
   select("settingsHelp")?.addEventListener("click", openHelp);
@@ -4258,7 +4588,11 @@ function bindAppEvents() {
   });
 
   document.addEventListener("keydown", (event) => {
-    if (event.key === "Escape") { closeExerciseModal(); closePolicyModal(); }
+    if (event.key === "Escape") {
+      closeExerciseModal();
+      closePolicyModal();
+      closeApiPromptModal(false);
+    }
   });
 }
 

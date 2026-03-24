@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Outfit:wght@400;500;600;700;800;900&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Sora:wght@500;600;700;800&display=swap");
 
 /* ============================================
    DAD BOD — Premium Fitness App Stylesheet
@@ -6,23 +6,23 @@
    ============================================ */
 
 :root {
-  --primary: #FF6B35;
-  --primary-light: #FF8F5E;
-  --primary-dark: #E55A25;
-  --primary-glow: rgba(255, 107, 53, 0.25);
-  --secondary: #1B2838;
-  --secondary-light: #2D4156;
-  --accent: #00C896;
-  --accent-light: #33D4AB;
-  --accent-glow: rgba(0, 200, 150, 0.2);
-  --blue: #4A90D9;
-  --blue-light: #6BA3E0;
-  --purple: #8B5CF6;
-  --yellow: #F59E0B;
-  --pink: #EC4899;
+  --primary: #f97316;
+  --primary-light: #fb923c;
+  --primary-dark: #c2410c;
+  --primary-glow: rgba(249, 115, 22, 0.24);
+  --secondary: #101c34;
+  --secondary-light: #20345a;
+  --accent: #0ea5a6;
+  --accent-light: #2fc8c9;
+  --accent-glow: rgba(14, 165, 166, 0.2);
+  --blue: #2563eb;
+  --blue-light: #4b83ff;
+  --purple: #475569;
+  --yellow: #f59e0b;
+  --pink: #ec4899;
 
-  --bg: #F8FAFB;
-  --bg-warm: #FFF9F5;
+  --bg: #f3f6fb;
+  --bg-warm: #fff8f0;
   --surface: #FFFFFF;
   --surface-2: #F3F5F7;
   --surface-3: #EDF0F3;
@@ -69,7 +69,7 @@ html {
 }
 
 body {
-  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: "Manrope", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: var(--text);
   background: var(--bg);
   -webkit-font-smoothing: antialiased;
@@ -82,7 +82,7 @@ body {
 body.modal-open { overflow: hidden; }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: "Outfit", "Inter", sans-serif;
+  font-family: "Sora", "Manrope", sans-serif;
   letter-spacing: -0.02em;
   line-height: 1.2;
 }
@@ -109,6 +109,15 @@ a { color: var(--primary); text-decoration: none; }
     var(--bg);
   z-index: -2;
   pointer-events: none;
+}
+
+.bg-gradient::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(16, 28, 52, 0.05) 0.6px, transparent 0.6px);
+  background-size: 18px 18px;
+  opacity: 0.4;
 }
 
 /* ============================================
@@ -466,7 +475,7 @@ textarea {
 /* ---- APP HEADER ---- */
 .app-header {
   border-radius: var(--radius-xl);
-  background: var(--surface);
+  background: linear-gradient(135deg, rgba(255,255,255,0.97), rgba(247,250,255,0.95));
   border: 1px solid var(--border-light);
   box-shadow: var(--shadow-sm);
   padding: 16px 18px;
@@ -857,7 +866,7 @@ textarea {
 }
 
 .card, .card-large {
-  background: var(--surface);
+  background: linear-gradient(165deg, rgba(255,255,255,0.98), rgba(246,250,255,0.95));
   border: 1px solid var(--border-light);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-sm);
@@ -867,6 +876,7 @@ textarea {
 
 .card:hover, .card-large:hover {
   box-shadow: var(--shadow);
+  transform: translateY(-2px);
 }
 
 
@@ -942,6 +952,57 @@ textarea {
 
 #mealDescription {
   min-height: 84px;
+}
+
+.meal-description-wrap {
+  position: relative;
+}
+
+.meal-suggestion-box {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 6px);
+  z-index: 40;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: blur(12px);
+  max-height: 220px;
+  overflow: auto;
+}
+
+.meal-suggestion-item {
+  width: 100%;
+  border: 0;
+  border-bottom: 1px solid var(--border-light);
+  background: transparent;
+  padding: 10px 12px;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  gap: 2px;
+}
+
+.meal-suggestion-item:last-child {
+  border-bottom: 0;
+}
+
+.meal-suggestion-item:hover,
+.meal-suggestion-item.active {
+  background: linear-gradient(135deg, rgba(249, 115, 22, 0.1), rgba(14, 165, 166, 0.08));
+}
+
+.meal-suggestion-title {
+  color: var(--text);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.meal-suggestion-meta {
+  color: var(--text-muted);
+  font-size: 0.74rem;
 }
 
 .btn-row {
@@ -1365,11 +1426,16 @@ textarea {
 }
 
 .timer-value {
-  font-family: "Outfit", sans-serif;
+  font-family: "Sora", sans-serif;
   font-size: 2rem;
   font-weight: 900;
   letter-spacing: 0.04em;
   color: var(--secondary);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* ---- Settings Section ---- */
@@ -1499,6 +1565,25 @@ textarea {
   padding: 20px;
   z-index: 1;
   animation: modalPop 0.35s var(--bounce);
+}
+
+.api-prompt-modal-content {
+  background: linear-gradient(160deg, #ffffff, #f2f8ff);
+}
+
+.api-prompt-points {
+  display: grid;
+  gap: 8px;
+}
+
+.api-prompt-points div {
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(14, 165, 166, 0.2);
+  background: rgba(14, 165, 166, 0.06);
+  color: var(--text-secondary);
+  padding: 10px 12px;
+  font-size: 0.82rem;
+  font-weight: 600;
 }
 
 @keyframes modalPop {
