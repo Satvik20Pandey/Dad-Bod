@@ -51,6 +51,7 @@ const TENOR_PUBLIC_KEY = "LIVDSRZULELA";
 const APP_NAME = "Dad Bod";
 const APP_TAGLINE = "Built Dream Physique";
 const APP_VERSION = "1.0.2";
+const DEFAULT_AI_MODEL = "deepseek/deepseek-r1";
 const API_PROMPT_STORAGE_KEY = "dadbod_api_prompt_v1";
 
 const ONBOARDING_QUOTES = [
@@ -486,7 +487,7 @@ const adminDefaultState = {
   },
   settings: {
     apiKey: ADMIN_API_KEY || "",
-    aiModel: "openai/gpt-4o",
+    aiModel: DEFAULT_AI_MODEL,
   },
   mealsByDate: {},
   foodLibrary: {},
@@ -523,7 +524,7 @@ const genericDefaultState = {
   },
   settings: {
     apiKey: "",
-    aiModel: "openai/gpt-4o",
+    aiModel: DEFAULT_AI_MODEL,
   },
   mealsByDate: {},
   foodLibrary: {},
@@ -1166,9 +1167,11 @@ function renderCalorieRing() {
   const target = Number(state.profile.calorieTarget || 2000);
   const eaten = totals.kcal;
   const remaining = Math.max(0, target - eaten);
-  const pct = Math.min(1, eaten / target);
+  const rawPct = target > 0 ? eaten / target : 0;
+  const pct = Math.min(1, rawPct);
   const burnTarget = Math.max(1200, Number(state.profile.maintenanceCalories || 2200));
-  const burnPct = Math.min(1, burn.total / burnTarget);
+  const rawBurnPct = burnTarget > 0 ? burn.total / burnTarget : 0;
+  const burnPct = Math.min(1, rawBurnPct);
   const circumference = 2 * Math.PI * 78; // ~490
   const offset = circumference * (1 - pct);
   const burnOffset = circumference * (1 - burnPct);
@@ -1177,12 +1180,31 @@ function renderCalorieRing() {
   if (ring) {
     ring.style.strokeDasharray = circumference;
     ring.style.strokeDashoffset = offset;
+
+    const ringWrapper = ring.closest(".calorie-ring-wrapper");
+    if (ringWrapper) {
+      const prevPct = Number(ringWrapper.dataset.pct || 0);
+      ringWrapper.style.setProperty("--ring-progress", String(pct));
+      ringWrapper.classList.toggle("ring-over", rawPct > 1);
+      if (Math.abs(prevPct - rawPct) >= 0.01) {
+        ringWrapper.classList.remove("ring-pop");
+        // Force reflow to replay the pop animation only when progress changes.
+        void ringWrapper.offsetWidth;
+        ringWrapper.classList.add("ring-pop");
+      }
+      ringWrapper.dataset.pct = String(rawPct);
+    }
   }
 
   const burnRing = select("burnRing");
   if (burnRing) {
     burnRing.style.strokeDasharray = circumference;
     burnRing.style.strokeDashoffset = burnOffset;
+
+    const burnWrapper = burnRing.closest(".calorie-ring-wrapper");
+    if (burnWrapper) {
+      burnWrapper.style.setProperty("--ring-progress", String(burnPct));
+    }
   }
 
   const val = select("calorieRingValue");
@@ -2852,47 +2874,78 @@ async function callOpenRouter(messages, modelOverride) {
   const apiKey = (state.settings.apiKey || "").trim();
   if (!apiKey) throw new Error("No API key available");
 
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${apiKey}`,
-      "HTTP-Referer": window.location.origin || "http://localhost",
-      "X-Title": APP_NAME,
-    },
-    body: JSON.stringify({
-      model: modelOverride || state.settings.aiModel || "openai/gpt-4o-mini",
-      messages,
-      temperature: 0,
-    }),
-  });
+  const modelChain = Array.from(new Set([
+    (modelOverride || "").trim(),
+    (state.settings.aiModel || "").trim(),
+    DEFAULT_AI_MODEL,
+    "deepseek/deepseek-chat-v3-0324",
+    "openai/gpt-4o",
+    "openai/gpt-4o-mini",
+  ].filter(Boolean)));
 
-  if (!response.ok) {
-    const text = await response.text();
-    throw new Error(`OpenRouter ${response.status}: ${text.slice(0, 180)}`);
+  let lastError = "";
+
+  for (const model of modelChain) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+          "HTTP-Referer": window.location.origin || "http://localhost",
+          "X-Title": APP_NAME,
+        },
+        body: JSON.stringify({
+          model,
+          messages,
+          temperature: 0,
+        }),
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        lastError = `${model}: OpenRouter ${response.status}: ${text.slice(0, 180)}`;
+        continue;
+      }
+
+      const data = await response.json();
+      const content = data?.choices?.[0]?.message?.content;
+
+      if (typeof content === "string") return content;
+      if (Array.isArray(content)) {
+        const joined = content
+          .map((part) => {
+            if (typeof part === "string") return part;
+            if (typeof part?.text === "string") return part.text;
+            return "";
+          })
+          .join("\n")
+          .trim();
+        if (joined) return joined;
+      }
+    } catch (error) {
+      lastError = `${model}: ${error?.message || "request failed"}`;
+    }
   }
 
-  const data = await response.json();
-  const content = data?.choices?.[0]?.message?.content;
+  throw new Error(lastError || "OpenRouter call failed across model fallbacks");
+}
 
-  if (typeof content === "string") return content;
-  if (Array.isArray(content)) {
-    return content
-      .map((part) => {
-        if (typeof part === "string") return part;
-        if (typeof part?.text === "string") return part.text;
-        return "";
-      })
-      .join("\n")
-      .trim();
+function parseLooseNumber(value) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const match = value.replace(/,/g, ".").match(/-?\d+(?:\.\d+)?/);
+    if (match) {
+      const parsed = Number(match[0]);
+      if (Number.isFinite(parsed)) return parsed;
+    }
   }
-
-  return "";
+  return NaN;
 }
 
 function pickNumericValue(source, keys, fallback = 0) {
   for (const key of keys) {
-    const value = Number(source?.[key]);
+    const value = parseLooseNumber(source?.[key]);
     if (Number.isFinite(value)) return value;
   }
   return fallback;
@@ -2913,10 +2966,10 @@ function parseAiNutritionPayload(parsed) {
     fiber: pickNumericValue(parsed, ["fiber"]),
     sugar: pickNumericValue(parsed, ["sugar", "sugars"]),
     fat: pickNumericValue(parsed, ["fat", "totalFat"]),
-    satFat: pickNumericValue(parsed, ["saturatedFat", "satFat", "saturated_fat"]),
-    polyFat: pickNumericValue(parsed, ["polyunsaturatedFat", "polyFat", "polyunsaturated_fat"]),
-    monoFat: pickNumericValue(parsed, ["monounsaturatedFat", "monoFat", "monounsaturated_fat"]),
-    transFat: pickNumericValue(parsed, ["transFat", "trans_fat"]),
+    satFat: pickNumericValue(parsed, ["saturatedFat", "satFat", "saturated_fat", "sfa"]),
+    polyFat: pickNumericValue(parsed, ["polyunsaturatedFat", "polyFat", "polyunsaturated_fat", "pufa"]),
+    monoFat: pickNumericValue(parsed, ["monounsaturatedFat", "monoFat", "monounsaturated_fat", "mufa"]),
+    transFat: pickNumericValue(parsed, ["transFat", "trans_fat", "transfat"]),
     cholesterol: pickNumericValue(parsed, ["cholesterolMg", "cholesterol"]),
     sodium: pickNumericValue(parsed, ["sodiumMg", "sodium"]),
     potassium: pickNumericValue(parsed, ["potassiumMg", "potassium"]),
@@ -2925,6 +2978,63 @@ function parseAiNutritionPayload(parsed) {
     calcium: pickNumericValue(parsed, ["calciumMg", "calcium"]),
     iron: pickNumericValue(parsed, ["ironMg", "iron"]),
   };
+}
+
+function clampNumber(value, minValue, maxValue) {
+  return Math.max(minValue, Math.min(maxValue, value));
+}
+
+function harmonizeAiNutritionEstimate(description, llmNutrition, knownTotals, heuristicNutrition, gramsHint) {
+  const adjusted = normalizeNutrition(llmNutrition || {});
+  const known = normalizeNutrition(knownTotals || {});
+  const heuristic = normalizeNutrition(heuristicNutrition || {});
+  const totalGrams = Math.max(1, Number(gramsHint || inferQuantityFromDescription(description, 100) || 100));
+  const text = normalizeFoodKey(description);
+
+  ["protein", "carbs", "fat"].forEach((field) => {
+    adjusted[field] = Math.max(Number(adjusted[field] || 0), Number(known[field] || 0));
+  });
+
+  if (adjusted.kcal <= 0 && heuristic.kcal > 0) {
+    adjusted.kcal = heuristic.kcal;
+  }
+
+  if (heuristic.kcal > 0 && adjusted.kcal > 0) {
+    const minKcal = heuristic.kcal * 0.72;
+    const maxKcal = heuristic.kcal * 1.28;
+    adjusted.kcal = clampNumber(adjusted.kcal, minKcal, maxKcal);
+  }
+
+  const fatBreakdownTotal = Number(adjusted.satFat || 0) + Number(adjusted.polyFat || 0) + Number(adjusted.monoFat || 0);
+  if (adjusted.fat > 0 && fatBreakdownTotal <= 0) {
+    adjusted.satFat = Math.max(Number(known.satFat || 0), adjusted.fat * 0.32);
+    adjusted.polyFat = Math.max(Number(known.polyFat || 0), adjusted.fat * 0.26);
+    adjusted.monoFat = Math.max(Number(known.monoFat || 0), adjusted.fat * 0.38);
+  }
+
+  const breakdownWithTrans = Number(adjusted.satFat || 0) + Number(adjusted.polyFat || 0) + Number(adjusted.monoFat || 0) + Number(adjusted.transFat || 0);
+  if (adjusted.fat > 0 && breakdownWithTrans > adjusted.fat) {
+    const scale = adjusted.fat / breakdownWithTrans;
+    adjusted.satFat *= scale;
+    adjusted.polyFat *= scale;
+    adjusted.monoFat *= scale;
+    adjusted.transFat *= scale;
+  }
+
+  adjusted.transFat = Math.max(Number(adjusted.transFat || 0), Number(known.transFat || 0));
+  if (adjusted.transFat <= 0 && /(fried|deep fried|pakora|chips|namkeen|bakery|processed)/i.test(text)) {
+    adjusted.transFat = Math.max(0.1, (totalGrams / 100) * 0.2);
+  }
+
+  const macroCalories = estimateCaloriesFromNutrition(adjusted);
+  if (macroCalories > 0) {
+    const kcalGapRatio = Math.abs(adjusted.kcal - macroCalories) / macroCalories;
+    if (!adjusted.kcal || kcalGapRatio > 0.25) {
+      adjusted.kcal = Math.round(macroCalories * 0.65 + adjusted.kcal * 0.35);
+    }
+  }
+
+  return applyMealSpecificSanityAdjustments(description, adjusted, totalGrams);
 }
 
 function buildHybridCompositionPrompt(hybrid, description, db) {
@@ -2960,6 +3070,8 @@ ${references}
 Use meal description, quantity, and dataset references to produce FINAL nutrition totals for the whole meal.
 Return ONLY strict JSON with numeric fields:
 kcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg, confidence.
+Do not leave fat subtype fields as all-zero when total fat is present; provide realistic saturated/polyunsaturated/monounsaturated split.
+If trans fat is unknown, estimate a small realistic value (0 is acceptable only for clearly non-processed foods).
 No explanation.`;
 }
 
@@ -2983,26 +3095,27 @@ async function aiEstimateMeal() {
 
   try {
     const prompt = buildHybridCompositionPrompt(hybrid, description, db);
+    const heuristic = estimateFromFoodDb(description, qty);
 
     const raw = await callOpenRouter(
       [
         {
           role: "system",
           content:
-            "You are a nutrition estimation engine for Indian foods. Use the dataset references as supporting evidence and return final meal totals with maximum realistic accuracy.",
+            "You are a strict nutrition estimation engine for Indian foods. Use dataset references as support and return realistic final totals; avoid impossible calories and avoid zeroing fat subtypes when total fat is non-zero.",
         },
         {
           role: "user",
           content: prompt,
         },
       ],
-      state.settings.aiModel || "openai/gpt-4o-mini"
+      state.settings.aiModel || DEFAULT_AI_MODEL
     );
 
     const parsed = extractJsonObject(raw);
 
     const llmFinal = parseAiNutritionPayload(parsed);
-    const corrected = applyMealSpecificSanityAdjustments(description, llmFinal, qty);
+    const corrected = harmonizeAiNutritionEstimate(description, llmFinal, hybrid.knownTotals, heuristic, qty);
 
     fillMealFormFromEstimate(corrected);
 
@@ -3021,6 +3134,30 @@ async function aiEstimateMeal() {
     fillMealFormFromEstimate(fallback);
     setText("mealStatus", "AI estimate failed. Used Indian dataset + heuristic composition estimate instead.");
   }
+}
+
+async function parseNutritionLabelWithAI(rawText) {
+  const apiKey = (state?.settings?.apiKey || "").trim();
+  if (!apiKey) return null;
+
+  const prompt = `OCR nutrition label text:\n${String(rawText || "").slice(0, 8000)}\n\nExtract nutrition values and return strict JSON only with these numeric fields:\nkcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg.`;
+
+  const raw = await callOpenRouter(
+    [
+      {
+        role: "system",
+        content: "Extract nutrition facts from OCR text. Return numeric JSON only. If a value is missing, set 0.",
+      },
+      {
+        role: "user",
+        content: prompt,
+      },
+    ],
+    state.settings.aiModel || DEFAULT_AI_MODEL
+  );
+
+  const parsed = extractJsonObject(raw);
+  return parseAiNutritionPayload(parsed);
 }
 
 function extractMeasuredValue(text, patterns) {
@@ -3120,7 +3257,33 @@ async function handleLabelPhotoScan(e) {
 
   try {
     const result = await window.Tesseract.recognize(file, "eng", { logger: () => {} });
-    const parsed = parseNutritionLabel(result?.data?.text || "");
+    const ocrText = result?.data?.text || "";
+    let parsed = parseNutritionLabel(ocrText);
+
+    if (parsed.kcal == null && parsed.protein == null && parsed.carbs == null && parsed.fat == null) {
+      const aiParsed = await parseNutritionLabelWithAI(ocrText).catch(() => null);
+      if (aiParsed) {
+        parsed = {
+          kcal: aiParsed.kcal,
+          protein: aiParsed.protein,
+          carbs: aiParsed.carbs,
+          fiber: aiParsed.fiber,
+          sugar: aiParsed.sugar,
+          fat: aiParsed.fat,
+          satFat: aiParsed.satFat,
+          polyFat: aiParsed.polyFat,
+          monoFat: aiParsed.monoFat,
+          transFat: aiParsed.transFat,
+          cholesterol: aiParsed.cholesterol,
+          sodium: aiParsed.sodium,
+          potassium: aiParsed.potassium,
+          vitaminA: aiParsed.vitaminA,
+          vitaminC: aiParsed.vitaminC,
+          calcium: aiParsed.calcium,
+          iron: aiParsed.iron,
+        };
+      }
+    }
 
     if (parsed.kcal == null && parsed.protein == null && parsed.carbs == null && parsed.fat == null) {
       setText("mealStatus", "Could not read nutrition values clearly. Try a sharper photo.");
@@ -3249,6 +3412,20 @@ function readPermissionGranted(result) {
   return false;
 }
 
+async function applyVoiceMealAndRunEstimate(input, transcript, sourceLabel) {
+  input.value = transcript;
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+
+  if (input.id !== "mealDescription") {
+    setText("mealStatus", `${sourceLabel} captured.`);
+    return;
+  }
+
+  setText("mealStatus", `${sourceLabel} captured. Running AI estimate...`);
+  showToast(`${sourceLabel} captured. Estimating meal...`, "success");
+  await aiEstimateMeal();
+}
+
 async function startNativeVoiceInput(targetInputId = "mealDescription") {
   const isNativeApp = Boolean(window.Capacitor?.isNativePlatform?.());
   const speechPlugin = window.Capacitor?.Plugins?.SpeechRecognition;
@@ -3361,9 +3538,7 @@ async function startNativeVoiceInput(targetInputId = "mealDescription") {
       return true;
     }
 
-    input.value = finalText;
-    setText("mealStatus", "Voice captured with native recognizer.");
-    showToast("Voice captured successfully.", "success");
+    await applyVoiceMealAndRunEstimate(input, finalText, "Native voice");
     return true;
   } catch (error) {
     console.warn("Native speech recognition failed", error);
@@ -3456,7 +3631,7 @@ async function startVoiceInput(targetInputId = "mealDescription") {
     setText("mealStatus", message);
   };
 
-  recog.onend = () => {
+  recog.onend = async () => {
     if (activeSpeechRecognition === recog) {
       activeSpeechRecognition = null;
     }
@@ -3471,9 +3646,7 @@ async function startVoiceInput(targetInputId = "mealDescription") {
       return;
     }
 
-    input.value = transcript;
-    setText("mealStatus", "Voice captured. Review the description and estimate nutrition.");
-    showToast("Voice captured successfully.", "success");
+    await applyVoiceMealAndRunEstimate(input, transcript, "Voice");
   };
 
   try {
@@ -4091,7 +4264,7 @@ function autoCalculateTargets() {
 
 function renderApiSettings() {
   if (select("apiKeyInput")) select("apiKeyInput").value = state.settings.apiKey || "";
-  if (select("aiModelInput")) select("aiModelInput").value = state.settings.aiModel || "openai/gpt-4o";
+  if (select("aiModelInput")) select("aiModelInput").value = state.settings.aiModel || DEFAULT_AI_MODEL;
 
   const status = state.settings.apiKey
     ? "API key is saved for this account."
@@ -4109,8 +4282,8 @@ function handleApiFormSubmit(e) {
   }
 
   state.settings.apiKey = apiKey;
-  state.settings.aiModel = (select("aiModelInput")?.value || "openai/gpt-4o").trim();
-  if (!state.settings.aiModel) state.settings.aiModel = "openai/gpt-4o";
+  state.settings.aiModel = (select("aiModelInput")?.value || DEFAULT_AI_MODEL).trim();
+  if (!state.settings.aiModel) state.settings.aiModel = DEFAULT_AI_MODEL;
 
   saveState();
   if (apiKey) {
