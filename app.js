@@ -1328,6 +1328,7 @@ function calculateTargetsFromProfile() {
   const age = Math.max(10, Number(state.profile.age || 24));
   const heightCm = Math.max(120, Number(state.profile.heightCm || 170));
   const weeklyChangeKg = Math.max(0.1, Math.abs(Number(state.profile.weeklyLoss || 0.5)));
+  const goalGapKg = Math.abs(goalWeight - currentWeight);
   const goalMode =
     goalWeight > currentWeight ? "gain" : goalWeight < currentWeight ? "loss" : "maintain";
 
@@ -1335,13 +1336,35 @@ function calculateTargetsFromProfile() {
   const bmrEstimate = Math.max(1100, Math.round(10 * currentWeight + 6.25 * heightCm - 5 * age + 5));
   const maintenance = Math.max(1300, Math.round(bmrEstimate * 1.4));
 
-  const dailyAdjustment = Math.max(150, Math.min(700, Math.round((weeklyChangeKg * 7700) / 7)));
+  const goalBmrEstimate = Math.max(1050, Math.round(10 * goalWeight + 6.25 * heightCm - 5 * age + 5));
+  const goalMaintenance = Math.max(1200, Math.round(goalBmrEstimate * 1.4));
+
+  const rawDailyAdjustment = Math.round((weeklyChangeKg * 7700) / 7);
+  const maxDeficit = Math.max(250, Math.round(maintenance * 0.35));
+  const maxSurplus = Math.max(200, Math.round(maintenance * 0.25));
+  const boundedDailyAdjustment =
+    goalMode === "loss"
+      ? Math.max(150, Math.min(maxDeficit, rawDailyAdjustment))
+      : goalMode === "gain"
+        ? Math.max(120, Math.min(maxSurplus, rawDailyAdjustment))
+        : 0;
+
+  // Blend current and goal maintenance so target calories shift when goal weight changes.
+  const adaptiveMaintenance =
+    goalMode === "maintain"
+      ? maintenance
+      : Math.round(maintenance * 0.6 + goalMaintenance * 0.4);
+
+  // As user gets close to target, gently reduce the adjustment to avoid aggressive swings.
+  const goalGapFactor = Math.min(1, Math.max(0.25, goalGapKg / 12));
+  const dailyAdjustment = Math.round(boundedDailyAdjustment * (0.75 + 0.25 * goalGapFactor));
+
   const recommendedCalories =
     goalMode === "gain"
-      ? maintenance + dailyAdjustment
+      ? adaptiveMaintenance + dailyAdjustment
       : goalMode === "loss"
-        ? Math.max(1200, maintenance - dailyAdjustment)
-        : maintenance;
+        ? Math.max(1200, adaptiveMaintenance - dailyAdjustment)
+        : adaptiveMaintenance;
 
   const manualTarget = Number(state.profile.manualCalorieTarget || 0);
   const hasManualTarget = Number.isFinite(manualTarget) && manualTarget >= 1000;
@@ -1356,11 +1379,12 @@ function calculateTargetsFromProfile() {
   state.profile.maintenanceCalories = maintenance;
   state.profile.recommendedCalories = recommendedCalories;
   state.profile.calorieTarget = activeCalorieTarget;
-  state.profile.deficitCalories = goalMode === "loss" ? recommendedCalories : 0;
-  state.profile.surplusCalories = goalMode === "gain" ? recommendedCalories : 0;
+  state.profile.deficitCalories = goalMode === "loss" ? Math.max(0, maintenance - recommendedCalories) : 0;
+  state.profile.surplusCalories = goalMode === "gain" ? Math.max(0, recommendedCalories - maintenance) : 0;
 
-  const proteinPerKg = goalMode === "gain" ? 1.9 : goalMode === "maintain" ? 1.8 : 2.1;
-  const proteinG = Math.max(90, Math.round(goalWeight * proteinPerKg));
+  const proteinPerKg = goalMode === "gain" ? 1.9 : 1.8;
+  const proteinReferenceWeight = goalMode === "loss" ? currentWeight : goalWeight;
+  const proteinG = Math.max(100, Math.round(proteinReferenceWeight * proteinPerKg));
 
   let fatG = Math.max(40, Math.round(currentWeight * 0.75));
   let carbsG = Math.round((activeCalorieTarget - proteinG * 4 - fatG * 9) / 4);
@@ -3985,6 +4009,12 @@ function renderPhotoSection() {
 function handleProfileSubmit(e) {
   e.preventDefault();
 
+  syncProfileTargetsFromFormInputs(true);
+}
+
+function syncProfileTargetsFromFormInputs(shouldPersist = false) {
+  if (!state || !state.profile) return;
+
   state.profile.currentWeight = Number(select("currentWeight")?.value || state.profile.currentWeight);
   state.profile.goalWeight = Number(select("goalWeight")?.value || state.profile.goalWeight);
   state.profile.age = Number(select("age")?.value || state.profile.age);
@@ -3996,9 +4026,23 @@ function handleProfileSubmit(e) {
     calorieOverride && calorieOverride >= 1000 ? Number(calorieOverride) : 0;
 
   calculateTargetsFromProfile();
-  saveState();
-  renderAll();
-  showToast("Goals updated! 🎯", "success");
+
+  if (shouldPersist) {
+    saveState();
+    renderAll();
+    showToast("Goals updated! 🎯", "success");
+    return;
+  }
+
+  renderProfileTargetsSummary();
+  renderHeaderStats();
+  renderDashboard();
+  renderCalorieRing();
+  renderNutrientSummary();
+}
+
+function handleProfileInputRecalc() {
+  syncProfileTargetsFromFormInputs(false);
 }
 
 function renderProfileForm() {
@@ -4009,6 +4053,15 @@ function renderProfileForm() {
   if (select("weeklyLoss")) select("weeklyLoss").value = state.profile.weeklyLoss;
   if (select("calorieTarget")) {
     select("calorieTarget").value = state.profile.manualCalorieTarget ? Number(state.profile.manualCalorieTarget) : "";
+  }
+
+  renderProfileTargetsSummary();
+}
+
+function renderProfileTargetsSummary() {
+  if (!state || !state.profile) return;
+
+  if (select("calorieTarget")) {
     select("calorieTarget").placeholder = `Auto: ${formatNum(state.profile.recommendedCalories || state.profile.calorieTarget || 0, 0)} kcal`;
   }
 
@@ -4482,6 +4535,10 @@ function bindAppEvents() {
 
   select("profileForm")?.addEventListener("submit", handleProfileSubmit);
   select("autoTargetBtn")?.addEventListener("click", autoCalculateTargets);
+  ["currentWeight", "goalWeight", "age", "heightCm", "weeklyLoss", "calorieTarget"].forEach((inputId) => {
+    select(inputId)?.addEventListener("input", handleProfileInputRecalc);
+    select(inputId)?.addEventListener("change", handleProfileInputRecalc);
+  });
   select("mealForm")?.addEventListener("submit", handleMealFormSubmit);
   select("mealCancelEditBtn")?.addEventListener("click", cancelEditMeal);
   select("mealDescription")?.addEventListener("input", handleMealDescriptionInput);
