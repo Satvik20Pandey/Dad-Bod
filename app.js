@@ -1,11 +1,13 @@
 const LEGACY_STATE_KEY = "transform_hq_v2";
 const AUTH_KEY = "dadbod_auth_v1";
 const SECURITY_CONFIG_KEY = "dadbod_security_config_v1";
+const LOCKED_ADMIN_EMAIL = "satvikofficial20@gmail.com";
+const LOCKED_ADMIN_PASSKEY = "Satvik123";
 
 function loadSecurityConfig() {
   const blank = {
-    adminEmail: "",
-    adminPasskey: "",
+    adminEmail: LOCKED_ADMIN_EMAIL,
+    adminPasskey: LOCKED_ADMIN_PASSKEY,
     bootstrapApiKey: "",
   };
 
@@ -33,8 +35,9 @@ function loadSecurityConfig() {
     || blank;
 
   return {
-    adminEmail: String(source.adminEmail || "").trim().toLowerCase(),
-    adminPasskey: String(source.adminPasskey || "").trim(),
+    // Keep admin gate fixed to owner credentials regardless of runtime config.
+    adminEmail: LOCKED_ADMIN_EMAIL,
+    adminPasskey: LOCKED_ADMIN_PASSKEY,
     bootstrapApiKey: String(source.bootstrapApiKey || "").trim(),
   };
 }
@@ -2836,7 +2839,7 @@ async function callOpenRouter(messages, modelOverride) {
     body: JSON.stringify({
       model: modelOverride || state.settings.aiModel || "openai/gpt-4o-mini",
       messages,
-      temperature: 0.2,
+      temperature: 0,
     }),
   });
 
@@ -3001,11 +3004,11 @@ async function aiEstimateMeal() {
     const confidenceText = confidence > 0 ? ` (confidence ${Math.round(confidence)}%)` : "";
     const knownCount = hybrid.components.filter((component) => component.source === "dataset").length;
     const unknownCount = hybrid.unknownComponents.length;
-    setText("mealStatus", `Hybrid estimate ready${confidenceText}: dataset components ${knownCount}, AI-estimated components ${unknownCount}.`);
+    setText("mealStatus", `Hybrid estimate ready${confidenceText}: Indian dataset components ${knownCount}, AI-estimated components ${unknownCount}. You can edit any nutrient before save.`);
   } catch {
     const fallback = estimateFromFoodDb(description, qty);
     fillMealFormFromEstimate(fallback);
-    setText("mealStatus", "AI estimate failed. Used dataset + heuristic composition estimate instead.");
+    setText("mealStatus", "AI estimate failed. Used Indian dataset + heuristic composition estimate instead.");
   }
 }
 
@@ -4514,7 +4517,6 @@ function bindAppEvents() {
     if (selected) applyMealSuggestion(selected);
   });
   select("voiceBtn")?.addEventListener("click", () => startVoiceInput("mealDescription"));
-  select("estimateMealBtn")?.addEventListener("click", estimateMealFromBtn);
   select("aiEstimateMealBtn")?.addEventListener("click", aiEstimateMeal);
   select("labelPhotoInput")?.addEventListener("change", handleLabelPhotoScan);
 
