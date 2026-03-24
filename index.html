@@ -595,7 +595,11 @@
                 </label>
                 <label>
                   <span class="label-text">Model</span>
-                  <input type="text" id="aiModelInput" placeholder="deepseek/deepseek-r1" />
+                  <select id="aiModelInput">
+                    <option value="stepfun-ai/step-3.5-flash">Step 3.5 Flash (Fast)</option>
+                    <option value="qwen/qwen3-next-80b-a3b-instruct">Qwen 3 Next 80B</option>
+                    <option value="nvidia/llama-3.1-nemotron-nano-8b-v1">Nemotron 3 Nano</option>
+                  </select>
                 </label>
                 <button class="btn-primary full-width" type="submit">Save AI Settings</button>
               </form>

@@ -51,7 +51,10 @@ const TENOR_PUBLIC_KEY = "LIVDSRZULELA";
 const APP_NAME = "Dad Bod";
 const APP_TAGLINE = "Built Dream Physique";
 const APP_VERSION = "1.0.2";
-const DEFAULT_AI_MODEL = "deepseek/deepseek-r1";
+const FAST_AI_MODEL_STEP = "stepfun-ai/step-3.5-flash";
+const FAST_AI_MODEL_QWEN = "qwen/qwen3-next-80b-a3b-instruct";
+const FAST_AI_MODEL_NEMOTRON = "nvidia/llama-3.1-nemotron-nano-8b-v1";
+const DEFAULT_AI_MODEL = FAST_AI_MODEL_STEP;
 const API_PROMPT_STORAGE_KEY = "dadbod_api_prompt_v1";
 
 const ONBOARDING_QUOTES = [
@@ -2378,6 +2381,15 @@ function inferQuantityFromDescription(description, fallback = null) {
   return null;
 }
 
+function inferTopLevelMealQuantity(description) {
+  const text = String(description || "").trim().toLowerCase();
+  if (!text) return null;
+
+  const topLevelMatch = text.match(/^\s*(\d+(?:\.\d+)?)\s*(kg|g|gram|grams|ml|l|litre|liter|cup|cups|tbsp|tablespoon|tsp|teaspoon)\b/i);
+  if (!topLevelMatch) return null;
+  return inferQuantityFromDescription(topLevelMatch[0], null);
+}
+
 function scaleNutrition(per100, grams) {
   const base = normalizeNutrition(per100);
   const factor = Math.max(1, Number(grams || 100)) / 100;
@@ -2638,6 +2650,8 @@ function buildHybridMealComponents(description, qtyInput, db) {
   const rawText = String(description || "").trim();
   const explicitQty = Number(qtyInput);
   const hasExplicitQty = Number.isFinite(explicitQty) && explicitQty > 0;
+  const topLevelMealQty = inferTopLevelMealQuantity(rawText);
+  const hasTopLevelMealQty = Number.isFinite(topLevelMealQty) && topLevelMealQty > 0;
 
   const components = [];
   let workingText = rawText;
@@ -2721,8 +2735,9 @@ function buildHybridMealComponents(description, qtyInput, db) {
   }
 
   const preScaleSummary = summarizeMealComponents(components);
-  if (hasExplicitQty && preScaleSummary.totalGrams > 0) {
-    const scale = explicitQty / preScaleSummary.totalGrams;
+  const targetTotalQty = hasExplicitQty ? explicitQty : hasTopLevelMealQty ? topLevelMealQty : null;
+  if (targetTotalQty && preScaleSummary.totalGrams > 0) {
+    const scale = targetTotalQty / preScaleSummary.totalGrams;
     components.forEach((component) => {
       component.grams = Math.max(1, Number(component.grams || 0) * scale);
       if (component.source === "dataset" && component.nutrition) {
@@ -2739,7 +2754,7 @@ function buildHybridMealComponents(description, qtyInput, db) {
     components,
     knownTotals: summary.knownTotals,
     unknownComponents: summary.unknownComponents,
-    totalGrams: hasExplicitQty ? explicitQty : summary.totalGrams,
+    totalGrams: targetTotalQty || summary.totalGrams,
   };
 }
 
@@ -2870,23 +2885,48 @@ function ensureApiKey(featureName) {
   return false;
 }
 
-async function callOpenRouter(messages, modelOverride) {
+async function callOpenRouter(messages, modelOverride, options = {}) {
   const apiKey = (state.settings.apiKey || "").trim();
   if (!apiKey) throw new Error("No API key available");
+
+  const expectJson = Boolean(options.expectJson);
+  const maxTokens = Number.isFinite(Number(options.maxTokens)) ? Number(options.maxTokens) : 320;
+  const totalTimeoutMs = Number.isFinite(Number(options.totalTimeoutMs)) ? Number(options.totalTimeoutMs) : 12000;
 
   const modelChain = Array.from(new Set([
     (modelOverride || "").trim(),
     (state.settings.aiModel || "").trim(),
     DEFAULT_AI_MODEL,
-    "deepseek/deepseek-chat-v3-0324",
-    "openai/gpt-4o",
+    FAST_AI_MODEL_QWEN,
+    FAST_AI_MODEL_NEMOTRON,
     "openai/gpt-4o-mini",
+    "openai/gpt-4o",
   ].filter(Boolean)));
 
   let lastError = "";
+  const startedAt = Date.now();
 
   for (const model of modelChain) {
+    const elapsed = Date.now() - startedAt;
+    const remaining = totalTimeoutMs - elapsed;
+    if (remaining < 800) break;
+
+    const requestTimeout = Math.max(700, Math.min(3200, remaining - 120));
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort("timeout"), requestTimeout);
+
     try {
+      const payload = {
+        model,
+        messages,
+        temperature: 0,
+        max_tokens: maxTokens,
+      };
+
+      if (expectJson) {
+        payload.response_format = { type: "json_object" };
+      }
+
       const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
         headers: {
@@ -2895,12 +2935,11 @@ async function callOpenRouter(messages, modelOverride) {
           "HTTP-Referer": window.location.origin || "http://localhost",
           "X-Title": APP_NAME,
         },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature: 0,
-        }),
+        body: JSON.stringify(payload),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const text = await response.text();
@@ -2924,7 +2963,9 @@ async function callOpenRouter(messages, modelOverride) {
         if (joined) return joined;
       }
     } catch (error) {
-      lastError = `${model}: ${error?.message || "request failed"}`;
+      clearTimeout(timeoutId);
+      const msg = error?.name === "AbortError" ? "request timeout" : error?.message || "request failed";
+      lastError = `${model}: ${msg}`;
     }
   }
 
@@ -3109,7 +3150,8 @@ async function aiEstimateMeal() {
           content: prompt,
         },
       ],
-      state.settings.aiModel || DEFAULT_AI_MODEL
+      state.settings.aiModel || DEFAULT_AI_MODEL,
+      { expectJson: true, maxTokens: 260, totalTimeoutMs: 4800 }
     );
 
     const parsed = extractJsonObject(raw);
@@ -3153,7 +3195,8 @@ async function parseNutritionLabelWithAI(rawText) {
         content: prompt,
       },
     ],
-    state.settings.aiModel || DEFAULT_AI_MODEL
+    state.settings.aiModel || DEFAULT_AI_MODEL,
+    { expectJson: true, maxTokens: 180, totalTimeoutMs: 4500 }
   );
 
   const parsed = extractJsonObject(raw);
@@ -3472,6 +3515,7 @@ async function startNativeVoiceInput(targetInputId = "mealDescription") {
       let settled = false;
       let timer = null;
       let listener = null;
+      let bestTranscript = "";
 
       const cleanup = async () => {
         if (timer) clearTimeout(timer);
@@ -3504,12 +3548,16 @@ async function startNativeVoiceInput(targetInputId = "mealDescription") {
           listener = await speechPlugin.addListener("partialResults", (event) => {
             const first = String(event?.matches?.[0] || "").trim();
             if (first) {
-              resolveOnce(first);
+              if (first.length > bestTranscript.length) bestTranscript = first;
             }
           });
 
           timer = setTimeout(() => {
-            rejectOnce(new Error("no-speech"));
+            if (bestTranscript) {
+              resolveOnce(bestTranscript);
+            } else {
+              rejectOnce(new Error("no-speech"));
+            }
           }, 18000);
 
           const started = await speechPlugin.start({
@@ -3523,6 +3571,8 @@ async function startNativeVoiceInput(targetInputId = "mealDescription") {
           const direct = String(started?.matches?.[0] || "").trim();
           if (direct) {
             resolveOnce(direct);
+          } else if (bestTranscript) {
+            resolveOnce(bestTranscript);
           }
         } catch (error) {
           rejectOnce(error);
@@ -3605,6 +3655,7 @@ async function startVoiceInput(targetInputId = "mealDescription") {
   recog.maxAlternatives = 1;
 
   let finalTranscript = "";
+  let latestTranscript = "";
   let hadError = false;
 
   setText("mealStatus", "Listening... describe your meal now.");
@@ -3617,6 +3668,9 @@ async function startVoiceInput(targetInputId = "mealDescription") {
         finalTranscript += `${transcript} `;
       } else {
         interim += transcript;
+      }
+      if (transcript.trim().length > latestTranscript.length) {
+        latestTranscript = transcript.trim();
       }
     }
     if (interim.trim()) {
@@ -3638,7 +3692,7 @@ async function startVoiceInput(targetInputId = "mealDescription") {
 
     if (hadError) return;
 
-    const transcript = finalTranscript.trim();
+    const transcript = finalTranscript.trim() || latestTranscript.trim();
     if (!transcript) {
       const message = "No speech captured. Try again and speak a little louder.";
       showToast(message, "error");
@@ -4264,7 +4318,12 @@ function autoCalculateTargets() {
 
 function renderApiSettings() {
   if (select("apiKeyInput")) select("apiKeyInput").value = state.settings.apiKey || "";
-  if (select("aiModelInput")) select("aiModelInput").value = state.settings.aiModel || DEFAULT_AI_MODEL;
+  const modelSelect = select("aiModelInput");
+  if (modelSelect) {
+    const preferredModel = String(state.settings.aiModel || DEFAULT_AI_MODEL);
+    const hasOption = Array.from(modelSelect.options || []).some((option) => option.value === preferredModel);
+    modelSelect.value = hasOption ? preferredModel : DEFAULT_AI_MODEL;
+  }
 
   const status = state.settings.apiKey
     ? "API key is saved for this account."

@@ -666,6 +666,7 @@ textarea {
   filter: blur(10px);
   opacity: 0.35;
   transition: opacity 0.3s ease;
+  animation: ringHaloSpin 6.5s linear infinite;
 }
 
 .calorie-ring-wrapper.ring-over::before {
@@ -733,6 +734,7 @@ textarea {
   font-weight: 900;
   color: var(--text);
   line-height: 1;
+  animation: ringValuePulse 2.4s ease-in-out infinite;
 }
 
 .calorie-ring-label {
@@ -791,6 +793,27 @@ textarea {
   }
   100% {
     transform: scale(1);
+  }
+}
+
+@keyframes ringHaloSpin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes ringValuePulse {
+  0%,
+  100% {
+    transform: scale(1);
+    text-shadow: 0 0 0 rgba(255, 107, 53, 0);
+  }
+  50% {
+    transform: scale(1.04);
+    text-shadow: 0 0 14px rgba(255, 107, 53, 0.35);
   }
 }
 
