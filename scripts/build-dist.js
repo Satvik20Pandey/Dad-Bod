@@ -7,6 +7,8 @@ const distDir = path.join(rootDir, "dist");
 const filesToCopy = [
   "index.html",
   "styles.css",
+  "persistence.js",
+  "gym-program.js",
   "app.js",
   "service-worker.js",
   "manifest.webmanifest",

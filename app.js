@@ -482,8 +482,10 @@ const adminDefaultState = {
     adminPlanVersion: 2,
     weeklyLoss: 1,
     goalMode: "loss",
-    gymClosedDay: "Wednesday",
-    trainingStartDay: "Thursday",
+    gymClosedDay: "Sunday",
+    trainingStartDay: "Monday",
+    gymSessionSlot: "morning",
+    cardioSessionSlot: "evening",
     calorieTarget: 1800,
     recommendedCalories: 1800,
     manualCalorieTarget: 0,
@@ -521,6 +523,8 @@ const genericDefaultState = {
     goalMode: "loss",
     gymClosedDay: "Sunday",
     trainingStartDay: "Monday",
+    gymSessionSlot: "morning",
+    cardioSessionSlot: "evening",
     calorieTarget: 1900,
     recommendedCalories: 1900,
     manualCalorieTarget: 0,
@@ -822,7 +826,24 @@ function loadAuthStore() {
 }
 
 function saveAuthStore() {
-  localStorage.setItem(AUTH_KEY, JSON.stringify(authStore));
+  const payload = JSON.stringify(authStore);
+  localStorage.setItem(AUTH_KEY, payload);
+  if (window.DadBodPersistence?.set) {
+    window.DadBodPersistence.set(AUTH_KEY, payload).catch(() => {});
+  }
+}
+
+async function hydratePersistentStorage() {
+  if (!window.DadBodPersistence?.get) return;
+  try {
+    const stored = await window.DadBodPersistence.get(AUTH_KEY);
+    if (!stored) return;
+    const parsed = JSON.parse(stored);
+    authStore = ensureAdminUser(parsed);
+    localStorage.setItem(AUTH_KEY, JSON.stringify(authStore));
+  } catch (error) {
+    console.warn("IndexedDB hydrate failed", error);
+  }
 }
 
 function ensureAdminUser(store) {
@@ -1087,6 +1108,10 @@ function saveState() {
   if (currentUser.isAdmin) {
     localStorage.setItem(LEGACY_STATE_KEY, JSON.stringify(state));
   }
+
+  if (window.DadBodPersistence?.set) {
+    window.DadBodPersistence.set(`${AUTH_KEY}:${currentUser.id}`, JSON.stringify(state)).catch(() => {});
+  }
 }
 
 function setOnboardingQuote() {
@@ -1285,8 +1310,10 @@ function activateUser(user) {
       state.weeklyPlan = buildAdminWeeklyPlan();
       state.profile.adminPlanVersion = 2;
     }
-    state.profile.gymClosedDay = "Wednesday";
-    state.profile.trainingStartDay = "Thursday";
+    state.profile.gymClosedDay = "Sunday";
+    state.profile.trainingStartDay = "Monday";
+    state.profile.gymSessionSlot = "morning";
+    state.profile.cardioSessionSlot = "evening";
     if (!state.settings.apiKey && ADMIN_API_KEY) {
       state.settings.apiKey = ADMIN_API_KEY;
     }
@@ -1422,10 +1449,16 @@ function calculateTargetsFromProfile() {
   };
 
   if (!weekDays.includes(state.profile.gymClosedDay)) {
-    state.profile.gymClosedDay = currentUser?.isAdmin ? "Wednesday" : "Sunday";
+    state.profile.gymClosedDay = "Sunday";
   }
   if (!weekDays.includes(state.profile.trainingStartDay)) {
-    state.profile.trainingStartDay = currentUser?.isAdmin ? "Thursday" : "Monday";
+    state.profile.trainingStartDay = "Monday";
+  }
+  if (!["morning", "evening"].includes(state.profile.gymSessionSlot)) {
+    state.profile.gymSessionSlot = "morning";
+  }
+  if (!["morning", "evening"].includes(state.profile.cardioSessionSlot)) {
+    state.profile.cardioSessionSlot = state.profile.gymSessionSlot === "morning" ? "evening" : "morning";
   }
 
   state.profile.nutrientTargets = calculateDynamicNutrientTargets(state.profile);
@@ -1472,20 +1505,28 @@ function orderedWeekFromStart(startDay) {
 }
 
 function getWorkoutPreferences() {
-  const fallbackClosed = currentUser?.isAdmin ? "Wednesday" : "Sunday";
-  const fallbackStart = currentUser?.isAdmin ? "Thursday" : "Monday";
-
   const closedDay = weekDays.includes(state.profile.gymClosedDay)
     ? state.profile.gymClosedDay
-    : fallbackClosed;
+    : "Sunday";
   const trainingStartDay = weekDays.includes(state.profile.trainingStartDay)
     ? state.profile.trainingStartDay
-    : fallbackStart;
+    : "Monday";
+  const gymSessionSlot = state.profile.gymSessionSlot === "evening" ? "evening" : "morning";
+  const cardioSessionSlot = state.profile.cardioSessionSlot === "morning" ? "morning" : "evening";
 
-  return { closedDay, trainingStartDay };
+  return { closedDay, trainingStartDay, gymSessionSlot, cardioSessionSlot };
 }
 
 function buildWeeklyEveningSchedule(closedDay, trainingStartDay) {
+  if (currentUser?.isAdmin && window.DADBOD_GYM?.ADMIN_GYM_SPLIT) {
+    return buildProgramWeeklySchedule(window.DADBOD_GYM.ADMIN_GYM_SPLIT, closedDay, trainingStartDay);
+  }
+
+  const genericSplit = window.DADBOD_GYM?.GENERIC_GYM_SPLIT || eveningWorkoutTemplates;
+  return buildProgramWeeklySchedule(genericSplit, closedDay, trainingStartDay);
+}
+
+function buildProgramWeeklySchedule(split, closedDay, trainingStartDay) {
   const schedule = {};
   const orderedDays = orderedWeekFromStart(trainingStartDay);
   let splitCursor = 0;
@@ -1493,29 +1534,32 @@ function buildWeeklyEveningSchedule(closedDay, trainingStartDay) {
   orderedDays.forEach((day) => {
     if (day === closedDay) {
       schedule[day] = {
-        key: "off",
+        key: "closed",
         title: "Gym Closed Day",
-        note: "Recovery day. No evening gym workout scheduled.",
+        note: "Recovery day. No gym workout scheduled.",
         exercises: [],
         isOff: true,
       };
       return;
     }
 
-    const template = eveningWorkoutTemplates[splitCursor % eveningWorkoutTemplates.length];
+    const template = split[splitCursor % split.length];
     splitCursor += 1;
 
-    const exercises = template.exercises.map((exercise) => ({ ...exercise }));
-    const hasTreadmill = exercises.some((exercise) =>
-      String(exercise?.name || "").toLowerCase().includes("treadmill")
-    );
-    if (!hasTreadmill) {
-      exercises.push({ ...eveningTreadmillFinisher });
+    if (template.isOff) {
+      schedule[day] = {
+        ...template,
+        title: template.label || template.title,
+        exercises: [],
+        isOff: true,
+      };
+      return;
     }
 
     schedule[day] = {
       ...template,
-      exercises,
+      title: template.label || template.title,
+      exercises: (template.exercises || []).map((exercise) => ({ ...exercise })),
       isOff: false,
     };
   });
@@ -1526,7 +1570,7 @@ function buildWeeklyEveningSchedule(closedDay, trainingStartDay) {
 function getEveningWorkoutForDay(day = currentDayName()) {
   const { closedDay, trainingStartDay } = getWorkoutPreferences();
   const schedule = buildWeeklyEveningSchedule(closedDay, trainingStartDay);
-  return schedule[day] || schedule[trainingStartDay] || eveningWorkoutTemplates[0];
+  return schedule[day] || schedule[trainingStartDay] || (window.DADBOD_GYM?.GENERIC_GYM_SPLIT?.[0] || eveningWorkoutTemplates[0]);
 }
 
 function findTodayWorkout() {
@@ -1545,6 +1589,7 @@ function ensureGymLogForDate(date = todayDate()) {
       morningCustomMet: 6.5,
       exerciseDone: {},
       exerciseWeights: {},
+      exerciseReps: {},
       steps: 0,
       sleepHours: 0,
     };
@@ -1553,6 +1598,7 @@ function ensureGymLogForDate(date = todayDate()) {
   const log = state.gymLogsByDate[date];
   if (!log.exerciseDone || typeof log.exerciseDone !== "object") log.exerciseDone = {};
   if (!log.exerciseWeights || typeof log.exerciseWeights !== "object") log.exerciseWeights = {};
+  if (!log.exerciseReps || typeof log.exerciseReps !== "object") log.exerciseReps = {};
   if (!Number.isFinite(Number(log.steps))) log.steps = 0;
   if (!Number.isFinite(Number(log.sleepHours))) log.sleepHours = 0;
   if (!log.morningActivityType) log.morningActivityType = "running";
@@ -1818,17 +1864,34 @@ function renderTodayWorkout() {
   const { closedDay, trainingStartDay } = getWorkoutPreferences();
   const workout = getEveningWorkoutForDay(day);
   const log = ensureGymLogForDate();
+  const isAdmin = Boolean(currentUser?.isAdmin);
 
   setText("todayWorkoutDayName", day);
-  setText("todayWorkoutNote", workout.note);
+  setText("todayWorkoutNote", workout.note || "");
   setText("todayWorkoutCycle", `${trainingStartDay} start · Closed ${closedDay}`);
+
+  const scienceBox = select("adminScienceRules");
+  if (scienceBox) {
+    if (isAdmin && window.DADBOD_GYM?.SCIENCE_RULES?.length) {
+      scienceBox.classList.remove("hidden");
+      scienceBox.innerHTML = `
+        <h4>Science Rules for Quick Results</h4>
+        <ul>${window.DADBOD_GYM.SCIENCE_RULES.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>
+      `;
+    } else {
+      scienceBox.classList.add("hidden");
+      scienceBox.innerHTML = "";
+    }
+  }
+
+  select("aiWorkoutAnalyzeBtn")?.classList.toggle("hidden", !isAdmin);
 
   const list = select("todayExerciseList");
   if (!list) return;
 
   if (workout.isOff) {
-    list.innerHTML = `<p class="muted">Recovery day. Rest, hydrate, and prepare for the next split.</p>`;
-    setText("workoutCompletionText", "Recovery day");
+    list.innerHTML = `<p class="muted">${escapeHtml(workout.title || "Recovery day")}. Rest, hydrate, and prepare for the next split.</p>`;
+    setText("workoutCompletionText", workout.title || "Recovery day");
     renderWorkoutProgress();
     return;
   }
@@ -1839,7 +1902,12 @@ function renderTodayWorkout() {
       const done = Boolean(log.exerciseDone[key]);
       const trackWeight = ex.trackWeight !== false;
       const load = trackWeight ? Number(log.exerciseWeights?.[key] || 0) : 0;
+      const reps = String(log.exerciseReps?.[key] || "");
       const timerSec = Math.max(20, Number(ex.timerSec || parseSetPrescription(ex.sets).secondsPerSet || 60));
+      const scienceLine = isAdmin && ex.science
+        ? `<p class="muted" style="margin-top:4px;font-size:0.68rem;">${escapeHtml(ex.science)}</p>`
+        : "";
+      const guideLabel = isAdmin ? "Form + GIF" : "Form Cues";
 
       return `
         <div class="exercise-item ${done ? "done" : ""}" onclick="toggleExercise('${day}', ${idx})">
@@ -1848,14 +1916,21 @@ function renderTodayWorkout() {
             <div class="exercise-index">Exercise ${idx + 1}</div>
             <h3>${escapeHtml(ex.name)}</h3>
             <p class="exercise-meta">${escapeHtml(ex.sets)} · ${escapeHtml(ex.cues)}</p>
+            ${scienceLine}
             ${trackWeight
-              ? `<label style="display:block;margin-top:6px;">
-                  <span class="label-text" style="margin-bottom:3px;">Load (kg)</span>
-                  <input type="number" min="0" step="0.5" value="${Number.isFinite(load) && load > 0 ? load : ""}" onclick="event.stopPropagation()" onchange="updateExerciseWeight('${day}', ${idx}, this.value)" placeholder="35" />
-                </label>`
-              : `<p class="muted" style="margin-top:4px;">Cardio finisher — no load entry.</p>`}
+              ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px;">
+                  <label onclick="event.stopPropagation()">
+                    <span class="label-text" style="margin-bottom:3px;">Load (kg)</span>
+                    <input type="number" min="0" step="0.5" value="${Number.isFinite(load) && load > 0 ? load : ""}" onchange="updateExerciseWeight('${day}', ${idx}, this.value)" placeholder="35" />
+                  </label>
+                  <label onclick="event.stopPropagation()">
+                    <span class="label-text" style="margin-bottom:3px;">Reps logged</span>
+                    <input type="text" value="${escapeHtml(reps)}" onchange="updateExerciseReps('${day}', ${idx}, this.value)" placeholder="8,8,7" />
+                  </label>
+                </div>`
+              : `<p class="muted" style="margin-top:4px;">Timed finisher — no load entry.</p>`}
             <div class="exercise-actions">
-              <button type="button" class="btn-small" onclick="event.stopPropagation(); openExerciseGuide('${encodeURIComponent(ex.name)}')">Form Cues</button>
+              <button type="button" class="btn-small" onclick="event.stopPropagation(); openExerciseGuide('${encodeURIComponent(ex.name)}')">${guideLabel}</button>
               <button type="button" class="btn-small btn-accent" onclick="event.stopPropagation(); startExerciseTimer('${encodeURIComponent(ex.name)}', ${timerSec})">${Math.round(timerSec)}s Timer</button>
             </div>
           </div>
@@ -1878,21 +1953,6 @@ function toggleExercise(day, idx) {
   renderCalorieRing();
   renderHeaderStats();
   renderDashboard();
-  renderBurnPage();
-}
-
-function updateExerciseWeight(day, idx, rawValue) {
-  const log = ensureGymLogForDate();
-  const key = `${day}-${idx}`;
-  const value = Number(rawValue || 0);
-  if (Number.isFinite(value) && value > 0) {
-    log.exerciseWeights[key] = value;
-  } else {
-    delete log.exerciseWeights[key];
-  }
-  saveState();
-  renderCalorieRing();
-  renderHeaderStats();
   renderBurnPage();
 }
 
@@ -1939,22 +1999,59 @@ function toggleAbsExercise(idx) {
   renderBurnPage();
 }
 
+function updateExerciseWeight(day, idx, rawValue) {
+  const log = ensureGymLogForDate();
+  const key = `${day}-${idx}`;
+  const value = Number(rawValue || 0);
+  if (Number.isFinite(value) && value > 0) {
+    log.exerciseWeights[key] = value;
+  } else {
+    delete log.exerciseWeights[key];
+  }
+  saveState();
+  renderCalorieRing();
+  renderHeaderStats();
+  renderBurnPage();
+}
+
+function updateExerciseReps(day, idx, rawValue) {
+  const log = ensureGymLogForDate();
+  const key = `${day}-${idx}`;
+  const value = String(rawValue || "").trim();
+  if (value) {
+    log.exerciseReps[key] = value;
+  } else {
+    delete log.exerciseReps[key];
+  }
+  saveState();
+}
+
 function renderWorkoutPreferences() {
-  const { closedDay, trainingStartDay } = getWorkoutPreferences();
+  const { closedDay, trainingStartDay, gymSessionSlot, cardioSessionSlot } = getWorkoutPreferences();
   if (select("gymClosedDay")) select("gymClosedDay").value = closedDay;
   if (select("trainingStartDay")) select("trainingStartDay").value = trainingStartDay;
+  if (select("gymSessionSlot")) select("gymSessionSlot").value = gymSessionSlot;
+  if (select("cardioSessionSlot")) select("cardioSessionSlot").value = cardioSessionSlot;
 }
 
 function handleWorkoutPrefsSubmit(e) {
   e.preventDefault();
   const closedDay = select("gymClosedDay")?.value;
   const trainingStartDay = select("trainingStartDay")?.value;
+  const gymSessionSlot = select("gymSessionSlot")?.value;
+  const cardioSessionSlot = select("cardioSessionSlot")?.value;
 
   if (weekDays.includes(closedDay)) {
     state.profile.gymClosedDay = closedDay;
   }
   if (weekDays.includes(trainingStartDay)) {
     state.profile.trainingStartDay = trainingStartDay;
+  }
+  if (["morning", "evening"].includes(gymSessionSlot)) {
+    state.profile.gymSessionSlot = gymSessionSlot;
+  }
+  if (["morning", "evening"].includes(cardioSessionSlot)) {
+    state.profile.cardioSessionSlot = cardioSessionSlot;
   }
 
   saveState();
@@ -1964,6 +2061,52 @@ function handleWorkoutPrefsSubmit(e) {
   renderHeaderStats();
   renderBurnPage();
   showToast("Workout setup updated.", "success");
+}
+
+async function analyzeWorkoutWithAI() {
+  if (!currentUser?.isAdmin) return;
+  if (!ensureApiKey("AI workout analysis")) return;
+
+  const day = currentDayName();
+  const workout = getEveningWorkoutForDay(day);
+  const log = ensureGymLogForDate();
+  const lines = (workout.exercises || []).map((ex, idx) => {
+    const key = `${day}-${idx}`;
+    const done = Boolean(log.exerciseDone?.[key]);
+    const weight = log.exerciseWeights?.[key];
+    const reps = log.exerciseReps?.[key];
+    return `- ${ex.name} (${ex.sets}) | done: ${done ? "yes" : "no"} | load: ${weight || "n/a"} kg | reps: ${reps || "n/a"}`;
+  });
+
+  setText("workoutAiFeedback", "Analyzing today's session...");
+  select("workoutAiFeedback")?.classList.remove("hidden");
+
+  try {
+    const prompt = `Analyze this gym session for Satvik. Day: ${day}. Workout: ${workout.title}. Exercises:\n${lines.join("\n")}\n\nGive: 1) performance score /10, 2) progressive overload advice per lift, 3) recovery note, 4) tomorrow focus, 5) one correction if form/load looks off. Be direct and practical.`;
+
+    const result = await callOpenRouter(
+      [
+        {
+          role: "system",
+          content: "You are an elite hypertrophy coach. Analyze logged gym data and give concise actionable feedback.",
+        },
+        { role: "user", content: prompt },
+      ],
+      state.settings.aiModel || DEFAULT_AI_MODEL
+    );
+
+    setText("workoutAiFeedback", result || "No analysis returned.");
+    showToast("Workout analysis ready.", "success");
+  } catch (error) {
+    console.warn("Workout AI analysis failed", error);
+    setText("workoutAiFeedback", "AI analysis failed. Check API key and try again.");
+    showToast("Workout analysis failed.", "error");
+  }
+}
+
+function renderAdminOnlySections() {
+  const isAdmin = Boolean(currentUser?.isAdmin);
+  select("photoSectionCard")?.classList.toggle("hidden", !isAdmin);
 }
 
 function showTab(tabName) {
@@ -3868,7 +4011,7 @@ function handleMorningSubmit(e) {
   renderHeaderStats();
   renderDashboard();
   renderBurnPage();
-  showToast("Morning check-in saved! 🌅", "success");
+  showToast("Cardio check-in saved!", "success");
 }
 
 function renderMorningForm() {
@@ -4203,6 +4346,11 @@ function deletePhotoEntry(photoId) {
 async function handlePhotoSubmit(e) {
   e.preventDefault();
 
+  if (!currentUser?.isAdmin) {
+    showToast("Progress photos are available on the admin profile only.", "error");
+    return;
+  }
+
   const file = select("photoInput")?.files?.[0];
   if (!file) {
     alert("Please select a photo first.");
@@ -4234,8 +4382,9 @@ async function handlePhotoSubmit(e) {
 }
 
 function renderPhotoSection() {
+  renderAdminOnlySections();
   const gallery = select("photoGallery");
-  if (!gallery) return;
+  if (!gallery || !currentUser?.isAdmin) return;
 
   if (!state.photoEntries.length) {
     gallery.innerHTML = `<p class="muted">No photos yet. Upload to track progress.</p>`;
@@ -4630,8 +4779,32 @@ function openExerciseModal(exercise) {
   setText("modalCues", exercise.cues || "Focus on controlled tempo and full range of motion.");
   setText("modalTips", exercise.tips || "Breathe out on exertion. Stop if you feel sharp pain. Prioritize form over load.");
 
+  const scienceBlock = select("modalScienceBlock");
+  const scienceText = select("modalScience");
+  if (scienceBlock && scienceText) {
+    const showScience = Boolean(currentUser?.isAdmin && exercise.science);
+    scienceBlock.classList.toggle("hidden", !showScience);
+    scienceText.textContent = showScience ? exercise.science : "";
+  }
+
   const tipsBlock = select("modalTipsBlock");
   if (tipsBlock) tipsBlock.classList.toggle("hidden", !exercise.tips && !select("modalTips")?.textContent);
+
+  const gifWrap = select("modalGifWrap");
+  const gifImg = select("modalGif");
+  const gifUrl = currentUser?.isAdmin && window.DADBOD_GYM?.resolveGif
+    ? window.DADBOD_GYM.resolveGif(exercise.name)
+    : null;
+  if (gifWrap && gifImg) {
+    if (gifUrl) {
+      gifWrap.classList.remove("hidden");
+      gifImg.src = gifUrl;
+      gifImg.onerror = () => gifWrap.classList.add("hidden");
+    } else {
+      gifWrap.classList.add("hidden");
+      gifImg.removeAttribute("src");
+    }
+  }
 
   const videoBtn = select("modalVideoBtn");
   if (videoBtn) {
@@ -4677,6 +4850,7 @@ function renderAll() {
   renderWorkoutPreferences();
   renderTodayWorkout();
   renderAbsCircuit();
+  renderAdminOnlySections();
   renderMorningForm();
   renderBurnPage();
   renderWorkoutTimer();
@@ -4737,6 +4911,7 @@ function bindAppEvents() {
   select("planVoiceBtn")?.addEventListener("click", startWeeklyVoiceFill);
 
   select("workoutPrefsForm")?.addEventListener("submit", handleWorkoutPrefsSubmit);
+  select("aiWorkoutAnalyzeBtn")?.addEventListener("click", analyzeWorkoutWithAI);
   select("morningForm")?.addEventListener("submit", handleMorningSubmit);
   select("morningGuideBtn")?.addEventListener("click", openMorningActivityGuide);
   select("burnForm")?.addEventListener("submit", handleBurnSubmit);
@@ -4829,6 +5004,7 @@ function exposeWindowActions() {
   window.deletePhotoEntry = deletePhotoEntry;
   window.openExerciseGuide = openExerciseGuide;
   window.openAbsGuide = openAbsGuide;
+  window.updateExerciseReps = updateExerciseReps;
 }
 
 function init() {
@@ -4842,17 +5018,18 @@ function init() {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
   }
 
-  const activeUser = authStore.users.find((u) => u.id === authStore.activeUserId);
+  hydratePersistentStorage().finally(() => {
+    const activeUser = authStore.users.find((u) => u.id === authStore.activeUserId);
 
-  /* Splash screen timing */
-  setTimeout(() => {
-    hideSplash();
-    if (activeUser) {
-      activateUser(activeUser);
-    } else {
-      showAuthShell();
-    }
-  }, 2200);
+    setTimeout(() => {
+      hideSplash();
+      if (activeUser) {
+        activateUser(activeUser);
+      } else {
+        showAuthShell();
+      }
+    }, 2400);
+  });
 
   setInterval(updateDateTime, 30000);
 }

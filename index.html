@@ -182,7 +182,7 @@
                 <div><h2 style="margin-bottom:0">Today's Workout</h2></div>
               </div>
               <p id="todayWorkoutTitle" class="workout-title"></p>
-              <div id="todayExerciseCount" class="progress-info"></div>
+              <div id="todayExerciseCount" class="progress-info workout-count-spacer"></div>
               <button class="btn-primary full-width" onclick="scrollToTab('gym')">Start Workout</button>
             </article>
           </div>
@@ -294,14 +294,15 @@
             <p class="muted" id="mealStatus" style="margin-top:8px;font-size:0.82rem;"></p>
           </article>
 
-          <article class="card">
-            <h2>Daily Nutrient Progress</h2>
+          <article class="card diet-section-card">
+            <h2 class="section-heading">Daily Nutrient Progress</h2>
+            <p class="section-sub muted">Macro and micronutrient targets for today.</p>
             <div id="nutrientSummaryGrid" class="nutrient-summary-grid"></div>
           </article>
 
-          <article class="card">
-            <h2>Today's Meals</h2>
-            <div id="mealSections"></div>
+          <article class="card diet-section-card">
+            <h2 class="section-heading">Today's Meals</h2>
+            <div id="mealSections" class="meal-sections-wrap"></div>
           </article>
         </section>
 
@@ -343,7 +344,33 @@
                 <div class="session-summary-main">
                   <span class="session-badge">AM</span>
                   <div>
-                    <h3>Morning Session</h3>
+                    <h3>Morning Gym: <span id="todayWorkoutDayName"></span></h3>
+                    <p>Structured strength split with tracking</p>
+                  </div>
+                </div>
+                <span class="session-chevron" aria-hidden="true">⌄</span>
+              </summary>
+
+              <div class="session-content">
+                <p id="todayWorkoutNote" class="muted session-lead"></p>
+                <p id="todayWorkoutCycle" class="muted session-lead"></p>
+                <div id="adminScienceRules" class="science-rules hidden"></div>
+                <div id="todayExerciseList" class="exercise-checklist"></div>
+                <p id="workoutCompletionText" class="progress-info workout-count-spacer"></p>
+                <div class="btn-row">
+                  <button class="btn-secondary" id="exportStrengthBtn" type="button">Export Strength CSV</button>
+                  <button class="btn-primary hidden" id="aiWorkoutAnalyzeBtn" type="button">AI Analyze Workout</button>
+                </div>
+                <p class="muted hidden" id="workoutAiFeedback" style="margin-top:10px;font-size:0.78rem;white-space:pre-wrap;"></p>
+              </div>
+            </details>
+
+            <details class="session-accordion" id="eveningSessionAccordion" style="margin-top:10px;">
+              <summary>
+                <div class="session-summary-main">
+                  <span class="session-badge evening">PM</span>
+                  <div>
+                    <h3>Evening Session</h3>
                     <p>Cardio + abs circuit</p>
                   </div>
                 </div>
@@ -377,7 +404,7 @@
                   </label>
                   <label class="checkbox-label">
                     <input type="checkbox" id="morningDone" />
-                    <span>Morning Session Done</span>
+                    <span>Cardio Session Done</span>
                   </label>
                   <label class="checkbox-label">
                     <input type="checkbox" id="absDone" />
@@ -410,57 +437,6 @@
                 </div>
               </div>
             </details>
-
-            <details class="session-accordion" id="eveningSessionAccordion" style="margin-top:10px;">
-              <summary>
-                <div class="session-summary-main">
-                  <span class="session-badge evening">PM</span>
-                  <div>
-                    <h3>Evening Gym: <span id="todayWorkoutDayName"></span></h3>
-                    <p>Strength split + finisher</p>
-                  </div>
-                </div>
-                <span class="session-chevron" aria-hidden="true">⌄</span>
-              </summary>
-
-              <div class="session-content">
-                <form id="workoutPrefsForm" class="form-grid" style="margin-bottom:10px;">
-                  <label>
-                    <span class="label-text">Gym Closed Day</span>
-                    <select id="gymClosedDay">
-                      <option value="Sunday">Sunday</option>
-                      <option value="Monday">Monday</option>
-                      <option value="Tuesday">Tuesday</option>
-                      <option value="Wednesday">Wednesday</option>
-                      <option value="Thursday">Thursday</option>
-                      <option value="Friday">Friday</option>
-                      <option value="Saturday">Saturday</option>
-                    </select>
-                  </label>
-                  <label>
-                    <span class="label-text">Gym Split Start Day</span>
-                    <select id="trainingStartDay">
-                      <option value="Sunday">Sunday</option>
-                      <option value="Monday">Monday</option>
-                      <option value="Tuesday">Tuesday</option>
-                      <option value="Wednesday">Wednesday</option>
-                      <option value="Thursday">Thursday</option>
-                      <option value="Friday">Friday</option>
-                      <option value="Saturday">Saturday</option>
-                    </select>
-                  </label>
-                  <button class="btn-secondary full-width" id="saveWorkoutPrefsBtn" type="submit">Save Workout Setup</button>
-                </form>
-
-                <p id="todayWorkoutNote" class="muted" style="margin-bottom:10px;"></p>
-                <p id="todayWorkoutCycle" class="muted" style="margin-bottom:10px;"></p>
-                <div id="todayExerciseList" class="exercise-checklist"></div>
-                <p id="workoutCompletionText" class="progress-info" style="margin-top:10px;"></p>
-                <div class="btn-row">
-                  <button class="btn-secondary" id="exportStrengthBtn" type="button">Export Strength CSV</button>
-                </div>
-              </div>
-            </details>
           </article>
         </section>
 
@@ -486,10 +462,10 @@
             <canvas id="weightChart" width="800" height="260"></canvas>
           </article>
 
-          <article class="card">
+          <article class="card hidden" id="photoSectionCard">
             <div class="card-icon-title">
               <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div>
-              <h2 style="margin-bottom:0">Progress Photos</h2>
+              <h2 style="margin-bottom:0">Daily Progress Photos</h2>
             </div>
             <form id="photoForm" class="form-grid">
               <label>
@@ -559,6 +535,56 @@
                 </div>
               </form>
               <div id="targetSummary" class="summary-grid" style="margin-top:12px;"></div>
+            </article>
+
+            <!-- Workout Settings -->
+            <article class="card">
+              <div class="card-icon-title">
+                <div class="card-icon workout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 12h12M4 8v8M20 8v8"/></svg></div>
+                <h2 style="margin-bottom:0">Workout Setup</h2>
+              </div>
+              <p class="muted section-sub">Customize gym split, rest day, and session timing.</p>
+              <form id="workoutPrefsForm" class="form-grid">
+                <label>
+                  <span class="label-text">Gym Closed Day</span>
+                  <select id="gymClosedDay">
+                    <option value="Sunday">Sunday</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="label-text">Gym Split Start Day</span>
+                  <select id="trainingStartDay">
+                    <option value="Sunday">Sunday</option>
+                    <option value="Monday">Monday</option>
+                    <option value="Tuesday">Tuesday</option>
+                    <option value="Wednesday">Wednesday</option>
+                    <option value="Thursday">Thursday</option>
+                    <option value="Friday">Friday</option>
+                    <option value="Saturday">Saturday</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="label-text">Gym Session Time</span>
+                  <select id="gymSessionSlot">
+                    <option value="morning">Morning</option>
+                    <option value="evening">Evening</option>
+                  </select>
+                </label>
+                <label>
+                  <span class="label-text">Cardio + Abs Time</span>
+                  <select id="cardioSessionSlot">
+                    <option value="evening">Evening</option>
+                    <option value="morning">Morning</option>
+                  </select>
+                </label>
+                <button class="btn-primary full-width" id="saveWorkoutPrefsBtn" type="submit">Save Workout Setup</button>
+              </form>
             </article>
 
             <!-- Data -->
@@ -713,9 +739,16 @@
         <article class="modal-content">
           <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Close">×</button>
           <h2 id="modalTitle">Exercise</h2>
+          <div id="modalGifWrap" class="exercise-gif-wrap hidden">
+            <img id="modalGif" alt="Exercise demonstration" loading="lazy" />
+          </div>
           <div class="exercise-detail-block">
             <h4>Prescription</h4>
             <p id="modalSets"></p>
+          </div>
+          <div class="exercise-detail-block" id="modalScienceBlock">
+            <h4>Science</h4>
+            <p id="modalScience"></p>
           </div>
           <div class="exercise-detail-block">
             <h4>Form Cues</h4>
@@ -761,6 +794,8 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="persistence.js"></script>
+    <script src="gym-program.js"></script>
     <script src="app.js"></script>
   </body>
 </html>
