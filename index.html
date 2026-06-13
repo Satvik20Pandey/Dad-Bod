@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
+    <meta name="theme-color" content="#0A0E17" />
+    <meta name="description" content="Dad Bod — Your free all-in-one fitness tracker. Track calories, macros, micronutrients, workouts, weight, and progress photos. Built for real results." />
+    <meta name="keywords" content="fitness tracker, calorie counter, diet plan, workout tracker, macro tracker, micronutrients, dad bod fitness, free fitness app" />
+    <meta name="author" content="Satvik Pandey" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta property="og:title" content="Dad Bod — Free Fitness & Nutrition Tracker" />
+    <meta property="og:description" content="Track calories, macros, micronutrients, workouts and progress — completely free. No premium walls." />
+    <meta property="og:type" content="website" />
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="assets/logo-premium.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="assets/logo-premium.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <title>Dad Bod — Free Fitness & Nutrition Tracker</title>
+  </head>
+  <body>
+    <!-- SPLASH SCREEN -->
+    <div class="splash-screen" id="splashScreen">
+      <img src="assets/splash-hero.svg" alt="" class="splash-hero" aria-hidden="true" />
+      <div class="splash-overlay" aria-hidden="true"></div>
+      <div class="splash-content">
+        <img src="assets/logo-premium.svg" alt="Dad Bod" class="splash-logo" />
+        <div class="splash-title">Dad Bod</div>
+        <div class="splash-subtitle">Built Dream Physique</div>
+        <div class="splash-loader"></div>
+      </div>
+    </div>
+
+    <div class="bg-gradient" aria-hidden="true"></div>
+
+    <!-- TOAST -->
+    <div class="toast" id="toast"></div>
+
+    <!-- ========== ONBOARDING ========== -->
+    <section class="auth-shell hidden" id="authShell">
+      <article class="auth-card">
+        <div class="brand-lockup">
+          <img src="assets/logo-premium.svg" alt="Dad Bod logo" class="brand-logo" />
+          <h1>Dad Bod</h1>
+          <p>Built Dream Physique</p>
+        </div>
+
+        <p class="welcome-quote" id="welcomeQuote">"One day or day one. You decide."</p>
+
+        <form id="welcomeForm" class="auth-form active">
+          <label>
+            <span class="label-text">Full Name</span>
+            <input type="text" id="welcomeName" required placeholder="Your name" autocomplete="name" />
+          </label>
+          <label>
+            <span class="label-text">Gmail ID</span>
+            <input type="email" id="welcomeEmail" required placeholder="you@gmail.com" autocomplete="email" />
+          </label>
+          <button type="submit" class="btn-primary full-width" id="welcomeSubmitBtn">Start My Journey</button>
+          <p class="auth-helper">Your records are saved to your email profile on this device.</p>
+        </form>
+
+        <div class="auth-note">
+          Your data stays on this device. Nothing is sent to our servers unless you enable AI features with your own API key.
+        </div>
+      </article>
+    </section>
+
+    <!-- ========== APP ========== -->
+    <main class="app-container hidden" id="appShell">
+      <div class="app-content">
+        <!-- Header -->
+        <header class="app-header">
+          <div class="header-top">
+            <div class="header-top-left">
+              <img src="assets/logo-premium.svg" alt="Dad Bod" class="header-logo-small" />
+              <div>
+                <h1 id="brandTitle">Dad Bod</h1>
+              </div>
+            </div>
+            <div class="header-actions">
+              <span class="user-pill" id="userBadge">Guest</span>
+            </div>
+          </div>
+          <p class="date-time" id="dateTimeText">Today</p>
+          <p class="user-email-line" id="userEmailLine">guest@profile</p>
+          <div class="header-stats" id="headerStats"></div>
+        </header>
+
+        <!-- ===== HOME TAB ===== -->
+        <section id="tabHome" class="tab-content active">
+          <!-- Streak Banner -->
+          <div class="streak-banner" id="streakBanner">
+            <div class="streak-icon">ST</div>
+            <div class="streak-info">
+              <div class="streak-count" id="streakCount">0 Day Streak</div>
+              <div class="streak-label">Consistent logging builds results.</div>
+            </div>
+          </div>
+
+          <article class="card">
+            <div class="calorie-ring-section">
+              <div class="ring-row">
+                <div class="calorie-ring-wrapper">
+                  <svg width="140" height="140" viewBox="0 0 140 140">
+                    <circle class="calorie-ring-bg" cx="70" cy="70" r="62" />
+                    <circle class="calorie-ring-fill" id="calorieRing" cx="70" cy="70" r="62"
+                      stroke-dasharray="390" stroke-dashoffset="390" />
+                  </svg>
+                  <div class="calorie-ring-center">
+                    <div class="calorie-ring-value" id="calorieRingValue">0</div>
+                    <div class="calorie-ring-label">remaining</div>
+                  </div>
+                </div>
+
+                <button class="calorie-ring-wrapper burn-ring-wrapper" type="button" onclick="scrollToTab('burn')" aria-label="Open calorie burn tracker">
+                  <svg width="140" height="140" viewBox="0 0 140 140">
+                    <circle class="calorie-ring-bg" cx="70" cy="70" r="62" />
+                    <circle class="calorie-ring-fill burn-ring-fill" id="burnRing" cx="70" cy="70" r="62"
+                      stroke-dasharray="390" stroke-dashoffset="390" />
+                  </svg>
+                  <div class="calorie-ring-center">
+                    <div class="calorie-ring-value" id="burnRingValue">0</div>
+                    <div class="calorie-ring-label">burnt</div>
+                    <div class="calorie-ring-sub" id="burnRingSub">Tap to edit</div>
+                  </div>
+                </button>
+              </div>
+              <div class="macro-pills" id="macroPills">
+                <div class="macro-pill"><span class="macro-dot protein"></span> Protein <b id="pillProtein">0g</b></div>
+                <div class="macro-pill"><span class="macro-dot carbs"></span> Carbs <b id="pillCarbs">0g</b></div>
+                <div class="macro-pill"><span class="macro-dot fat"></span> Fat <b id="pillFat">0g</b></div>
+              </div>
+            </div>
+          </article>
+
+          <div class="quick-actions">
+            <button class="quick-action-btn" onclick="scrollToTab('diet')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10h16M6 6h12M8 14h8M10 18h4"/></svg>
+              Log Meal
+            </button>
+            <button class="quick-action-btn" onclick="scrollToTab('gym')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 12h12M4 8v8M20 8v8M8 6v12M16 6v12"/></svg>
+              Workout
+            </button>
+            <button class="quick-action-btn" onclick="scrollToTab('progress')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M7 8l5-5 5 5"/></svg>
+              Weight
+            </button>
+            <button class="quick-action-btn" onclick="scrollToTab('burn')">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3c2 4 4 6 4 9a4 4 0 1 1-8 0c0-3 2-5 4-9z"/></svg>
+              Burn
+            </button>
+          </div>
+
+          <!-- Today Summary Cards -->
+          <div class="dashboard-grid">
+            <article class="card-large">
+              <div class="card-icon-title">
+                <div class="card-icon nutrition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><path d="M12 4v16"/></svg></div>
+                <div><h2 style="margin-bottom:0">Today's Nutrition</h2></div>
+              </div>
+              <div id="todayMacroSummary" class="macro-grid"></div>
+              <button class="btn-primary full-width" onclick="scrollToTab('diet')">+ Log Meal</button>
+            </article>
+
+            <article class="card-large">
+              <div class="card-icon-title">
+                <div class="card-icon weight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3v18M7 8l5-5 5 5"/></svg></div>
+                <div><h2 style="margin-bottom:0">Weight</h2></div>
+              </div>
+              <div class="weight-display" id="weightDisplay"></div>
+              <button class="btn-secondary full-width" onclick="scrollToTab('progress')">Update Weight</button>
+            </article>
+
+            <article class="card-large">
+              <div class="card-icon-title">
+                <div class="card-icon workout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 12h12M4 8v8M20 8v8"/></svg></div>
+                <div><h2 style="margin-bottom:0">Today's Workout</h2></div>
+              </div>
+              <p id="todayWorkoutTitle" class="workout-title"></p>
+              <div id="todayExerciseCount" class="progress-info"></div>
+              <button class="btn-primary full-width" onclick="scrollToTab('gym')">Start Workout</button>
+            </article>
+          </div>
+        </section>
+
+        <!-- ===== BURN TAB ===== -->
+        <section id="tabBurn" class="tab-content" hidden>
+          <article class="card">
+            <div class="card-icon-title">
+              <div class="card-icon" style="background:rgba(45,212,191,0.08);border-color:rgba(45,212,191,0.2);color:var(--success)"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3c2 4 4 6 4 9a4 4 0 1 1-8 0c0-3 2-5 4-9z"/></svg></div>
+              <h2 style="margin-bottom:0">Calories Burnt</h2>
+            </div>
+            <p class="muted" style="margin-bottom:10px;">Set your daily steps and sleep. Morning/evening session burns are auto-added from workout completion.</p>
+            <form id="burnForm" class="form-grid">
+              <label>
+                <span class="label-text">Date</span>
+                <input type="date" id="burnDate" />
+              </label>
+              <label>
+                <span class="label-text">Steps Walked Today</span>
+                <input type="number" id="stepCount" min="0" step="100" placeholder="e.g., 8500" />
+              </label>
+              <label>
+                <span class="label-text">Sleep Hours</span>
+                <input type="number" id="sleepHours" min="0" max="24" step="0.1" placeholder="e.g., 7.5" />
+              </label>
+              <button class="btn-primary full-width" type="submit">Save Burn Inputs</button>
+            </form>
+            <div id="burnSummaryGrid" class="summary-grid" style="margin-top:12px;"></div>
+            <p id="burnInsight" class="muted" style="margin-top:8px;"></p>
+          </article>
+        </section>
+
+        <!-- ===== DIET TAB ===== -->
+        <section id="tabDiet" class="tab-content" hidden>
+          <article class="card">
+            <div class="card-icon-title">
+              <div class="card-icon nutrition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10h16M6 6h12M8 14h8"/></svg></div>
+              <h2 style="margin-bottom:0">Log Meal</h2>
+            </div>
+            <p class="ai-notice">Nutrition is estimated via AI or entered manually. We do not maintain a full food database — describe your meal, use AI estimate, or fill values you already know.</p>
+            <form id="mealForm" class="form-grid">
+              <label>
+                <span class="label-text">Meal Type</span>
+                <select id="mealSlot">
+                  <option value="breakfast">Breakfast</option>
+                  <option value="lunch">Lunch</option>
+                  <option value="snacks">Snacks</option>
+                  <option value="dinner">Dinner</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-text">Food Description</span>
+                <div class="meal-description-wrap">
+                  <textarea id="mealDescription" rows="3" placeholder="e.g., 2 eggs + 1 roti + 200ml milk"></textarea>
+                  <div id="mealSuggestionBox" class="meal-suggestion-box hidden" aria-live="polite"></div>
+                </div>
+              </label>
+              <label>
+                <span class="label-text">Quantity (g, optional)</span>
+                <input type="number" id="mealQty" min="1" placeholder="Auto-inferred from description" />
+              </label>
+              <label>
+                <span class="label-text">Calories</span>
+                <input type="number" id="mealCalories" placeholder="Leave blank to estimate" />
+              </label>
+
+              <fieldset class="mini-form">
+                <legend>Macros</legend>
+                <label>Protein (g)<input type="number" id="mealProtein" min="0" step="0.1" /></label>
+                <label>Carbs (g)<input type="number" id="mealCarbs" min="0" step="0.1" /></label>
+                <label>Fat (g)<input type="number" id="mealFat" min="0" step="0.1" /></label>
+              </fieldset>
+
+              <div class="btn-row">
+                <button type="button" class="btn-small btn-accent" id="voiceBtn">
+                  <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+                  Voice
+                </button>
+                <button type="button" class="btn-primary btn-small" id="aiEstimateMealBtn">AI Estimate</button>
+                <label class="btn-small file-label">
+                  Scan Label
+                  <input type="file" id="labelPhotoInput" accept="image/*" capture="environment" />
+                </label>
+              </div>
+
+              <fieldset class="mini-form micro-form">
+                <legend>Micronutrients & Fats (Optional)</legend>
+                <label>Fiber (g)<input type="number" id="mealFiber" min="0" step="0.1" /></label>
+                <label>Sugar (g)<input type="number" id="mealSugar" min="0" step="0.1" /></label>
+                <label>Saturated Fat (g)<input type="number" id="mealSaturatedFat" min="0" step="0.1" /></label>
+                <label>Polyunsaturated Fat (g)<input type="number" id="mealPolyunsaturatedFat" min="0" step="0.1" /></label>
+                <label>Monounsaturated Fat (g)<input type="number" id="mealMonounsaturatedFat" min="0" step="0.1" /></label>
+                <label>Trans Fat (g)<input type="number" id="mealTransFat" min="0" step="0.1" /></label>
+                <label>Cholesterol (mg)<input type="number" id="mealCholesterol" min="0" step="0.1" /></label>
+                <label>Sodium (mg)<input type="number" id="mealSodium" min="0" step="0.1" /></label>
+                <label>Potassium (mg)<input type="number" id="mealPotassium" min="0" step="0.1" /></label>
+                <label>Vitamin A (mcg)<input type="number" id="mealVitaminA" min="0" step="0.1" /></label>
+                <label>Calcium (mg)<input type="number" id="mealCalcium" min="0" step="0.1" /></label>
+                <label>Iron (mg)<input type="number" id="mealIron" min="0" step="0.1" /></label>
+                <label>Vitamin C (mg)<input type="number" id="mealVitaminC" min="0" step="0.1" /></label>
+              </fieldset>
+
+              <div class="btn-row">
+                <button class="btn-primary" type="submit" id="mealSubmitBtn">Save Meal</button>
+                <button class="btn-secondary" type="button" id="mealCancelEditBtn">Cancel Edit</button>
+              </div>
+            </form>
+            <p class="muted" id="mealStatus" style="margin-top:8px;font-size:0.82rem;"></p>
+          </article>
+
+          <article class="card">
+            <h2>Daily Nutrient Progress</h2>
+            <div id="nutrientSummaryGrid" class="nutrient-summary-grid"></div>
+          </article>
+
+          <article class="card">
+            <h2>Today's Meals</h2>
+            <div id="mealSections"></div>
+          </article>
+        </section>
+
+        <!-- ===== WEEKLY PLAN TAB ===== -->
+        <section id="tabWeeklyPlan" class="tab-content" hidden>
+          <article class="card">
+            <div class="card-icon-title">
+              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg></div>
+              <h2 style="margin-bottom:0">Weekly Meal Plan</h2>
+            </div>
+            <p class="muted" id="weeklyPlanIntro" style="margin-bottom:12px;">Customize your weekly meals.</p>
+            <div class="plan-builder-hint" id="planBuilderHint">
+              <p class="muted" style="margin-bottom:8px;">New here? Build your custom weekly plan.</p>
+              <div class="btn-row">
+                <button class="btn-secondary" id="planWizardBtn" type="button">Create Plan</button>
+                <button class="btn-secondary" id="planVoiceBtn" type="button">Voice Fill</button>
+              </div>
+            </div>
+            <div id="weeklyPlanContainer" class="weekly-plan-grid"></div>
+            <div class="btn-row" style="margin-top:12px;">
+              <button class="btn-ghost" id="resetPlanBtn" type="button">Reset</button>
+              <button class="btn-primary" id="savePlanBtn" type="button">Save Plan</button>
+            </div>
+          </article>
+        </section>
+
+        <!-- ===== GYM TAB ===== -->
+        <section id="tabGym" class="tab-content" hidden>
+          <article class="card">
+            <div class="card-icon-title" style="margin-bottom:8px;">
+              <div class="card-icon workout"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 12h12M4 8v8M20 8v8"/></svg></div>
+              <div><h2 style="margin-bottom:0">Workout Sessions</h2></div>
+            </div>
+            <p class="muted" style="margin-bottom:10px;">Structured split with timers and form cues. Open one session at a time.</p>
+            <div class="workout-progress-bar" id="workoutProgressBar" aria-hidden="true"><div class="workout-progress-fill" id="workoutProgressFill" style="width:0%"></div></div>
+
+            <details class="session-accordion" id="morningSessionAccordion">
+              <summary>
+                <div class="session-summary-main">
+                  <span class="session-badge">AM</span>
+                  <div>
+                    <h3>Morning Session</h3>
+                    <p>Cardio + abs circuit</p>
+                  </div>
+                </div>
+                <span class="session-chevron" aria-hidden="true">⌄</span>
+              </summary>
+
+              <div class="session-content">
+                <form id="morningForm" class="form-grid">
+                  <label>
+                    <span class="label-text">Activity</span>
+                    <select id="morningActivityType">
+                      <option value="running">Running</option>
+                      <option value="racing">Sprint Intervals</option>
+                      <option value="swimming">Swimming</option>
+                      <option value="walk">Brisk Walk</option>
+                      <option value="custom">Custom Activity</option>
+                      <option value="none">None Today</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="label-text">Duration (min)</span>
+                    <input type="number" id="morningMinutes" min="0" placeholder="20" />
+                  </label>
+                  <label>
+                    <span class="label-text">Custom Activity Name (if custom)</span>
+                    <input type="text" id="morningCustomActivity" placeholder="e.g., Skipping, Dance Cardio" />
+                  </label>
+                  <label>
+                    <span class="label-text">Custom Intensity MET (optional)</span>
+                    <input type="number" id="morningCustomMet" min="2" max="15" step="0.1" placeholder="6.5" />
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="morningDone" />
+                    <span>Morning Session Done</span>
+                  </label>
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="absDone" />
+                    <span>Abs Circuit Done</span>
+                  </label>
+                  <label>
+                    <span class="label-text">Notes</span>
+                    <textarea id="morningNotes" rows="2" placeholder="How did the session feel?"></textarea>
+                  </label>
+                  <button class="btn-secondary full-width" id="morningGuideBtn" type="button">Activity Tips</button>
+                  <button class="btn-primary full-width" type="submit">Save Check-in</button>
+                </form>
+
+                <div class="session-subcard">
+                  <h3>Abs Circuit</h3>
+                  <p class="muted" style="margin-bottom:8px;">Daily core work with timers and form cues.</p>
+                  <div id="absExerciseList" class="exercise-checklist"></div>
+                </div>
+
+                <div class="session-subcard">
+                  <h3>Workout Timer</h3>
+                  <p id="timerExerciseLabel" class="muted" style="margin-bottom:6px;">No active timer. Tap Start Timer on any exercise.</p>
+                  <div class="timer-value" id="timerDisplay">00:00</div>
+                  <div class="btn-row" style="margin-top:10px;">
+                    <button class="btn-primary" type="button" id="timerStartBtn">Start</button>
+                    <button class="btn-secondary" type="button" id="timerPauseBtn">Pause</button>
+                    <button class="btn-secondary" type="button" id="timerResumeBtn">Resume</button>
+                    <button class="btn-ghost" type="button" id="timerResetBtn">Reset</button>
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            <details class="session-accordion" id="eveningSessionAccordion" style="margin-top:10px;">
+              <summary>
+                <div class="session-summary-main">
+                  <span class="session-badge evening">PM</span>
+                  <div>
+                    <h3>Evening Gym: <span id="todayWorkoutDayName"></span></h3>
+                    <p>Strength split + finisher</p>
+                  </div>
+                </div>
+                <span class="session-chevron" aria-hidden="true">⌄</span>
+              </summary>
+
+              <div class="session-content">
+                <form id="workoutPrefsForm" class="form-grid" style="margin-bottom:10px;">
+                  <label>
+                    <span class="label-text">Gym Closed Day</span>
+                    <select id="gymClosedDay">
+                      <option value="Sunday">Sunday</option>
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                    </select>
+                  </label>
+                  <label>
+                    <span class="label-text">Gym Split Start Day</span>
+                    <select id="trainingStartDay">
+                      <option value="Sunday">Sunday</option>
+                      <option value="Monday">Monday</option>
+                      <option value="Tuesday">Tuesday</option>
+                      <option value="Wednesday">Wednesday</option>
+                      <option value="Thursday">Thursday</option>
+                      <option value="Friday">Friday</option>
+                      <option value="Saturday">Saturday</option>
+                    </select>
+                  </label>
+                  <button class="btn-secondary full-width" id="saveWorkoutPrefsBtn" type="submit">Save Workout Setup</button>
+                </form>
+
+                <p id="todayWorkoutNote" class="muted" style="margin-bottom:10px;"></p>
+                <p id="todayWorkoutCycle" class="muted" style="margin-bottom:10px;"></p>
+                <div id="todayExerciseList" class="exercise-checklist"></div>
+                <p id="workoutCompletionText" class="progress-info" style="margin-top:10px;"></p>
+                <div class="btn-row">
+                  <button class="btn-secondary" id="exportStrengthBtn" type="button">Export Strength CSV</button>
+                </div>
+              </div>
+            </details>
+          </article>
+        </section>
+
+        <!-- ===== PROGRESS TAB ===== -->
+        <section id="tabProgress" class="tab-content" hidden>
+          <article class="card">
+            <div class="card-icon-title">
+              <div class="card-icon weight"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg></div>
+              <h2 style="margin-bottom:0">Weight Tracker</h2>
+            </div>
+            <form id="weightForm" class="form-grid">
+              <label>
+                <span class="label-text">Date</span>
+                <input type="date" id="weightDate" />
+              </label>
+              <label>
+                <span class="label-text">Weight (kg)</span>
+                <input type="number" id="weightValue" min="30" max="250" step="0.1" />
+              </label>
+              <button class="btn-primary full-width" type="submit">Record Weight</button>
+            </form>
+            <div id="weightSummary" class="summary-grid" style="margin-top:12px;"></div>
+            <canvas id="weightChart" width="800" height="260"></canvas>
+          </article>
+
+          <article class="card">
+            <div class="card-icon-title">
+              <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div>
+              <h2 style="margin-bottom:0">Progress Photos</h2>
+            </div>
+            <form id="photoForm" class="form-grid">
+              <label>
+                <span class="label-text">Photo Type</span>
+                <select id="photoType">
+                  <option value="body">Body Photo</option>
+                  <option value="scale">Weight Scale</option>
+                </select>
+              </label>
+              <label>
+                <span class="label-text">Photo Date</span>
+                <input type="date" id="photoDate" />
+              </label>
+              <label>
+                <span class="label-text">Note</span>
+                <input type="text" id="photoNote" placeholder="Optional note" />
+              </label>
+              <label class="btn-secondary full-width file-label">
+                Take Photo
+                <input type="file" id="photoInput" accept="image/*" capture="environment" />
+              </label>
+              <button class="btn-secondary full-width" id="aiPhotoAnalyzeBtn" type="button">AI Analyze Photo</button>
+              <button class="btn-primary full-width" type="submit">Save Photo</button>
+            </form>
+            <p class="muted" id="photoAiFeedback" style="margin-top:8px;"></p>
+            <div id="photoGallery" class="photo-grid" style="margin-top:12px;"></div>
+          </article>
+        </section>
+
+        <!-- ===== MORE TAB (Settings + Play Store pages) ===== -->
+        <section id="tabSettings" class="tab-content" hidden>
+          <div class="settings-section">
+            <!-- Goals -->
+            <article class="card">
+              <div class="card-icon-title">
+                <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/></svg></div>
+                <h2 style="margin-bottom:0">Goals</h2>
+              </div>
+              <form id="profileForm" class="form-grid">
+                <label>
+                  <span class="label-text">Current Weight (kg)</span>
+                  <input type="number" id="currentWeight" min="30" max="250" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Goal Weight (kg)</span>
+                  <input type="number" id="goalWeight" min="30" max="250" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Age</span>
+                  <input type="number" id="age" min="10" max="90" />
+                </label>
+                <label>
+                  <span class="label-text">Height (cm)</span>
+                  <input type="number" id="heightCm" min="120" max="230" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Weekly Weight Change (kg)</span>
+                  <input type="number" id="weeklyLoss" min="0.2" max="1.5" step="0.1" />
+                </label>
+                <label>
+                  <span class="label-text">Daily Calories (Optional Override)</span>
+                  <input type="number" id="calorieTarget" min="1000" max="5000" step="10" placeholder="Leave blank for auto target" />
+                </label>
+                <div class="btn-row">
+                  <button class="btn-primary" type="submit">Update Goals</button>
+                  <button class="btn-secondary" type="button" id="autoTargetBtn">Auto Calculate</button>
+                </div>
+              </form>
+              <div id="targetSummary" class="summary-grid" style="margin-top:12px;"></div>
+            </article>
+
+            <!-- Data -->
+            <article class="card">
+              <div class="card-icon-title">
+                <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 7h16v12H4z"/><path d="M8 7V5h8v2"/></svg></div>
+                <h2 style="margin-bottom:0">Data</h2>
+              </div>
+              <div class="btn-row">
+                <button class="btn-secondary" id="exportBtn">Export</button>
+                <label class="btn-secondary file-label">Import<input type="file" id="importInput" accept="application/json" /></label>
+                <button class="btn-secondary hidden" id="userSheetExportBtn">Export Users Sheet</button>
+                <button class="btn-danger" id="clearDayBtn">Clear Today</button>
+              </div>
+            </article>
+
+            <!-- AI Settings -->
+            <article class="card">
+              <div class="card-icon-title">
+                <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 3l2 4 4 .5-3 3 1 4-4-2-4 2 1-4-3-3 4-.5z"/></svg></div>
+                <h2 style="margin-bottom:0">AI Settings</h2>
+              </div>
+              <p class="muted" style="margin-bottom:10px;font-size:0.76rem;">Required for AI meal estimation and photo analysis. Uses your OpenRouter key — we recommend GPT-4o Mini for best nutrition accuracy.</p>
+              <form id="apiForm" class="form-grid">
+                <label>
+                  <span class="label-text">OpenRouter API Key</span>
+                  <input type="password" id="apiKeyInput" placeholder="sk-or-v1-..." />
+                </label>
+                <label>
+                  <span class="label-text">Model</span>
+                  <select id="aiModelInput">
+                    <option value="openai/gpt-4o-mini">GPT-4o Mini (Recommended)</option>
+                    <option value="openai/gpt-4o">GPT-4o (Most Accurate)</option>
+                    <option value="google/gemini-2.0-flash-001">Gemini 2.0 Flash</option>
+                    <option value="anthropic/claude-3.5-haiku">Claude 3.5 Haiku</option>
+                  </select>
+                </label>
+                <button class="btn-primary full-width" type="submit">Save AI Settings</button>
+              </form>
+              <p id="apiStatus" class="muted" style="margin-top:6px;font-size:0.82rem;"></p>
+            </article>
+
+            <article class="card api-help">
+              <div class="api-help-header">
+                <h3>Don't have an API Key?</h3>
+                <p class="muted" style="font-size:0.82rem;">Get your free OpenRouter API key in seconds</p>
+              </div>
+              <button type="button" class="btn-secondary full-width" id="getApiKeyBtn">Get OpenRouter API Key</button>
+              <p class="api-help-notes">
+                <strong>Steps:</strong><br/>
+                1. Click button above → OpenRouter.ai<br/>
+                2. Sign up (free)<br/>
+                3. Copy API key → paste above
+              </p>
+            </article>
+
+            <!-- Play Store Sections -->
+            <div class="settings-group">
+              <div class="settings-group-title">App</div>
+              <div class="settings-item" id="settingsAbout">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon">i</div>
+                  <div class="settings-item-text">
+                    <h3>About Dad Bod</h3>
+                    <p>Version 1.1.0</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsHelp">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon">?</div>
+                  <div class="settings-item-text">
+                    <h3>Help & Support</h3>
+                    <p>Contact us for assistance</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsPrivacy">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon">P</div>
+                  <div class="settings-item-text">
+                    <h3>Privacy Policy</h3>
+                    <p>How we handle your data</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsTerms">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon">T</div>
+                  <div class="settings-item-text">
+                    <h3>Terms of Service</h3>
+                    <p>Usage terms & conditions</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+              <div class="settings-item" id="settingsRate">
+                <div class="settings-item-left">
+                  <div class="settings-item-icon">R</div>
+                  <div class="settings-item-text">
+                    <h3>Rate This App</h3>
+                    <p>Love Dad Bod? Leave a review!</p>
+                  </div>
+                </div>
+                <div class="settings-item-arrow">›</div>
+              </div>
+            </div>
+
+            <!-- Logout -->
+            <button class="btn-danger full-width" type="button" id="logoutBtn" style="margin-top:4px;">
+              Logout
+            </button>
+
+            <p class="muted" style="text-align:center;font-size:0.68rem;padding:8px 0 20px;">
+              Dad Bod by Satvik Pandey<br/>
+              © 2024-2026. All rights reserved.
+            </p>
+          </div>
+        </section>
+      </div>
+
+      <!-- Bottom Navigation -->
+      <nav class="bottom-nav">
+        <button class="nav-btn active" data-tab="home">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10.5 12 4l8 6.5V20a1 1 0 0 1-1 1h-5v-6H10v6H5a1 1 0 0 1-1-1z"/></svg>
+          <small>Home</small>
+        </button>
+        <button class="nav-btn" data-tab="diet">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10h16M6 6h12M8 14h8"/></svg>
+          <small>Diet</small>
+        </button>
+        <button class="nav-btn" data-tab="gym">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 12h12M4 8v8M20 8v8"/></svg>
+          <small>Workout</small>
+        </button>
+        <button class="nav-btn" data-tab="progress">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/></svg>
+          <small>Progress</small>
+        </button>
+        <button class="nav-btn" data-tab="settings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+          <small>More</small>
+        </button>
+      </nav>
+
+      <!-- Exercise Detail Modal -->
+      <div id="exerciseModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" id="modalBackdrop"></div>
+        <article class="modal-content">
+          <button class="modal-close" id="modalCloseBtn" type="button" aria-label="Close">×</button>
+          <h2 id="modalTitle">Exercise</h2>
+          <div class="exercise-detail-block">
+            <h4>Prescription</h4>
+            <p id="modalSets"></p>
+          </div>
+          <div class="exercise-detail-block">
+            <h4>Form Cues</h4>
+            <p id="modalCues"></p>
+          </div>
+          <div class="exercise-detail-block" id="modalTipsBlock">
+            <h4>Coaching Notes</h4>
+            <p id="modalTips"></p>
+          </div>
+          <button class="btn-secondary full-width" id="modalVideoBtn" type="button">Search Video Guide</button>
+          <button class="btn-primary full-width" id="modalCloseBtnBottom" type="button" style="margin-top:8px;">Close</button>
+        </article>
+      </div>
+
+      <!-- Policy Modal (reusable) -->
+      <div id="policyModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" id="policyModalBackdrop"></div>
+        <article class="modal-content">
+          <button class="modal-close" id="policyModalCloseBtn" type="button" aria-label="Close">×</button>
+          <h2 id="policyModalTitle">Title</h2>
+          <div id="policyModalBody" class="policy-content"></div>
+          <button class="btn-primary full-width" id="policyModalDoneBtn" type="button" style="margin-top:12px;">Done</button>
+        </article>
+      </div>
+
+      <div id="apiPromptModal" class="modal hidden" aria-hidden="true">
+        <div class="modal-backdrop" id="apiPromptBackdrop"></div>
+        <article class="modal-content api-prompt-modal-content">
+          <button class="modal-close" id="apiPromptCloseBtn" type="button" aria-label="Close">×</button>
+          <h2>Unlock Advanced AI Features</h2>
+          <p class="muted" style="margin: 8px 0 14px;">Set up your free API key once to enable smarter meal AI, photo analysis, and future premium tools.</p>
+          <div class="api-prompt-points">
+            <div>AI meal estimate with stronger accuracy</div>
+            <div>Photo progress analysis and coaching feedback</div>
+            <div>Future advanced assistant upgrades</div>
+          </div>
+          <div class="btn-row" style="margin-top:14px;">
+            <button class="btn-primary full-width" id="apiPromptSetupBtn" type="button">Set Up API Key</button>
+            <button class="btn-secondary full-width" id="apiPromptDismissBtn" type="button">Maybe Later</button>
+          </div>
+        </article>
+      </div>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>

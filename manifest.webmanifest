@@ -1,0 +1,25 @@
+{
+  "name": "Dad Bod — Fitness & Nutrition Tracker",
+  "short_name": "Dad Bod",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0A0E17",
+  "theme_color": "#0A0E17",
+  "description": "Premium fitness and nutrition tracker with AI meal estimation, structured workouts, and progress tracking.",
+  "categories": ["health", "fitness", "lifestyle"],
+  "icons": [
+    {
+      "src": "assets/logo-premium.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "assets/logo-premium.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

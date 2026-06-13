@@ -1,0 +1,36 @@
+<svg viewBox="0 0 800 1200" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0A0E17"/>
+      <stop offset="45%" stop-color="#101828"/>
+      <stop offset="100%" stop-color="#0A0E17"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0"/>
+      <stop offset="50%" stop-color="#00E5FF" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#00E5FF" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="plate" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#161F30"/>
+      <stop offset="100%" stop-color="#1E2A3F"/>
+    </linearGradient>
+  </defs>
+  <rect width="800" height="1200" fill="url(#sky)"/>
+  <rect width="800" height="1200" fill="url(#glow)"/>
+  <ellipse cx="400" cy="920" rx="280" ry="40" fill="#000" opacity="0.35"/>
+  <!-- silhouette -->
+  <path d="M400 180 C430 180 450 210 450 250 C450 290 430 310 400 310 C370 310 350 290 350 250 C350 210 370 180 400 180Z" fill="#243044"/>
+  <path d="M360 320 C340 380 330 460 335 540 L310 760 C305 820 340 860 400 860 C460 860 495 820 490 760 L465 540 C470 460 460 380 440 320 C420 330 380 330 360 320Z" fill="#243044"/>
+  <path d="M310 420 C270 440 250 500 260 560 L280 620 L320 580 L335 480Z" fill="#1C2738"/>
+  <path d="M490 420 C530 440 550 500 540 560 L520 620 L480 580 L465 480Z" fill="#1C2738"/>
+  <!-- healthy plate -->
+  <ellipse cx="400" cy="700" rx="120" ry="18" fill="#0A0E17" opacity="0.5"/>
+  <ellipse cx="400" cy="690" rx="110" ry="14" fill="url(#plate)" stroke="rgba(255,255,255,0.08)" stroke-width="1"/>
+  <circle cx="370" cy="680" r="16" fill="#2D6A4F" opacity="0.9"/>
+  <circle cx="400" cy="672" r="14" fill="#E9C46A" opacity="0.85"/>
+  <circle cx="430" cy="682" r="12" fill="#E63946" opacity="0.8"/>
+  <circle cx="385" cy="698" r="10" fill="#457B9D" opacity="0.75"/>
+  <!-- accent lines -->
+  <line x1="120" y1="980" x2="680" y2="980" stroke="rgba(0,229,255,0.15)" stroke-width="1"/>
+  <line x1="200" y1="1020" x2="600" y2="1020" stroke="rgba(255,255,255,0.05)" stroke-width="1"/>
+</svg>

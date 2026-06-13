@@ -1,0 +1,22 @@
+node_modules/
+dist/
+build/
+*.log
+*.tmp
+.DS_Store
+.env
+.env.local
+*.apk
+*.aab
+android/
+ios/
+.capacitor/
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Track distributable artifacts in release/
+!release/*.apk
+!release/*.aab

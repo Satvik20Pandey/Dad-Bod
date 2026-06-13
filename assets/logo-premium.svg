@@ -1,0 +1,18 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Dad Bod">
+  <defs>
+    <linearGradient id="dbAccent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00E5FF"/>
+      <stop offset="100%" stop-color="#00B8D4"/>
+    </linearGradient>
+    <linearGradient id="dbRing" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00E5FF" stop-opacity="0.15"/>
+      <stop offset="50%" stop-color="#00E5FF" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#00E5FF" stop-opacity="0.15"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="#0A0E17"/>
+  <circle cx="60" cy="60" r="44" fill="none" stroke="url(#dbRing)" stroke-width="1.5"/>
+  <circle cx="60" cy="60" r="36" fill="#161F30" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+  <text x="60" y="58" text-anchor="middle" font-family="Inter, system-ui, sans-serif" font-size="28" font-weight="600" fill="url(#dbAccent)">DB</text>
+  <rect x="38" y="72" width="44" height="2" rx="1" fill="#00E5FF" opacity="0.45"/>
+</svg>

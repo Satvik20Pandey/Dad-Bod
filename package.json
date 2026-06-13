@@ -1,0 +1,31 @@
+{
+  "name": "diet-plan-and-body-tracker",
+  "version": "1.1.0",
+  "description": "A mobile-first transformation app with a modern fitness app UI, inspired by MyFitnessPal. Tracks diet, gym progress, weight, and body photos with intelligent form guides and exercise GIFs.",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "npm run build:dist",
+    "build:dist": "node scripts/build-dist.js",
+    "build:android": "npx cap build android --release",
+    "build:ios": "npx cap build ios --release",
+    "sync": "npx cap sync",
+    "dev": "npx cap open android"
+  },
+  "keywords": [],
+  "author": "Satvik Pandey",
+  "license": "MIT",
+  "type": "commonjs",
+  "dependencies": {
+    "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor/android": "^8.2.0",
+    "@capacitor/cli": "^8.2.0",
+    "@capacitor/core": "^8.2.0",
+    "@capacitor/ios": "^8.2.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "playwright": "^1.58.2",
+    "vercel": "^50.33.0"
+  }
+}

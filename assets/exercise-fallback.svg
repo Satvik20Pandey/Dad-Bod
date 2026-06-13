@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 360" role="img" aria-label="Exercise guide unavailable">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fff3ed" />
+      <stop offset="100%" stop-color="#eef8ff" />
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#ff5a2a" />
+      <stop offset="100%" stop-color="#0f3460" />
+    </linearGradient>
+  </defs>
+  <rect width="640" height="360" rx="24" fill="url(#bg)" />
+  <rect x="28" y="28" width="584" height="304" rx="18" fill="#ffffff" stroke="#dfe3eb" stroke-width="2" />
+  <circle cx="164" cy="174" r="56" fill="#f7f9fc" stroke="#ff5a2a" stroke-width="8" />
+  <path d="M146 162h36M164 144v36" stroke="#ff5a2a" stroke-width="10" stroke-linecap="round" />
+  <text x="248" y="148" font-family="Sora, Arial, sans-serif" font-size="28" fill="#0f3460" font-weight="700">GIF Not Available</text>
+  <text x="248" y="186" font-family="Sora, Arial, sans-serif" font-size="18" fill="#6b7280">Tap Open Video Guide for full form demo</text>
+  <rect x="248" y="214" width="300" height="44" rx="12" fill="url(#accent)" />
+  <text x="273" y="242" font-family="Sora, Arial, sans-serif" font-size="18" fill="#ffffff" font-weight="700">Use Open Video Guide Button</text>
+</svg>
