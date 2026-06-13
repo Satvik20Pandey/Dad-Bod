@@ -1,5 +1,12 @@
 {
   "appId": "com.dadbod.app",
   "appName": "Dad Bod",
-  "webDir": "dist"
+  "webDir": "dist",
+  "android": {
+    "backgroundColor": "#0A0E17",
+    "allowMixedContent": false
+  },
+  "server": {
+    "androidScheme": "https"
+  }
 }

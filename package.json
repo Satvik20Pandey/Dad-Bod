@@ -1,13 +1,14 @@
 {
   "name": "diet-plan-and-body-tracker",
   "version": "1.1.0",
-  "description": "A mobile-first transformation app with a modern fitness app UI, inspired by MyFitnessPal. Tracks diet, gym progress, weight, and body photos with intelligent form guides and exercise GIFs.",
+  "description": "Premium mobile fitness and nutrition tracker with AI meal estimation, structured workouts, and progress tracking.",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:dist",
     "build:dist": "node scripts/build-dist.js",
-    "build:android": "npx cap build android --release",
+    "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
+    "setup:android": "powershell -ExecutionPolicy Bypass -File scripts/setup-android-sdk.ps1",
     "build:ios": "npx cap build ios --release",
     "sync": "npx cap sync",
     "dev": "npx cap open android"

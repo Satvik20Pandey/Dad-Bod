@@ -46,24 +46,41 @@ Open http://localhost:8080
 
 ## Build Mobile Artifacts
 
-```bash
-npm run build:dist
-npm run sync
-cd android
-./gradlew assembleRelease
-./gradlew bundleRelease
+First-time setup (installs portable JDK 21 + Android SDK locally):
+
+```powershell
+npm run setup:android
+. .\.android-env.ps1
+```
+
+Build signed release APK + AAB (copied to `release/`):
+
+```powershell
+npm run build:android
+```
+
+Outputs:
+- `release/DadBod-v1.1.0-signed.apk`
+- `release/DadBod-v1.1.0-signed.aab`
+- `release/DadBod-latest-signed.apk` / `.aab`
+
+Play Store upload checklist: see `release/PLAYSTORE_LISTING.txt`
+
+Optional keystore password override (PKCS12 uses one password for store + key):
+
+```powershell
+$env:DADBOD_STORE_PASSWORD = "your-store-password"
+npm run build:android
 ```
 
 ## Signed Artifacts In This Repo
 
 Generated files are committed in `release/`:
 
+- `release/DadBod-v1.1.0-signed.apk`
+- `release/DadBod-v1.1.0-signed.aab`
 - `release/DadBod-latest-signed.apk`
 - `release/DadBod-latest-signed.aab`
-- `release/DadBod-v1.0.2-signed.apk`
-- `release/DadBod-v1.0.2-signed.aab`
-- `release/DadBod-v1.0.1-signed.apk`
-- `release/DadBod-v1.0.1-signed.aab`
 
 ## OpenRouter API Key Setup
 

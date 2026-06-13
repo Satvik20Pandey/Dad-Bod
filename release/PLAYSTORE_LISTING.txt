@@ -1,0 +1,65 @@
+# Dad Bod — Play Store Listing Pack (v1.1.0)
+
+## App identity
+- App name: Dad Bod
+- Package: com.dadbod.app
+- Version: 1.1.0 (versionCode 4)
+- Category: Health & Fitness
+- Content rating: Everyone (questionnaire: no violence, user-generated photos stored locally)
+
+## Short description (max 80 chars)
+Track calories, macros, workouts, and progress with AI meal estimation.
+
+## Full description
+Dad Bod is a premium fitness and nutrition companion built for real-world consistency.
+
+Track your daily calories, protein, carbs, fats, and key micronutrients. Log meals with AI-powered estimation from plain English descriptions, voice input, or manual entry when you already know the numbers.
+
+Features:
+- Luxury dark UI designed for clarity and focus
+- AI meal estimation via your own OpenRouter key (GPT-4o Mini recommended)
+- Voice meal logging with live transcript preview
+- Structured weekly gym split with timers and form cues
+- Morning cardio + abs circuit tracking
+- Weight trend chart and progress photos
+- Weekly meal planner
+- Export/import your data anytime
+
+Privacy first: your logs stay on your device. AI features only run when you add your own API key.
+
+Built Dream Physique.
+
+## Store URLs (update after deploy)
+- Privacy policy: https://YOUR-VERCEL-URL/privacy-policy.html
+- Data deletion: https://YOUR-VERCEL-URL/data-deletion.html
+- Support email: satvikofficial20@gmail.com
+
+## Data safety (Play Console)
+Collects: None by default (local-only app)
+Shares: Optional meal text to OpenRouter when user configures AI
+Photos: Stored locally on device only
+Account: Local profile on device (name + email for multi-user on same phone)
+
+## Release artifacts
+- APK (side-load / testers): release/DadBod-v1.1.0-signed.apk
+- AAB (Play Store upload): release/DadBod-v1.1.0-signed.aab
+- Latest aliases: release/DadBod-latest-signed.apk / .aab
+
+## Upload checklist
+1. Build signed AAB: npm run build:android
+2. Play Console → Create release → Production/Internal testing
+3. Upload DadBod-v1.1.0-signed.aab
+4. Add screenshots (phone: Home, Diet, Workout, Progress, Settings)
+5. Feature graphic 1024x500 (dark theme + DB logo)
+6. App icon 512x512 (use assets/logo-premium.svg exported to PNG)
+7. Complete Data safety form (no collection unless AI enabled by user)
+8. Link privacy policy + data deletion pages
+9. Target API 36 — already configured
+
+## Screenshot suggestions
+Capture on Android device or emulator at 1080x2400:
+1. Splash / Home with calorie rings
+2. Diet tab with AI estimate panel
+3. Workout session expanded
+4. Weight chart on Progress tab
+5. AI Settings in More tab
