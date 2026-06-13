@@ -603,6 +603,9 @@ textarea { resize: vertical; min-height: 68px; }
 .section-heading { font-size: 0.95rem; margin-bottom: 4px; }
 .section-sub { font-size: 0.72rem; margin-bottom: 12px; }
 .diet-section-card { padding: 16px; }
+.diet-section-card:first-of-type {
+  padding-top: calc(12px + env(safe-area-inset-top, 0px));
+}
 .meal-sections-wrap { display: grid; gap: 12px; margin-top: 4px; }
 
 .workout-count-spacer { margin-bottom: 12px; margin-top: 6px; }

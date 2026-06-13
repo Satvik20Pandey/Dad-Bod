@@ -2495,6 +2495,66 @@ function findFoodPortionHint(foodKey) {
   return hintKey ? portionHintByKeyword[hintKey] : 100;
 }
 
+function descriptionHasExplicitGrams(description) {
+  return /(\d+(?:\.\d+)?)\s*(kg|g|gram|grams|ml|l|litre|liter)\b/i.test(String(description || ""));
+}
+
+function descriptionHasExplicitCount(description) {
+  return /(\d+(?:\.\d+)?)\s*(?:(?:whole\s+wheat|wheat|plain|buttered|tandoori)\s+)?(egg|eggs|roti|rotis|chapati|chapatis|chappati|chappatis|slice|slices|banana|bananas|piece|pieces)\b/i.test(
+    String(description || "")
+  );
+}
+
+function describesCountBasedFood(description) {
+  return /(eggs?|roti|rotis|chapati|chapatis|chappati|chappatis|slice|slices|banana|bananas)\b/i.test(
+    String(description || "")
+  );
+}
+
+function resolveMealQuantityInput(description, qtyInput) {
+  const explicitQty = Number(qtyInput);
+  if (!Number.isFinite(explicitQty) || explicitQty <= 0) return null;
+
+  const text = String(description || "").trim();
+  if (descriptionHasExplicitGrams(text)) return explicitQty;
+
+  const normalized = normalizeFoodKey(text);
+  const hasCountInText = descriptionHasExplicitCount(text);
+
+  if (!hasCountInText && explicitQty <= 30 && Number.isInteger(explicitQty)) {
+    if (/^eggs?\s*$/i.test(normalized)) return explicitQty * 50;
+    if (/^(roti|rotis|chapati|chapatis|chappati|chappatis)\s*$/i.test(normalized)) return explicitQty * 40;
+    if (/^bananas?\s*$/i.test(normalized)) return explicitQty * 118;
+    if (/\beggs?\b/i.test(normalized) && !/\d/.test(normalized.replace(/\beggs?\b/gi, "")) && explicitQty <= 12) {
+      return explicitQty * 50;
+    }
+  }
+
+  if (hasCountInText && explicitQty >= 50) return explicitQty;
+
+  if (!hasCountInText && explicitQty <= 30 && describesCountBasedFood(text)) {
+    if (/\beggs?\b/i.test(normalized)) return explicitQty * 50;
+    if (/(roti|chapati|chappati)/i.test(normalized)) return explicitQty * 40;
+  }
+
+  return explicitQty;
+}
+
+function extractEggCountFromDescription(description) {
+  const text = normalizeFoodKey(description);
+  const match = text.match(/(\d+(?:\.\d+)?)\s*eggs?\b/i);
+  return match ? Number(match[1]) : 0;
+}
+
+function isEggPreparedDish(description) {
+  return /(omelet|omlette|omelette|bhurji|scrambled|fried egg|egg fry)/i.test(normalizeFoodKey(description));
+}
+
+function isOmeletteRemainder(text) {
+  const cleaned = String(text || "").replace(/\s+/g, " ").trim();
+  return !cleaned || /^(omelet|omlette|omelette|with|and|wheat)$/i.test(cleaned);
+}
+
 function inferQuantityFromDescription(description, fallback = null) {
   const text = String(description || "").toLowerCase();
 
@@ -2512,14 +2572,14 @@ function inferQuantityFromDescription(description, fallback = null) {
   }
 
   const countMatch = text.match(
-    /(\d+(?:\.\d+)?)\s*(egg|eggs|roti|rotis|chapati|chapatis|slice|slices|banana|bananas|piece|pieces)\b/i
+    /(\d+(?:\.\d+)?)\s*(?:(?:whole\s+wheat|wheat|plain|buttered|tandoori)\s+)?(egg|eggs|roti|rotis|chapati|chapatis|chappati|chappatis|slice|slices|banana|bananas|piece|pieces)\b/i
   );
   if (countMatch) {
     const count = Number(countMatch[1]);
     const unit = countMatch[2].toLowerCase();
     const perUnit =
       unit.includes("egg") ? 50 :
-      unit.includes("roti") || unit.includes("chapati") ? 40 :
+      unit.includes("roti") || unit.includes("chapati") || unit.includes("chappati") ? 40 :
       unit.includes("slice") ? 30 :
       unit.includes("banana") ? 118 :
       60;
@@ -2604,6 +2664,26 @@ function estimateUnknownFood(description, grams) {
       calcium: 55,
       iron: 1.2,
     });
+  } else if (/(cooking oil|oil\/butter|butter|ghee)/i.test(text)) {
+    profile = withNutritionDefaults({
+      kcal: 884,
+      protein: 0,
+      carbs: 0,
+      fiber: 0,
+      sugar: 0,
+      fat: 100,
+      satFat: 45,
+      polyFat: 12,
+      monoFat: 38,
+      transFat: 0,
+      cholesterol: 0,
+      sodium: 2,
+      potassium: 0,
+      vitaminA: 0,
+      vitaminC: 0,
+      calcium: 0,
+      iron: 0,
+    });
   } else if (/(chicken|fish|egg|paneer|tofu|dal|lentil|bean|protein)/i.test(text)) {
     profile = withNutritionDefaults({
       kcal: 170,
@@ -2686,6 +2766,7 @@ function findBestFoodMatch(text, db) {
 
 function splitMealDescription(description) {
   return String(description || "")
+    .replace(/^\s*with\s+/i, "")
     .split(/\+|,|\sand\s|\s&\s|\swith\s/i)
     .map((part) => part.trim())
     .filter(Boolean);
@@ -2714,12 +2795,31 @@ function applyMealSpecificSanityAdjustments(description, nutrition, gramsHint) {
 
   const eggCountMatch = text.match(/(\d+(?:\.\d+)?)\s*eggs?\b/i);
   const eggCount = eggCountMatch ? Number(eggCountMatch[1]) : 0;
+  const rotiCountMatch = text.match(
+    /(\d+(?:\.\d+)?)\s*(?:(?:whole\s+wheat|wheat|plain|buttered|tandoori)\s+)?(roti|rotis|chapati|chapatis|chappati|chappatis)\b/i
+  );
+  const rotiCount = rotiCountMatch ? Number(rotiCountMatch[1]) : 0;
+
   if (eggCount > 0 && /egg curry/.test(text)) {
     const gravyAllowance = Math.min(4, Math.max(1, totalGrams / 200));
     const realisticProteinCap = eggCount * 6.5 + gravyAllowance;
     if (adjusted.protein > realisticProteinCap) {
       adjusted.protein = realisticProteinCap;
     }
+  }
+
+  if (eggCount > 0 && /(omelet|omlette|omelette|bhurji|scramble|fried egg|egg fry)/i.test(text)) {
+    const realisticProteinCap = eggCount * 6.5 + rotiCount * 3 + 2;
+    const realisticFatCap = eggCount * 5.5 + rotiCount * 1.5 + 14;
+    const realisticKcalCap = eggCount * 72 + rotiCount * 120 + 130;
+    if (adjusted.protein > realisticProteinCap) adjusted.protein = realisticProteinCap;
+    if (adjusted.fat > realisticFatCap) adjusted.fat = realisticFatCap;
+    if (adjusted.kcal > realisticKcalCap * 1.12) adjusted.kcal = Math.round(realisticKcalCap);
+  } else if (eggCount > 0 && !/curry/.test(text)) {
+    const plainEggProteinCap = eggCount * 6.5 + rotiCount * 3 + 1;
+    const plainEggFatCap = eggCount * 5.5 + rotiCount * 1.5 + 2;
+    if (adjusted.protein > plainEggProteinCap) adjusted.protein = plainEggProteinCap;
+    if (adjusted.fat > plainEggFatCap) adjusted.fat = plainEggFatCap;
   }
 
   const macroCalories = estimateCaloriesFromNutrition(adjusted);
@@ -2748,7 +2848,9 @@ function addNutritionTotals(target, addition) {
 function deriveCountBasedFoodConfig(unitText) {
   const unit = String(unitText || "").toLowerCase();
   if (unit.includes("egg")) return { foodLookup: "egg", gramsPerUnit: 50 };
-  if (unit.includes("roti") || unit.includes("chapati")) return { foodLookup: "roti", gramsPerUnit: 40 };
+  if (unit.includes("roti") || unit.includes("chapati") || unit.includes("chappati")) {
+    return { foodLookup: "roti", gramsPerUnit: 40 };
+  }
   if (unit.includes("slice")) return { foodLookup: "bread", gramsPerUnit: 30 };
   if (unit.includes("banana")) return { foodLookup: "banana", gramsPerUnit: 118 };
   return null;
@@ -2758,7 +2860,7 @@ function extractCountBasedComponents(segmentText, db) {
   let working = String(segmentText || "");
   const components = [];
 
-  const countPattern = /(\d+(?:\.\d+)?)\s*(eggs?|rotis?|chapatis?|slices?|bananas?)\b/gi;
+  const countPattern = /(\d+(?:\.\d+)?)\s*(?:(?:whole\s+wheat|wheat|plain|buttered|tandoori)\s+)?(eggs?|rotis?|chapatis?|chappatis?|slices?|bananas?)\b/gi;
   working = working.replace(countPattern, (fullMatch, countText, unitText) => {
     const config = deriveCountBasedFoodConfig(unitText);
     const count = Number(countText);
@@ -2811,6 +2913,7 @@ function buildHybridMealComponents(description, qtyInput, db) {
   const rawText = String(description || "").trim();
   const explicitQty = Number(qtyInput);
   const hasExplicitQty = Number.isFinite(explicitQty) && explicitQty > 0;
+  const resolvedQty = hasExplicitQty ? resolveMealQuantityInput(rawText, explicitQty) : null;
   const topLevelMealQty = inferTopLevelMealQuantity(rawText);
   const hasTopLevelMealQty = Number.isFinite(topLevelMealQty) && topLevelMealQty > 0;
 
@@ -2819,7 +2922,39 @@ function buildHybridMealComponents(description, qtyInput, db) {
   const normalizedText = normalizeFoodKey(rawText);
 
   const eggCountMatch = normalizedText.match(/(\d+(?:\.\d+)?)\s*eggs?\b/i);
-  const eggCount = eggCountMatch ? Number(eggCountMatch[1]) : 0;
+  let eggCount = eggCountMatch ? Number(eggCountMatch[1]) : 0;
+
+  if (!eggCount && hasExplicitQty && Number.isInteger(explicitQty) && explicitQty <= 12 && /\beggs?\b/i.test(normalizedText)) {
+    eggCount = explicitQty;
+  }
+
+  if (isEggPreparedDish(normalizedText) && eggCount > 0) {
+    const eggKey = findBestFoodMatch("egg", db) || "egg";
+    const eggGrams = eggCount * 50;
+
+    if (db[eggKey]) {
+      components.push({
+        source: "dataset",
+        label: `eggs (${eggCount})`,
+        grams: eggGrams,
+        matchedKey: eggKey,
+        nutrition: scaleNutrition(db[eggKey], eggGrams),
+      });
+    }
+
+    const fatGrams = Math.min(15, Math.max(8, eggCount * 3));
+    components.push({
+      source: "unknown",
+      label: "cooking oil/butter",
+      grams: fatGrams,
+    });
+
+    workingText = workingText
+      .replace(/(\d+(?:\.\d+)?)\s*eggs?\b/gi, " ")
+      .replace(/(omelet|omlette|omelette|bhurji|scrambled|fried egg|egg fry)/gi, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
 
   if (/egg curry/.test(normalizedText) && eggCount > 0) {
     const eggKey = findBestFoodMatch("egg", db) || "egg";
@@ -2836,7 +2971,8 @@ function buildHybridMealComponents(description, qtyInput, db) {
     }
 
     const inferredMealQty = Number(
-      inferQuantityFromDescription(rawText, hasExplicitQty ? explicitQty : eggGrams + 160) ||
+      inferQuantityFromDescription(rawText, resolvedQty || (hasExplicitQty ? explicitQty : eggGrams + 160)) ||
+        resolvedQty ||
         (hasExplicitQty ? explicitQty : eggGrams + 160)
     );
     const gravyGrams = Math.max(60, inferredMealQty - eggGrams);
@@ -2860,7 +2996,7 @@ function buildHybridMealComponents(description, qtyInput, db) {
     countedComponents.forEach((component) => components.push(component));
 
     const segmentText = String(remainder || "").trim();
-    if (!segmentText) return;
+    if (!segmentText || (isEggPreparedDish(normalizedText) && isOmeletteRemainder(segmentText))) return;
 
     const matchedKey = findBestFoodMatch(segmentText, db);
     const grams = Math.max(
@@ -2887,7 +3023,10 @@ function buildHybridMealComponents(description, qtyInput, db) {
   });
 
   if (!components.length) {
-    const grams = Math.max(1, Number(hasExplicitQty ? explicitQty : inferQuantityFromDescription(rawText, 100) || 100));
+    const grams = Math.max(
+      1,
+      Number(resolvedQty || (hasExplicitQty ? explicitQty : inferQuantityFromDescription(rawText, 100) || 100))
+    );
     components.push({
       source: "unknown",
       label: rawText || "meal",
@@ -2896,7 +3035,7 @@ function buildHybridMealComponents(description, qtyInput, db) {
   }
 
   const preScaleSummary = summarizeMealComponents(components);
-  const targetTotalQty = hasExplicitQty ? explicitQty : hasTopLevelMealQty ? topLevelMealQty : null;
+  const targetTotalQty = resolvedQty || (hasExplicitQty ? explicitQty : null) || (hasTopLevelMealQty ? topLevelMealQty : null);
   if (targetTotalQty && preScaleSummary.totalGrams > 0) {
     const scale = targetTotalQty / preScaleSummary.totalGrams;
     components.forEach((component) => {
@@ -3205,6 +3344,14 @@ function harmonizeAiNutritionEstimate(description, llmNutrition, knownTotals, he
     adjusted.kcal = clampNumber(adjusted.kcal, minKcal, maxKcal);
   }
 
+  if (heuristic.protein > 0 && adjusted.protein > heuristic.protein * 1.12) {
+    adjusted.protein = Math.max(Number(known.protein || 0), heuristic.protein * 1.05);
+  }
+
+  if (heuristic.fat > 0 && adjusted.fat > heuristic.fat * 1.18) {
+    adjusted.fat = Math.max(Number(known.fat || 0), heuristic.fat * 1.08);
+  }
+
   const fatBreakdownTotal = Number(adjusted.satFat || 0) + Number(adjusted.polyFat || 0) + Number(adjusted.monoFat || 0);
   if (adjusted.fat > 0 && fatBreakdownTotal <= 0) {
     adjusted.satFat = Math.max(Number(known.satFat || 0), adjusted.fat * 0.32);
@@ -3295,7 +3442,7 @@ async function aiEstimateMeal() {
 
   try {
     const prompt = buildHybridCompositionPrompt(hybrid, description, db);
-    const heuristic = estimateFromFoodDb(description, qty);
+    const heuristic = estimateFromFoodDb(description, qtyInput);
 
     const raw = await callOpenRouter(
       [
