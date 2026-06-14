@@ -223,7 +223,7 @@
               <div class="card-icon nutrition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10h16M6 6h12M8 14h8"/></svg></div>
               <h2 style="margin-bottom:0">Log Meal</h2>
             </div>
-            <p class="ai-notice">Nutrition is matched from our Indian food dataset first (3,000+ foods, staples, and supplements). Describe your meal, enter quantity as count or grams (e.g. 4 or 200g), then use AI estimate only for unmatched parts.</p>
+            <p class="ai-notice">Nutrition is matched from our Indian food dataset first (5,000+ foods, staples, and supplements). Describe portions in the meal text (e.g. 200g paneer, 250ml curry, 4 eggs) and tap Estimate — AI is only used for rare unmatched meals if you add an API key.</p>
             <form id="mealForm" class="form-grid">
               <label>
                 <span class="label-text">Meal Type</span>
@@ -262,7 +262,7 @@
                   <svg class="icon-inline" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 14a3 3 0 0 0 3-3V6a3 3 0 1 0-6 0v5a3 3 0 0 0 3 3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
                   Voice
                 </button>
-                <button type="button" class="btn-primary btn-small" id="aiEstimateMealBtn">AI Estimate</button>
+                <button type="button" class="btn-primary btn-small" id="estimateMealBtn">Estimate</button>
                 <label class="btn-small file-label">
                   Scan Label
                   <input type="file" id="labelPhotoInput" accept="image/*" capture="environment" />
@@ -462,11 +462,12 @@
             <canvas id="weightChart" width="800" height="260"></canvas>
           </article>
 
-          <article class="card hidden" id="photoSectionCard">
+          <article class="card" id="photoSectionCard">
             <div class="card-icon-title">
               <div class="card-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="12" cy="12" r="3"/></svg></div>
               <h2 style="margin-bottom:0">Daily Progress Photos</h2>
             </div>
+            <p class="muted section-sub" style="margin-bottom:12px;">Log daily body or scale photos. Analyze to save coach notes on each entry in your timeline.</p>
             <form id="photoForm" class="form-grid">
               <label>
                 <span class="label-text">Photo Type</span>
@@ -487,11 +488,12 @@
                 Take Photo
                 <input type="file" id="photoInput" accept="image/*" capture="environment" />
               </label>
-              <button class="btn-secondary full-width" id="aiPhotoAnalyzeBtn" type="button">AI Analyze Photo</button>
+              <button class="btn-secondary full-width" id="aiPhotoAnalyzeBtn" type="button">Analyze Photo</button>
               <button class="btn-primary full-width" type="submit">Save Photo</button>
             </form>
-            <p class="muted" id="photoAiFeedback" style="margin-top:8px;"></p>
-            <div id="photoGallery" class="photo-grid" style="margin-top:12px;"></div>
+            <div class="photo-analysis-shell" id="photoAiFeedback" aria-live="polite"></div>
+            <h3 class="photo-timeline-title">Progress Timeline</h3>
+            <div id="photoGallery" class="photo-grid"></div>
           </article>
         </section>
 

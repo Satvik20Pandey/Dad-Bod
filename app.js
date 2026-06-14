@@ -449,6 +449,8 @@ const builtInFoodDb = {
   roti: { kcal: 297, protein: 11, carbs: 58, fiber: 9.6, sugar: 2.8, fat: 3.6, satFat: 0.7, polyFat: 1.3, monoFat: 0.8, transFat: 0, cholesterol: 0, sodium: 12, potassium: 405, vitaminA: 0, vitaminC: 0, calcium: 29, iron: 3.9 },
   besan: { kcal: 387, protein: 22, carbs: 58, fiber: 10.8, sugar: 10.8, fat: 7, satFat: 0.7, polyFat: 2.9, monoFat: 1.6, transFat: 0, cholesterol: 0, sodium: 64, potassium: 846, vitaminA: 0, vitaminC: 0, calcium: 45, iron: 4.9 },
   paneer: { kcal: 265, protein: 18.3, carbs: 1.2, fiber: 0, sugar: 0.5, fat: 20.8, satFat: 13, polyFat: 0.6, monoFat: 4.5, transFat: 0.8, cholesterol: 56, sodium: 22, potassium: 104, vitaminA: 210, vitaminC: 0, calcium: 208, iron: 0.7 },
+  "indian curry gravy": { kcal: 118, protein: 2.8, carbs: 7.5, fiber: 1.5, sugar: 2.5, fat: 8.2, satFat: 2.1, polyFat: 2.4, monoFat: 3.2, transFat: 0.05, cholesterol: 0, sodium: 280, potassium: 180, vitaminA: 85, vitaminC: 6, calcium: 28, iron: 0.9 },
+  "paneer curry": { kcal: 176.52, protein: 7.8, carbs: 8.4, fiber: 1.4, sugar: 6.29, fat: 12.38, satFat: 4.2, polyFat: 1.8, monoFat: 3.6, transFat: 0.05, cholesterol: 18, sodium: 216, potassium: 120, vitaminA: 45, vitaminC: 20, calcium: 189, iron: 0.81 },
   chicken: { kcal: 239, protein: 27, carbs: 0, fiber: 0, sugar: 0, fat: 14, satFat: 3.8, polyFat: 3.2, monoFat: 6.4, transFat: 0.1, cholesterol: 88, sodium: 82, potassium: 223, vitaminA: 13, vitaminC: 0, calcium: 15, iron: 1.3 },
   potato: { kcal: 87, protein: 1.9, carbs: 20.1, fiber: 1.8, sugar: 0.9, fat: 0.1, satFat: 0, polyFat: 0.1, monoFat: 0, transFat: 0, cholesterol: 0, sodium: 6, potassium: 379, vitaminA: 0, vitaminC: 13, calcium: 5, iron: 0.8 },
   curd: { kcal: 63, protein: 3.5, carbs: 4.7, fiber: 0, sugar: 4.7, fat: 3.3, satFat: 2.1, polyFat: 0.1, monoFat: 0.9, transFat: 0.1, cholesterol: 13, sodium: 46, potassium: 141, vitaminA: 27, vitaminC: 0, calcium: 121, iron: 0.1 },
@@ -2238,8 +2240,7 @@ async function analyzeWorkoutWithAI() {
 }
 
 function renderAdminOnlySections() {
-  const isAdmin = Boolean(currentUser?.isAdmin);
-  select("photoSectionCard")?.classList.toggle("hidden", !isAdmin);
+  // Progress photos are available to all users.
 }
 
 function showTab(tabName) {
@@ -3039,6 +3040,147 @@ function addNutritionTotals(target, addition) {
   return dest;
 }
 
+const MEASURED_UNIT_PATTERN = "(?:kg|kilogram|kilograms|g|gram|grams|gm|ml|l|litre|liter|cup|cups|tbsp|tablespoons?|tsp|teaspoons?)";
+
+function parseMeasuredUnitToGrams(value, unit) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) return 0;
+  const token = String(unit || "").toLowerCase();
+  if (token === "kg" || token === "kilogram" || token === "kilograms") return amount * 1000;
+  if (token === "l" || token === "litre" || token === "liter") return amount * 1000;
+  if (token === "cup" || token === "cups") return amount * 240;
+  if (token === "tbsp" || token === "tablespoon" || token === "tablespoons") return amount * 15;
+  if (token === "tsp" || token === "teaspoon" || token === "teaspoons") return amount * 5;
+  return amount;
+}
+
+function hasSeparatePaneerWeight(mealContext) {
+  return /(\d+(?:\.\d+)?)\s*(?:kg|g|gram|grams|gm|ml|l|litre|liter)\s*(?:of\s+)?paneer\b/i.test(String(mealContext || ""));
+}
+
+function resolveMeasuredFoodKey(foodText, mealContext, db) {
+  const food = normalizeFoodKey(foodText);
+  if (!food) return null;
+
+  const plainPaneer = /^(paneer|cottage cheese|indian cottage cheese)$/.test(food)
+    || (/\bpaneer\b/.test(food) && !/(curry|masala|bhurji|tikka|korma|biryani|roll|sandwich|salad|paratha|kofta|handi|do pyaza|jalfrezi|palak|matar|butter|cutlet|kheer|samosa)/.test(food));
+
+  if (plainPaneer) {
+    const key = findBestFoodMatch("paneer", db);
+    if (key && (key === "paneer" || isCanonicalStapleKey(key))) return "paneer";
+    return db.paneer ? "paneer" : key;
+  }
+
+  if (/curry|gravy|masala|salan|sabzi/.test(food)) {
+    if (hasSeparatePaneerWeight(mealContext) && /paneer/.test(food)) {
+      return findBestFoodMatch("indian curry gravy", db) || "indian curry gravy";
+    }
+    if (/paneer/.test(food)) return findBestFoodMatch("paneer curry", db) || "paneer curry";
+    if (/egg|anda/.test(food)) return findBestFoodMatch("egg curry", db) || "egg curry";
+    if (/chicken/.test(food)) return findBestFoodMatch("chicken curry", db);
+    return findBestFoodMatch(food, db) || findBestFoodMatch("indian curry gravy", db) || "indian curry gravy";
+  }
+
+  const direct = findBestFoodMatch(food, db);
+  if (direct) return direct;
+
+  const tokens = tokenizeFoodText(food);
+  if (tokens.length === 1) return findBestFoodMatch(tokens[0], db);
+  return null;
+}
+
+function pushMeasuredComponent(components, foodLabel, grams, mealContext, db) {
+  const safeGrams = Math.max(1, Number(grams || 0));
+  const matchedKey = resolveMeasuredFoodKey(foodLabel, mealContext, db);
+  if (matchedKey && db[matchedKey]) {
+    const meta = getFoodMetaForKey(matchedKey);
+    components.push({
+      source: "dataset",
+      label: `${foodLabel.trim()} (${Math.round(safeGrams)}g)`,
+      grams: safeGrams,
+      matchedKey,
+      nutrition: scaleNutrition(db[matchedKey], safeGrams, meta),
+    });
+    return;
+  }
+
+  components.push({
+    source: "unknown",
+    label: String(foodLabel || "unknown").trim(),
+    grams: safeGrams,
+  });
+}
+
+function extractExplicitMeasuredComponents(description, db) {
+  const text = String(description || "");
+  const components = [];
+  const matchedRanges = [];
+
+  const markRange = (start, end) => {
+    matchedRanges.push([start, end]);
+  };
+
+  const overlapsExisting = (start, end) =>
+    matchedRanges.some(([s, e]) => start < e && end > s);
+
+  const qtyFirstPattern = new RegExp(
+    `(\\d+(?:\\.\\d+)?)\\s*(${MEASURED_UNIT_PATTERN})\\s*(?:of\\s+)?([a-z][a-z0-9\\s/-]{1,55})`,
+    "gi"
+  );
+  let match = qtyFirstPattern.exec(text);
+  while (match) {
+    const [full, qtyText, unit, foodText] = match;
+    const start = match.index;
+    const end = start + full.length;
+    if (!overlapsExisting(start, end)) {
+      const grams = parseMeasuredUnitToGrams(qtyText, unit);
+      const food = String(foodText || "")
+        .replace(/\s+(with|and|plus)$/i, "")
+        .trim();
+      if (food && grams > 0) {
+        pushMeasuredComponent(components, food, grams, text, db);
+        markRange(start, end);
+      }
+    }
+    match = qtyFirstPattern.exec(text);
+  }
+
+  const foodFirstPattern = new RegExp(
+    `([a-z][a-z0-9\\s/-]{2,55}?)\\s+(\\d+(?:\\.\\d+)?)\\s*(${MEASURED_UNIT_PATTERN})\\b`,
+    "gi"
+  );
+  match = foodFirstPattern.exec(text);
+  while (match) {
+    const [full, foodText, qtyText, unit] = match;
+    const start = match.index;
+    const end = start + full.length;
+    if (!overlapsExisting(start, end)) {
+      const grams = parseMeasuredUnitToGrams(qtyText, unit);
+      const food = String(foodText || "").trim();
+      if (food && grams > 0 && !/^(with|and|of|plus)$/i.test(food)) {
+        pushMeasuredComponent(components, food, grams, text, db);
+        markRange(start, end);
+      }
+    }
+    match = foodFirstPattern.exec(text);
+  }
+
+  let remainder = text;
+  matchedRanges
+    .sort((a, b) => b[0] - a[0])
+    .forEach(([start, end]) => {
+      remainder = `${remainder.slice(0, start)} ${remainder.slice(end)}`;
+    });
+
+  remainder = remainder
+    .replace(/\bwith\b/gi, " ")
+    .replace(/\band\b/gi, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return { components, remainder };
+}
+
 function deriveCountBasedFoodConfig(unitText) {
   const unit = String(unitText || "").toLowerCase();
   if (unit.includes("egg")) return { foodLookup: "egg", gramsPerUnit: 50 };
@@ -3118,6 +3260,12 @@ function buildHybridMealComponents(description, qtyInput, db) {
   let workingText = rawText;
   const normalizedText = normalizeFoodKey(rawText);
 
+  const measuredParts = extractExplicitMeasuredComponents(rawText, db);
+  measuredParts.components.forEach((component) => components.push(component));
+  if (measuredParts.components.length) {
+    workingText = measuredParts.remainder || "";
+  }
+
   const eggCountMatch = normalizedText.match(/(\d+(?:\.\d+)?)\s*(?:eggs?|anda)\b/i);
   let eggCount = eggCountMatch ? Number(eggCountMatch[1]) : 0;
 
@@ -3176,10 +3324,11 @@ function buildHybridMealComponents(description, qtyInput, db) {
       });
     }
 
+    const parsedQtyValue = Number(parsedQty?.value || 0);
     const inferredMealQty = Number(
-      inferQuantityFromDescription(rawText, resolvedQty || (hasExplicitQty ? explicitQty : eggGrams + 160)) ||
+      inferQuantityFromDescription(rawText, resolvedQty || (hasExplicitQty ? parsedQtyValue : eggGrams + 160)) ||
         resolvedQty ||
-        (hasExplicitQty ? explicitQty : eggGrams + 160)
+        (hasExplicitQty ? parsedQtyValue : eggGrams + 160)
     );
     const gravyGrams = Math.max(60, inferredMealQty - eggGrams);
 
@@ -3274,15 +3423,7 @@ function buildHybridMealComponents(description, qtyInput, db) {
   };
 }
 
-function estimateFromFoodDb(description, qtyInput = null) {
-  const text = String(description || "").trim();
-  if (!foodDatasetLoaded && !foodDatasetLoadPromise) {
-    loadFoodDatasetIfNeeded().catch(() => {});
-  }
-
-  const db = getMergedFoodDb();
-  const hybrid = buildHybridMealComponents(text, qtyInput, db);
-
+function composeEstimationFromHybrid(hybrid, description, qtyInput = null) {
   const combined = zeroNutritionTotals();
   addNutritionTotals(combined, hybrid.knownTotals);
 
@@ -3292,10 +3433,77 @@ function estimateFromFoodDb(description, qtyInput = null) {
 
   const gramsHint = Math.max(
     1,
-    Number(hybrid.totalGrams || inferQuantityFromDescription(text, qtyInput || 100) || qtyInput || 100)
+    Number(hybrid.totalGrams || inferQuantityFromDescription(description, qtyInput || 100) || qtyInput || 100)
   );
 
-  return applyMealSpecificSanityAdjustments(text, combined, gramsHint);
+  return applyMealSpecificSanityAdjustments(description, combined, gramsHint);
+}
+
+function mealNeedsAiFallback(hybrid, description, db) {
+  const datasetComponents = (hybrid.components || []).filter((component) => component.source === "dataset");
+  const unknownComponents = hybrid.unknownComponents || [];
+  if (!unknownComponents.length) return false;
+
+  if (!datasetComponents.length) {
+    return getBestFoodMatchScore(description, db) < 24;
+  }
+
+  const unknownGrams = unknownComponents.reduce((sum, component) => sum + Number(component.grams || 0), 0);
+  const totalGrams = Math.max(1, Number(hybrid.totalGrams || unknownGrams));
+  if (unknownGrams / totalGrams >= 0.55) return true;
+
+  return unknownComponents.some((component) => getBestFoodMatchScore(component.label, db) < 16);
+}
+
+async function tryAiMealFallback(description, qtyParsed, hybrid) {
+  const apiKey = (state?.settings?.apiKey || "").trim();
+  if (!apiKey) return null;
+
+  const db = getMergedFoodDb();
+  const qty = Number(
+    hybrid.totalGrams ||
+      getMealQuantityInput(description) ||
+      inferQuantityFromDescription(description, 100) ||
+      100
+  );
+  const matchScore = getBestFoodMatchScore(description, db);
+  const heuristic = composeEstimationFromHybrid(hybrid, description, qtyParsed);
+  const prompt = buildHybridCompositionPrompt(hybrid, description, db);
+
+  try {
+    const raw = await callOpenRouter(
+      [
+        {
+          role: "system",
+          content:
+            "You are an expert clinical nutritionist specializing in Indian and global home-cooked meals. Estimate complete nutrition from meal descriptions with realistic portion sizes. Return strict JSON only. Use standard nutrition science: protein/carbs ~4 kcal/g, fat ~9 kcal/g. Provide realistic fat subtypes when total fat > 0.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      state.settings.aiModel || DEFAULT_AI_MODEL,
+      { expectJson: true, maxTokens: 420, totalTimeoutMs: 16000 }
+    );
+
+    const parsed = extractJsonObject(raw);
+    const llmFinal = parseAiNutritionPayload(parsed);
+    return harmonizeAiNutritionEstimate(description, llmFinal, hybrid.knownTotals, heuristic, qty, matchScore);
+  } catch {
+    return null;
+  }
+}
+
+function estimateFromFoodDb(description, qtyInput = null) {
+  const text = String(description || "").trim();
+  if (!foodDatasetLoaded && !foodDatasetLoadPromise) {
+    loadFoodDatasetIfNeeded().catch(() => {});
+  }
+
+  const db = getMergedFoodDb();
+  const hybrid = buildHybridMealComponents(text, qtyInput, db);
+  return composeEstimationFromHybrid(hybrid, text, qtyInput);
 }
 
 function fillMealFormFromEstimate(estimation) {
@@ -3321,11 +3529,41 @@ async function estimateMealFromBtn() {
   await loadFoodDatasetIfNeeded();
 
   const qtyParsed = getMealQuantityParsed(description);
-  const estimation = estimateFromFoodDb(description, qtyParsed);
+  const db = getMergedFoodDb();
+  const hybrid = buildHybridMealComponents(description, qtyParsed, db);
+  let estimation = composeEstimationFromHybrid(hybrid, description, qtyParsed);
+  let status = foodDatasetLoaded
+    ? "Estimated from Indian food dataset."
+    : "Estimated using built-in food intelligence.";
+
+  const knownCount = hybrid.components.filter((component) => component.source === "dataset").length;
+  const unknownCount = hybrid.unknownComponents.length;
+
+  if (mealNeedsAiFallback(hybrid, description, db)) {
+    setText("mealStatus", "Dataset partial match — checking AI for unknown parts...");
+    const aiEstimation = await tryAiMealFallback(description, qtyParsed, hybrid);
+    if (aiEstimation) {
+      estimation = aiEstimation;
+      status = `Dataset matched ${knownCount} part(s); AI filled ${unknownCount} unknown part(s). Review before saving.`;
+    } else if (!(state?.settings?.apiKey || "").trim()) {
+      status = `Dataset matched ${knownCount} part(s); ${unknownCount} part(s) estimated heuristically. Add API key in Settings for rare meals.`;
+    } else {
+      status = `Dataset matched ${knownCount} part(s); AI unavailable — used heuristic fallback.`;
+    }
+  } else if (knownCount > 0) {
+    status = `Estimated from dataset (${knownCount} matched part${knownCount === 1 ? "" : "s"}). Protein ~${Number(estimation.protein || 0).toFixed(1)}g. Review before saving.`;
+  } else {
+    status = "Estimated using built-in food intelligence. Review before saving.";
+  }
+
   fillMealFormFromEstimate(estimation);
-  setText("mealStatus", foodDatasetLoaded
-    ? "Estimated using merged Indian food dataset (CSV + XLS)."
-    : "Estimated using built-in food intelligence.");
+
+  const qtyInputEl = select("mealQty");
+  if (qtyInputEl && !qtyInputEl.value && hybrid.totalGrams) {
+    qtyInputEl.value = Math.round(hybrid.totalGrams);
+  }
+
+  setText("mealStatus", status);
 }
 
 function extractJsonObject(text) {
@@ -3649,66 +3887,7 @@ No explanation.`;
 }
 
 async function aiEstimateMeal() {
-  const description = select("mealDescription")?.value.trim();
-  if (!description) {
-    alert("Enter food description first.");
-    return;
-  }
-
-  if (!ensureApiKey("AI meal estimate")) return;
-
-  await loadFoodDatasetIfNeeded();
-
-  const qtyParsed = getMealQuantityParsed(description);
-  const db = getMergedFoodDb();
-  const hybrid = buildHybridMealComponents(description, qtyParsed, db);
-  const qty = Number(hybrid.totalGrams || getMealQuantityInput(description) || inferQuantityFromDescription(description, 100) || 100);
-  const matchScore = getBestFoodMatchScore(description, db);
-
-  setText("mealStatus", "Analyzing meal with AI nutrition engine...");
-
-  try {
-    const prompt = buildHybridCompositionPrompt(hybrid, description, db);
-    const heuristic = estimateFromFoodDb(description, qtyParsed);
-
-    const raw = await callOpenRouter(
-      [
-        {
-          role: "system",
-          content:
-            "You are an expert clinical nutritionist specializing in Indian and global home-cooked meals. Estimate complete nutrition from meal descriptions with realistic portion sizes. Return strict JSON only. Use standard nutrition science: protein/carbs ~4 kcal/g, fat ~9 kcal/g. Provide realistic fat subtypes when total fat > 0.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      state.settings.aiModel || DEFAULT_AI_MODEL,
-      { expectJson: true, maxTokens: 420, totalTimeoutMs: 16000 }
-    );
-
-    const parsed = extractJsonObject(raw);
-
-    const llmFinal = parseAiNutritionPayload(parsed);
-    const corrected = harmonizeAiNutritionEstimate(description, llmFinal, hybrid.knownTotals, heuristic, qty, matchScore);
-
-    fillMealFormFromEstimate(corrected);
-
-    const qtyInputEl = select("mealQty");
-    if (qtyInputEl && !qtyInputEl.value) {
-      qtyInputEl.value = Math.round(qty);
-    }
-
-    const confidence = pickNumericValue(parsed, ["confidence"], 0);
-    const confidenceText = confidence > 0 ? ` (confidence ${Math.round(confidence)}%)` : "";
-    const knownCount = hybrid.components.filter((component) => component.source === "dataset").length;
-    const referenceCount = findTopFoodMatches(description, db, 8).length;
-    setText("mealStatus", `AI estimate ready${confidenceText}. Review values before saving.`);
-  } catch {
-    const fallback = estimateFromFoodDb(description, qtyParsed);
-    fillMealFormFromEstimate(fallback);
-    setText("mealStatus", "AI estimate failed. Used Indian dataset + heuristic composition estimate instead.");
-  }
+  return estimateMealFromBtn();
 }
 
 async function parseNutritionLabelWithAI(rawText) {
@@ -3998,17 +4177,9 @@ async function applyVoiceMealAndRunEstimate(input, transcript, sourceLabel) {
     return;
   }
 
-  setText("mealStatus", `${sourceLabel} captured.`);
+  setText("mealStatus", `${sourceLabel} captured. Estimating nutrients...`);
   showToast(`${sourceLabel} captured.`, "success");
-
-  const hasApiKey = Boolean((state?.settings?.apiKey || "").trim());
-  if (!hasApiKey) {
-    setText("mealStatus", `${sourceLabel} captured. Add an OpenRouter API key in Settings to auto-estimate nutrients, or enter values manually.`);
-    return;
-  }
-
-  setText("mealStatus", `${sourceLabel} captured. Running AI estimate...`);
-  await aiEstimateMeal();
+  await estimateMealFromBtn();
 }
 
 async function startNativeVoiceInput(targetInputId = "mealDescription") {
@@ -4620,8 +4791,8 @@ function normalizePhotoDate(value) {
 
 async function analyzePhotoDataUrlWithAI(dataUrl, contextText = "") {
   const prompt = contextText
-    ? `Analyze this fitness progress photo. Context: ${contextText}. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.`
-    : "Analyze this fitness progress photo and give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.";
+    ? `Analyze this fitness progress photo. Context: ${contextText}. Return practical feedback as numbered points covering: 1) posture/body alignment, 2) visible progress since last check-in, 3) focus areas to improve, 4) next-week action plan, 5) short motivation. Use plain text with one numbered point per line.`
+    : "Analyze this fitness progress photo. Return practical feedback as numbered points covering posture, visible progress, focus areas, next-week action, and motivation. Use plain text with one numbered point per line.";
 
   const preferredModel = (state.settings.aiModel || "").trim() || "openai/gpt-4o";
   const modelCandidates = [preferredModel, "openai/gpt-4o", "openai/gpt-4o-mini"]
@@ -4636,7 +4807,7 @@ async function analyzePhotoDataUrlWithAI(dataUrl, contextText = "") {
           {
             role: "system",
             content:
-              "You are a fitness coach. Give concise practical feedback in 5 lines: posture, visible progress, focus areas, next-week action, motivation.",
+              "You are a fitness coach. Return concise practical feedback as numbered points (1-5), one point per line. No markdown headings or bullet symbols.",
           },
           {
             role: "user",
@@ -4649,7 +4820,7 @@ async function analyzePhotoDataUrlWithAI(dataUrl, contextText = "") {
         model
       );
 
-      if (result && String(result).trim()) return result;
+      if (result && String(result).trim()) return String(result).trim();
     } catch (error) {
       lastError = error;
     }
@@ -4659,6 +4830,60 @@ async function analyzePhotoDataUrlWithAI(dataUrl, contextText = "") {
   return "AI did not return text. Please try again.";
 }
 
+function formatPhotoAnalysisHtml(raw) {
+  const text = String(raw || "").trim();
+  if (!text) return `<p class="muted">No analysis yet.</p>`;
+
+  const lines = text
+    .split(/\n+/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const items = lines.map((line, idx) => {
+    const numbered = line.match(/^(\d+)[\.)]\s*(.+)$/);
+    if (numbered) {
+      return `<div class="photo-analysis-item"><span class="photo-analysis-num">${numbered[1]}</span><span>${escapeHtml(numbered[2])}</span></div>`;
+    }
+    const bullet = line.match(/^[-*•]\s*(.+)$/);
+    if (bullet) {
+      return `<div class="photo-analysis-item"><span class="photo-analysis-num">${idx + 1}</span><span>${escapeHtml(bullet[1])}</span></div>`;
+    }
+    return `<p class="photo-analysis-line">${escapeHtml(line)}</p>`;
+  });
+
+  return `<div class="photo-analysis-panel">${items.join("")}</div>`;
+}
+
+let pendingPhotoAnalysisText = "";
+
+function setPhotoAnalysisFeedback(rawText) {
+  const el = select("photoAiFeedback");
+  if (!el) return;
+  el.innerHTML = formatPhotoAnalysisHtml(rawText);
+}
+
+function getWeightForDate(dateText) {
+  const target = normalizePhotoDate(dateText);
+  const entries = [...(state.weightEntries || [])].sort((a, b) => a.date.localeCompare(b.date));
+  const exact = entries.find((entry) => normalizePhotoDate(entry.date) === target);
+  if (exact) return Number(exact.weight);
+
+  let latest = null;
+  entries.forEach((entry) => {
+    if (entry.date <= target) latest = entry;
+  });
+  return latest ? Number(latest.weight) : null;
+}
+
+function savePhotoAnalysis(photoId, analysisText) {
+  const photo = (state.photoEntries || []).find((entry) => entry.id === photoId);
+  if (!photo) return;
+  photo.aiAnalysis = String(analysisText || "").trim();
+  photo.analyzedAt = new Date().toISOString();
+  saveState();
+  renderPhotoSection();
+}
+
 async function analyzePhotoWithAI() {
   if (!ensureApiKey("AI photo analysis")) return;
 
@@ -4666,11 +4891,11 @@ async function analyzePhotoWithAI() {
   const latestSaved = Array.isArray(state.photoEntries) && state.photoEntries.length ? state.photoEntries[0] : null;
 
   if (!selectedFile && !latestSaved) {
-    setText("photoAiFeedback", "Select a photo first (or save one), then tap AI Analyze Photo.");
+    setPhotoAnalysisFeedback("Select a photo first (or save one), then tap Analyze Photo.");
     return;
   }
 
-  setText("photoAiFeedback", "AI is analyzing your progress photo...");
+  setPhotoAnalysisFeedback("Analyzing your progress photo...");
 
   try {
     const dataUrl = selectedFile
@@ -4682,10 +4907,16 @@ async function analyzePhotoWithAI() {
       : `Saved photo. Type: ${latestSaved.type}; Date: ${normalizePhotoDate(latestSaved.date)}; Note: ${latestSaved.note || "none"}`;
 
     const result = await analyzePhotoDataUrlWithAI(dataUrl, context);
-    setText("photoAiFeedback", result);
+    setPhotoAnalysisFeedback(result);
+
+    if (selectedFile) {
+      pendingPhotoAnalysisText = result;
+    } else if (latestSaved) {
+      savePhotoAnalysis(latestSaved.id, result);
+    }
   } catch (error) {
     console.warn("AI photo analysis failed", error);
-    setText("photoAiFeedback", "AI analysis failed. Please check API key/model or internet.");
+    setPhotoAnalysisFeedback("Analysis failed. Check API key/model or internet connection.");
   }
 }
 
@@ -4697,16 +4928,17 @@ async function analyzeSavedPhoto(photoId) {
   }
 
   if (!ensureApiKey("AI photo analysis")) return;
-  setText("photoAiFeedback", "AI is analyzing selected saved photo...");
+  setPhotoAnalysisFeedback("Analyzing selected photo...");
 
   try {
     const context = `Saved photo. Type: ${photo.type}; Date: ${normalizePhotoDate(photo.date)}; Note: ${photo.note || "none"}`;
     const result = await analyzePhotoDataUrlWithAI(photo.image, context);
-    setText("photoAiFeedback", result);
-    showToast("Saved photo analyzed.", "success");
+    savePhotoAnalysis(photo.id, result);
+    setPhotoAnalysisFeedback(result);
+    showToast("Photo analyzed and saved to timeline.", "success");
   } catch (error) {
     console.warn("Saved photo analysis failed", error);
-    setText("photoAiFeedback", "AI analysis failed for this saved photo.");
+    setPhotoAnalysisFeedback("Analysis failed for this photo.");
   }
 }
 
@@ -4719,11 +4951,6 @@ function deletePhotoEntry(photoId) {
 
 async function handlePhotoSubmit(e) {
   e.preventDefault();
-
-  if (!currentUser?.isAdmin) {
-    showToast("Progress photos are available on the admin profile only.", "error");
-    return;
-  }
 
   const file = select("photoInput")?.files?.[0];
   if (!file) {
@@ -4742,13 +4969,18 @@ async function handlePhotoSubmit(e) {
       type: select("photoType")?.value || "body",
       note: select("photoNote")?.value || "",
       image,
+      aiAnalysis: pendingPhotoAnalysisText || "",
+      analyzedAt: pendingPhotoAnalysisText ? new Date().toISOString() : null,
     });
+
+    pendingPhotoAnalysisText = "";
 
     saveState();
     select("photoForm")?.reset();
     if (select("photoDate")) select("photoDate").value = todayDate();
+    setPhotoAnalysisFeedback("");
     renderPhotoSection();
-    showToast("Photo saved! 📸", "success");
+    showToast("Photo saved to progress timeline.", "success");
   } catch (error) {
     console.warn("Photo save failed", error);
     showToast("Photo save failed. Try a smaller image.", "error");
@@ -4758,27 +4990,43 @@ async function handlePhotoSubmit(e) {
 function renderPhotoSection() {
   renderAdminOnlySections();
   const gallery = select("photoGallery");
-  if (!gallery || !currentUser?.isAdmin) return;
+  if (!gallery) return;
 
   if (!state.photoEntries.length) {
-    gallery.innerHTML = `<p class="muted">No photos yet. Upload to track progress.</p>`;
+    gallery.innerHTML = `<p class="muted">No photos yet. Upload daily body or scale photos to track progress.</p>`;
     return;
   }
 
-  gallery.innerHTML = state.photoEntries
+  const sorted = [...state.photoEntries].sort((a, b) => {
+    const dateDiff = normalizePhotoDate(b.date).localeCompare(normalizePhotoDate(a.date));
+    if (dateDiff !== 0) return dateDiff;
+    return String(b.capturedAt || "").localeCompare(String(a.capturedAt || ""));
+  });
+
+  gallery.innerHTML = sorted
     .map((p) => {
       const date = normalizePhotoDate(p.date);
       const typeLabel = p.type === "body" ? "Body" : "Scale";
+      const weight = getWeightForDate(date);
+      const weightLine = Number.isFinite(weight) ? `<p class="photo-card-weight">${formatNum(weight, 1)} kg recorded</p>` : "";
+      const analysisHtml = p.aiAnalysis ? formatPhotoAnalysisHtml(p.aiAnalysis) : `<p class="muted photo-card-empty">No analysis yet. Tap Analyze to add coach notes.</p>`;
       return `
-        <div class="photo-card">
-          <h3>${typeLabel} | ${date}</h3>
-          <img src="${p.image}" alt="${escapeHtml(typeLabel)}" />
-          <p class="muted" style="padding: 10px 10px 12px;">${escapeHtml(p.note || "No note")}</p>
-          <div style="display:flex;gap:8px;padding: 0 10px 12px;">
-            <button class="btn-small" onclick="analyzeSavedPhoto('${p.id}')">AI Analyze</button>
-            <button class="btn-small" style="color:#f44336;" onclick="deletePhotoEntry('${p.id}')">Delete</button>
+        <article class="photo-card">
+          <div class="photo-card-head">
+            <div>
+              <h3>${typeLabel} · ${date}</h3>
+              ${weightLine}
+            </div>
+            <span class="photo-card-badge">${sorted.indexOf(p) === 0 ? "Latest" : "Logged"}</span>
           </div>
-        </div>
+          <img src="${p.image}" alt="${escapeHtml(typeLabel)} progress on ${escapeHtml(date)}" loading="lazy" />
+          <p class="photo-card-note">${escapeHtml(p.note || "No note")}</p>
+          <div class="photo-card-analysis">${analysisHtml}</div>
+          <div class="photo-card-actions">
+            <button class="btn-small" type="button" onclick="analyzeSavedPhoto('${p.id}')">Analyze</button>
+            <button class="btn-small btn-danger-text" type="button" onclick="deletePhotoEntry('${p.id}')">Delete</button>
+          </div>
+        </article>
       `;
     })
     .join("");
@@ -5276,7 +5524,7 @@ function bindAppEvents() {
     if (selected) applyMealSuggestion(selected);
   });
   select("voiceBtn")?.addEventListener("click", () => startVoiceInput("mealDescription"));
-  select("aiEstimateMealBtn")?.addEventListener("click", aiEstimateMeal);
+  select("estimateMealBtn")?.addEventListener("click", estimateMealFromBtn);
   select("labelPhotoInput")?.addEventListener("change", handleLabelPhotoScan);
 
   select("savePlanBtn")?.addEventListener("click", saveWeeklyPlan);
