@@ -1,12 +1,15 @@
 {
   "name": "diet-plan-and-body-tracker",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Premium mobile fitness and nutrition tracker with AI meal estimation, structured workouts, and progress tracking.",
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "npm run build:dist",
     "build:dist": "node scripts/build-dist.js",
+    "build:food-dataset": "node scripts/build-food-dataset.js",
+    "validate:food-dataset": "node scripts/validate-food-dataset.js",
+    "test:meal-estimates": "node scripts/test-meal-estimates.js",
     "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
     "setup:android": "powershell -ExecutionPolicy Bypass -File scripts/setup-android-sdk.ps1",
     "build:ios": "npx cap build ios --release",

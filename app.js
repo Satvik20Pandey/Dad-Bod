@@ -453,9 +453,51 @@ const builtInFoodDb = {
   potato: { kcal: 87, protein: 1.9, carbs: 20.1, fiber: 1.8, sugar: 0.9, fat: 0.1, satFat: 0, polyFat: 0.1, monoFat: 0, transFat: 0, cholesterol: 0, sodium: 6, potassium: 379, vitaminA: 0, vitaminC: 13, calcium: 5, iron: 0.8 },
   curd: { kcal: 63, protein: 3.5, carbs: 4.7, fiber: 0, sugar: 4.7, fat: 3.3, satFat: 2.1, polyFat: 0.1, monoFat: 0.9, transFat: 0.1, cholesterol: 13, sodium: 46, potassium: 141, vitaminA: 27, vitaminC: 0, calcium: 121, iron: 0.1 },
   oil: { kcal: 884, protein: 0, carbs: 0, fiber: 0, sugar: 0, fat: 100, satFat: 14, polyFat: 34, monoFat: 43, transFat: 0.5, cholesterol: 0, sodium: 0, potassium: 0, vitaminA: 0, vitaminC: 0, calcium: 0, iron: 0 },
+  ghee: { kcal: 900, protein: 0, carbs: 0, fiber: 0, sugar: 0, fat: 100, satFat: 61, polyFat: 4, monoFat: 28, transFat: 0, cholesterol: 256, sodium: 0, potassium: 0, vitaminA: 840, vitaminC: 0, calcium: 0, iron: 0 },
+  chapati: { kcal: 297, protein: 11, carbs: 58, fiber: 9.6, sugar: 2.8, fat: 3.6, satFat: 0.7, polyFat: 1.3, monoFat: 0.8, transFat: 0, cholesterol: 0, sodium: 12, potassium: 405, vitaminA: 0, vitaminC: 0, calcium: 29, iron: 3.9 },
+  fish: { kcal: 136, protein: 20, carbs: 0, fiber: 0, sugar: 0, fat: 6, satFat: 1.2, polyFat: 1.8, monoFat: 2.2, transFat: 0, cholesterol: 55, sodium: 90, potassium: 350, vitaminA: 30, vitaminC: 0, calcium: 15, iron: 0.5 },
+  mutton: { kcal: 294, protein: 25, carbs: 0, fiber: 0, sugar: 0, fat: 21, satFat: 9, polyFat: 1.5, monoFat: 9, transFat: 0, cholesterol: 97, sodium: 72, potassium: 315, vitaminA: 0, vitaminC: 0, calcium: 17, iron: 2.5 },
+};
+
+const CANONICAL_STAPLE_KEYS = new Set([
+  ...Object.keys(builtInFoodDb),
+  "anda",
+  "phulka",
+  "paratha",
+  "idli",
+  "dosa",
+  "poha",
+  "upma",
+  "sambar",
+  "rajma",
+  "rajmah",
+  "chole",
+  "chana",
+  "moong",
+  "masoor",
+  "toor",
+  "urad",
+  "soy",
+  "whey",
+]);
+
+const massDefaultFoodPattern = /(paneer|chicken|fish|mutton|lamb|beef|pork|rice|dal|lentil|curd|yogurt|milk|tofu|soya|soy|meat|cheese|potato|oats|besan|atta|maida|semolina|suji|poha|upma|khichdi|biryani|pulao)/i;
+
+const countBasedFoodPattern = /(eggs?|rotis?|chapatis?|chappatis?|slices?|bananas?|tablets?|capsules?|scoops?)\b/i;
+
+const foodCategorySanityRules = {
+  dairy_protein: {
+    pattern: /^(paneer|cottage cheese|cheese)$/i,
+    proteinPer100g: 18,
+    carbPer100g: 2.5,
+  },
+  supplement: {
+    pattern: /(zincovit|whey|creatine|multivitamin|fish oil|protein powder|supplement|tablet|capsule)/i,
+  },
 };
 
 let externalFoodDb = {};
+let externalFoodMeta = {};
 let foodDatasetEntries = [];
 let foodDatasetLoaded = false;
 let foodDatasetLoadPromise = null;
@@ -611,6 +653,65 @@ function parseOptionalNumber(inputId) {
   return Number.isFinite(n) ? n : null;
 }
 
+function parseMealQuantity(rawValue, description = "") {
+  const raw = String(rawValue ?? "").trim();
+  if (!raw) return null;
+
+  const unitMatch = raw.match(/^\s*(\d+(?:\.\d+)?)\s*(kg|kilogram|kilograms|g|gram|grams|gm|ml|l|litre|liter|tablet|tablets|tab|capsule|capsules|cap|scoop|scoops|piece|pieces|count)?\s*$/i);
+  if (unitMatch) {
+    const value = Number(unitMatch[1]);
+    if (!Number.isFinite(value) || value <= 0) return null;
+    const unitToken = String(unitMatch[2] || "").toLowerCase();
+    if (unitToken === "kg" || unitToken === "kilogram" || unitToken === "kilograms") {
+      return { value: value * 1000, unit: "g", rawValue: value, rawUnit: unitToken };
+    }
+    if (["g", "gram", "grams", "gm", "ml", "l", "litre", "liter"].includes(unitToken)) {
+      const grams = unitToken === "l" || unitToken === "litre" || unitToken === "liter" ? value * 1000 : value;
+      return { value: grams, unit: "g", rawValue: value, rawUnit: unitToken || "g" };
+    }
+    if (["tablet", "tablets", "tab", "capsule", "capsules", "cap", "scoop", "scoops", "piece", "pieces", "count"].includes(unitToken)) {
+      return { value, unit: "count", rawValue: value, rawUnit: unitToken };
+    }
+    return { value, unit: null, rawValue: value, rawUnit: null };
+  }
+
+  const numericOnly = Number(raw);
+  if (Number.isFinite(numericOnly) && numericOnly > 0) {
+    return { value: numericOnly, unit: null, rawValue: numericOnly, rawUnit: null };
+  }
+
+  return null;
+}
+
+function getMealQuantityParsed(description = "") {
+  return parseMealQuantity(select("mealQty")?.value, description);
+}
+
+function getMealQuantityInput(description = "") {
+  const parsed = getMealQuantityParsed(description);
+  if (!parsed) return null;
+  return resolveMealQuantityInput(description, parsed);
+}
+
+function isCanonicalStapleKey(key) {
+  const normalized = normalizeFoodKey(key);
+  if (!normalized) return false;
+  if (CANONICAL_STAPLE_KEYS.has(normalized)) return true;
+  return normalized.split(" ").some((token) => CANONICAL_STAPLE_KEYS.has(token));
+}
+
+function getFoodMetaForKey(key) {
+  const normalized = normalizeFoodKey(key);
+  return externalFoodMeta[normalized] || null;
+}
+
+function getDefaultPortionGrams(key, description = "") {
+  const meta = getFoodMetaForKey(key);
+  if (meta?.perServing && meta?.servingG) return Number(meta.servingG);
+  if (meta?.defaultPortionG) return Number(meta.defaultPortionG);
+  return findFoodPortionHint(key);
+}
+
 function normalizeFoodKey(value) {
   return String(value || "")
     .toLowerCase()
@@ -686,33 +787,53 @@ async function loadFoodDatasetIfNeeded() {
       }
 
       const index = {};
+      const metaIndex = {};
       const entries = [];
 
       foods.forEach((food) => {
         const nutrition = mapFoodPayloadToNutrition(food);
+        const canonicalKey = normalizeFoodKey(food?.key || food?.name || "");
         const aliases = [food?.name, food?.key, ...(Array.isArray(food?.aliases) ? food.aliases : [])]
           .map((alias) => normalizeFoodKey(alias))
           .filter(Boolean);
 
         if (!aliases.length) return;
 
+        const meta = {
+          key: canonicalKey,
+          category: String(food?.category || "dish"),
+          defaultPortionG: Number(food?.defaultPortionG || 0) || null,
+          servingG: Number(food?.servingG || 0) || null,
+          perServing: Boolean(food?.perServing),
+          confidence: Number(food?.confidence || 0.85),
+        };
+
         aliases.forEach((alias) => {
-          if (!index[alias]) index[alias] = nutrition;
+          if (CANONICAL_STAPLE_KEYS.has(alias) && alias !== canonicalKey && canonicalKey.split(" ").length > 1) {
+            return;
+          }
+          if (!index[alias]) {
+            index[alias] = nutrition;
+            metaIndex[alias] = meta;
+          }
         });
 
         entries.push({
           name: String(food?.name || food?.key || aliases[0]),
-          key: aliases[0],
+          key: canonicalKey || aliases[0],
           nutrition,
+          category: meta.category,
         });
       });
 
       externalFoodDb = index;
+      externalFoodMeta = metaIndex;
       foodDatasetEntries = entries;
       foodDatasetLoaded = true;
     } catch (error) {
       console.warn("Food dataset load failed, using built-in DB only.", error);
       externalFoodDb = {};
+      externalFoodMeta = {};
       foodDatasetEntries = [];
       foodDatasetLoaded = false;
     } finally {
@@ -725,16 +846,18 @@ async function loadFoodDatasetIfNeeded() {
 
 function getMergedFoodDb() {
   const merged = {};
-  const addSource = (source) => {
+  const addSource = (source, options = {}) => {
+    const protectStaples = Boolean(options.protectStaples);
     Object.entries(source || {}).forEach(([rawKey, values]) => {
       const key = normalizeFoodKey(rawKey);
       if (!key) return;
+      if (protectStaples && merged[key] && isCanonicalStapleKey(key)) return;
       merged[key] = withNutritionDefaults(values);
     });
   };
 
   addSource(builtInFoodDb);
-  addSource(externalFoodDb);
+  addSource(externalFoodDb, { protectStaples: true });
   addSource(state?.foodLibrary || {});
 
   return merged;
@@ -742,7 +865,9 @@ function getMergedFoodDb() {
 
 function scoreFoodKeyMatch(normalizedText, textTokens, dbKey) {
   if (!normalizedText || !dbKey) return 0;
-  if (normalizedText === dbKey) return 100;
+  if (normalizedText === dbKey) {
+    return isCanonicalStapleKey(dbKey) ? 120 : 100;
+  }
 
   const dbTokens = dbKey.split(" ").filter(Boolean);
   const overlapTokens = dbTokens.filter((token) => textTokens.includes(token));
@@ -756,6 +881,14 @@ function scoreFoodKeyMatch(normalizedText, textTokens, dbKey) {
   score += overlap * 9;
 
   if (dbTokens.length > 1 && overlap === dbTokens.length) score += 18;
+
+  if (textTokens.length === 1 && dbTokens.length === 1 && textTokens[0] === dbTokens[0]) {
+    score += isCanonicalStapleKey(dbKey) ? 25 : 12;
+  }
+
+  if (textTokens.length <= 2 && dbTokens.length >= 3 && normalizedText === textTokens.join(" ")) {
+    score -= 28;
+  }
 
   // Avoid overfitting a single generic ingredient token to a full dish string.
   if (dbTokens.length === 1 && textTokens.length >= 2) {
@@ -2483,6 +2616,8 @@ const portionHintByKeyword = {
   tofu: 120,
   paneer: 100,
   chicken: 120,
+  fish: 120,
+  mutton: 120,
   curd: 120,
   potato: 150,
   dryfruits: 30,
@@ -2512,29 +2647,54 @@ function describesCountBasedFood(description) {
 }
 
 function resolveMealQuantityInput(description, qtyInput) {
-  const explicitQty = Number(qtyInput);
+  const parsed = typeof qtyInput === "object" && qtyInput !== null
+    ? qtyInput
+    : parseMealQuantity(qtyInput, description);
+  if (!parsed) return null;
+
+  const explicitQty = Number(parsed.value);
   if (!Number.isFinite(explicitQty) || explicitQty <= 0) return null;
 
   const text = String(description || "").trim();
   if (descriptionHasExplicitGrams(text)) return explicitQty;
 
+  if (parsed.unit === "g") return explicitQty;
+  if (parsed.unit === "count") {
+    if (/^(eggs?|anda)\s*$/i.test(normalizeFoodKey(text))) return explicitQty * 50;
+    if (/^(roti|rotis|chapati|chapatis|chappati|chappatis|phulka)\s*$/i.test(normalizeFoodKey(text))) {
+      return explicitQty * 40;
+    }
+    if (/^bananas?\s*$/i.test(normalizeFoodKey(text))) return explicitQty * 118;
+    const meta = getFoodMetaForKey(text);
+    if (meta?.perServing && meta?.servingG) return explicitQty * Number(meta.servingG);
+    if (countBasedFoodPattern.test(text) && explicitQty <= 30) {
+      if (/\beggs?\b|\banda\b/i.test(text)) return explicitQty * 50;
+      if (/(roti|chapati|chappati|phulka)/i.test(text)) return explicitQty * 40;
+    }
+    return explicitQty;
+  }
+
   const normalized = normalizeFoodKey(text);
   const hasCountInText = descriptionHasExplicitCount(text);
 
   if (!hasCountInText && explicitQty <= 30 && Number.isInteger(explicitQty)) {
-    if (/^eggs?\s*$/i.test(normalized)) return explicitQty * 50;
-    if (/^(roti|rotis|chapati|chapatis|chappati|chappatis)\s*$/i.test(normalized)) return explicitQty * 40;
+    if (/^eggs?\s*$|^anda\s*$/i.test(normalized)) return explicitQty * 50;
+    if (/^(roti|rotis|chapati|chapatis|chappati|chappatis|phulka)\s*$/i.test(normalized)) return explicitQty * 40;
     if (/^bananas?\s*$/i.test(normalized)) return explicitQty * 118;
-    if (/\beggs?\b/i.test(normalized) && !/\d/.test(normalized.replace(/\beggs?\b/gi, "")) && explicitQty <= 12) {
+    if (/\beggs?\b|\banda\b/i.test(normalized) && !/\d/.test(normalized.replace(/\beggs?\b|\banda\b/gi, "")) && explicitQty <= 12) {
       return explicitQty * 50;
+    }
+    if (countBasedFoodPattern.test(text) && describesCountBasedFood(text)) {
+      if (/\beggs?\b|\banda\b/i.test(normalized)) return explicitQty * 50;
+      if (/(roti|chapati|chappati|phulka)/i.test(normalized)) return explicitQty * 40;
     }
   }
 
   if (hasCountInText && explicitQty >= 50) return explicitQty;
 
   if (!hasCountInText && explicitQty <= 30 && describesCountBasedFood(text)) {
-    if (/\beggs?\b/i.test(normalized)) return explicitQty * 50;
-    if (/(roti|chapati|chappati)/i.test(normalized)) return explicitQty * 40;
+    if (/\beggs?\b|\banda\b/i.test(normalized)) return explicitQty * 50;
+    if (/(roti|chapati|chappati|phulka)/i.test(normalized)) return explicitQty * 40;
   }
 
   return explicitQty;
@@ -2611,8 +2771,18 @@ function inferTopLevelMealQuantity(description) {
   return inferQuantityFromDescription(topLevelMatch[0], null);
 }
 
-function scaleNutrition(per100, grams) {
+function scaleNutrition(per100, grams, meta = null) {
   const base = normalizeNutrition(per100);
+  if (meta?.perServing) {
+    const servings = Math.max(1, Number(grams || meta.servingG || 1)) / Math.max(1, Number(meta.servingG || 1));
+    const scaled = zeroNutritionTotals();
+    scaled.kcal = base.kcal * servings;
+    nutrientFields.forEach((field) => {
+      scaled[field] = Number(base[field] || 0) * servings;
+    });
+    return scaled;
+  }
+
   const factor = Math.max(1, Number(grams || 100)) / 100;
   const scaled = zeroNutritionTotals();
   scaled.kcal = base.kcal * factor;
@@ -2750,18 +2920,33 @@ function estimateUnknownFood(description, grams) {
 }
 
 function findBestFoodMatch(text, db) {
-  const top = findTopFoodMatches(text, db, 1)[0];
+  const normalizedText = normalizeFoodKey(text);
+  if (!normalizedText) return null;
+
+  if (db[normalizedText]) return normalizedText;
+
+  const textTokens = tokenizeFoodText(normalizedText);
+  if (textTokens.length === 1 && db[textTokens[0]]) return textTokens[0];
+
+  const top = findTopFoodMatches(text, db, 3)[0];
   if (!top) return null;
 
-  const normalizedText = normalizeFoodKey(text);
-  const textTokens = tokenizeFoodText(normalizedText);
   const keyTokens = String(top.key || "").split(" ").filter(Boolean);
 
   if (keyTokens.length === 1 && textTokens.length >= 2 && genericFoodTokens.has(keyTokens[0])) {
     return null;
   }
 
+  if (textTokens.length <= 2 && keyTokens.length >= 3 && top.score < 90) {
+    return null;
+  }
+
   return top.score >= 16 ? top.key : null;
+}
+
+function getBestFoodMatchScore(text, db) {
+  const top = findTopFoodMatches(text, db, 1)[0];
+  return top ? Number(top.score || 0) : 0;
 }
 
 function splitMealDescription(description) {
@@ -2822,6 +3007,15 @@ function applyMealSpecificSanityAdjustments(description, nutrition, gramsHint) {
     if (adjusted.fat > plainEggFatCap) adjusted.fat = plainEggFatCap;
   }
 
+  if (/^(paneer|cottage cheese)$/i.test(text.trim()) || (/\bpaneer\b/i.test(text) && !/(curry|masala|bhurji|tikka|korma|biryani|roll|sandwich|salad|paratha)/i.test(text))) {
+    const paneerProteinCap = (totalGrams / 100) * 20;
+    const paneerCarbCap = (totalGrams / 100) * 4;
+    const paneerFatCap = (totalGrams / 100) * 24;
+    if (adjusted.protein > paneerProteinCap) adjusted.protein = paneerProteinCap;
+    if (adjusted.carbs > paneerCarbCap) adjusted.carbs = paneerCarbCap;
+    if (adjusted.fat > paneerFatCap) adjusted.fat = paneerFatCap;
+  }
+
   const macroCalories = estimateCaloriesFromNutrition(adjusted);
   if (!adjusted.kcal || adjusted.kcal < macroCalories * 0.72 || adjusted.kcal > macroCalories * 1.45) {
     adjusted.kcal = Math.round(macroCalories);
@@ -2870,12 +3064,13 @@ function extractCountBasedComponents(segmentText, db) {
     if (!matchedKey || !db[matchedKey]) return " ";
 
     const grams = Math.max(1, count * config.gramsPerUnit);
+    const itemMeta = getFoodMetaForKey(matchedKey);
     components.push({
       source: "dataset",
       label: `${count} ${unitText}`,
       grams,
       matchedKey,
-      nutrition: scaleNutrition(db[matchedKey], grams),
+      nutrition: scaleNutrition(db[matchedKey], grams, itemMeta),
     });
 
     return " ";
@@ -2911,9 +3106,11 @@ function summarizeMealComponents(components) {
 
 function buildHybridMealComponents(description, qtyInput, db) {
   const rawText = String(description || "").trim();
-  const explicitQty = Number(qtyInput);
-  const hasExplicitQty = Number.isFinite(explicitQty) && explicitQty > 0;
-  const resolvedQty = hasExplicitQty ? resolveMealQuantityInput(rawText, explicitQty) : null;
+  const parsedQty = typeof qtyInput === "object" && qtyInput !== null
+    ? qtyInput
+    : parseMealQuantity(qtyInput, rawText);
+  const hasExplicitQty = Boolean(parsedQty && Number(parsedQty.value) > 0);
+  const resolvedQty = hasExplicitQty ? resolveMealQuantityInput(rawText, parsedQty) : null;
   const topLevelMealQty = inferTopLevelMealQuantity(rawText);
   const hasTopLevelMealQty = Number.isFinite(topLevelMealQty) && topLevelMealQty > 0;
 
@@ -2921,11 +3118,20 @@ function buildHybridMealComponents(description, qtyInput, db) {
   let workingText = rawText;
   const normalizedText = normalizeFoodKey(rawText);
 
-  const eggCountMatch = normalizedText.match(/(\d+(?:\.\d+)?)\s*eggs?\b/i);
+  const eggCountMatch = normalizedText.match(/(\d+(?:\.\d+)?)\s*(?:eggs?|anda)\b/i);
   let eggCount = eggCountMatch ? Number(eggCountMatch[1]) : 0;
 
-  if (!eggCount && hasExplicitQty && Number.isInteger(explicitQty) && explicitQty <= 12 && /\beggs?\b/i.test(normalizedText)) {
-    eggCount = explicitQty;
+  if (!eggCount && hasExplicitQty && parsedQty?.unit === "count" && /\beggs?\b|\banda\b/i.test(normalizedText)) {
+    eggCount = Number(parsedQty.value);
+  } else if (
+    !eggCount &&
+    hasExplicitQty &&
+    parsedQty?.unit !== "g" &&
+    Number.isInteger(Number(parsedQty.value)) &&
+    Number(parsedQty.value) <= 12 &&
+    /\beggs?\b|\banda\b/i.test(normalizedText)
+  ) {
+    eggCount = Number(parsedQty.value);
   }
 
   if (isEggPreparedDish(normalizedText) && eggCount > 0) {
@@ -2999,10 +3205,19 @@ function buildHybridMealComponents(description, qtyInput, db) {
     if (!segmentText || (isEggPreparedDish(normalizedText) && isOmeletteRemainder(segmentText))) return;
 
     const matchedKey = findBestFoodMatch(segmentText, db);
-    const grams = Math.max(
+    const meta = matchedKey ? getFoodMetaForKey(matchedKey) : null;
+    let grams = Math.max(
       1,
-      Number(inferQuantityFromDescription(segmentText, matchedKey ? findFoodPortionHint(matchedKey) : 100) || 100)
+      Number(
+        resolvedQty && segments.length === 1 && components.length === 0
+          ? resolvedQty
+          : inferQuantityFromDescription(segmentText, matchedKey ? getDefaultPortionGrams(matchedKey, segmentText) : 100) || 100
+      )
     );
+
+    if (meta?.perServing && parsedQty?.unit === "count" && segments.length === 1 && components.length === 0) {
+      grams = Math.max(1, Number(parsedQty.value) * Number(meta.servingG || 1));
+    }
 
     if (matchedKey && db[matchedKey]) {
       components.push({
@@ -3010,7 +3225,8 @@ function buildHybridMealComponents(description, qtyInput, db) {
         label: segmentText,
         grams,
         matchedKey,
-        nutrition: scaleNutrition(db[matchedKey], grams),
+        nutrition: scaleNutrition(db[matchedKey], grams, meta),
+        category: meta?.category || null,
       });
       return;
     }
@@ -3025,7 +3241,7 @@ function buildHybridMealComponents(description, qtyInput, db) {
   if (!components.length) {
     const grams = Math.max(
       1,
-      Number(resolvedQty || (hasExplicitQty ? explicitQty : inferQuantityFromDescription(rawText, 100) || 100))
+      Number(resolvedQty || inferQuantityFromDescription(rawText, getDefaultPortionGrams(rawText, rawText)) || 100)
     );
     components.push({
       source: "unknown",
@@ -3035,8 +3251,8 @@ function buildHybridMealComponents(description, qtyInput, db) {
   }
 
   const preScaleSummary = summarizeMealComponents(components);
-  const targetTotalQty = resolvedQty || (hasExplicitQty ? explicitQty : null) || (hasTopLevelMealQty ? topLevelMealQty : null);
-  if (targetTotalQty && preScaleSummary.totalGrams > 0) {
+  const targetTotalQty = resolvedQty || (hasTopLevelMealQty ? topLevelMealQty : null);
+  if (targetTotalQty && preScaleSummary.totalGrams > 0 && Math.abs(targetTotalQty - preScaleSummary.totalGrams) > 1) {
     const scale = targetTotalQty / preScaleSummary.totalGrams;
     components.forEach((component) => {
       component.grams = Math.max(1, Number(component.grams || 0) * scale);
@@ -3104,8 +3320,8 @@ async function estimateMealFromBtn() {
 
   await loadFoodDatasetIfNeeded();
 
-  const qty = parseOptionalNumber("mealQty");
-  const estimation = estimateFromFoodDb(description, qty);
+  const qtyParsed = getMealQuantityParsed(description);
+  const estimation = estimateFromFoodDb(description, qtyParsed);
   fillMealFormFromEstimate(estimation);
   setText("mealStatus", foodDatasetLoaded
     ? "Estimated using merged Indian food dataset (CSV + XLS)."
@@ -3323,12 +3539,17 @@ function clampNumber(value, minValue, maxValue) {
   return Math.max(minValue, Math.min(maxValue, value));
 }
 
-function harmonizeAiNutritionEstimate(description, llmNutrition, knownTotals, heuristicNutrition, gramsHint) {
+function harmonizeAiNutritionEstimate(description, llmNutrition, knownTotals, heuristicNutrition, gramsHint, matchScore = 0) {
   const adjusted = normalizeNutrition(llmNutrition || {});
   const known = normalizeNutrition(knownTotals || {});
   const heuristic = normalizeNutrition(heuristicNutrition || {});
   const totalGrams = Math.max(1, Number(gramsHint || inferQuantityFromDescription(description, 100) || 100));
   const text = normalizeFoodKey(description);
+  const highConfidenceDataset = matchScore >= 80 || getBestFoodMatchScore(description, getMergedFoodDb()) >= 80;
+
+  if (highConfidenceDataset && heuristic.kcal > 0) {
+    return applyMealSpecificSanityAdjustments(description, heuristic, totalGrams);
+  }
 
   ["protein", "carbs", "fat"].forEach((field) => {
     adjusted[field] = Math.max(Number(adjusted[field] || 0), Number(known[field] || 0));
@@ -3350,6 +3571,10 @@ function harmonizeAiNutritionEstimate(description, llmNutrition, knownTotals, he
 
   if (heuristic.fat > 0 && adjusted.fat > heuristic.fat * 1.18) {
     adjusted.fat = Math.max(Number(known.fat || 0), heuristic.fat * 1.08);
+  }
+
+  if (heuristic.carbs > 0 && adjusted.carbs > heuristic.carbs * 1.15) {
+    adjusted.carbs = Math.max(Number(known.carbs || 0), heuristic.carbs * 1.06);
   }
 
   const fatBreakdownTotal = Number(adjusted.satFat || 0) + Number(adjusted.polyFat || 0) + Number(adjusted.monoFat || 0);
@@ -3405,7 +3630,7 @@ Total quantity: ${formatNum(hybrid.totalGrams, 0)} grams.
 Known components already computed from dataset (do NOT recalculate these):
 ${knownComponents || "none"}
 
-Dataset subtotal estimate (use this as evidence, not final answer):
+Dataset subtotal estimate (ground truth for matched components — do NOT exceed these totals unless unknown parts require it):
 ${JSON.stringify(knownTotals)}
 
 Unknown components requiring estimation:
@@ -3415,6 +3640,7 @@ Reference foods from merged dataset:
 ${references}
 
 Use meal description, quantity, and dataset references to produce FINAL nutrition totals for the whole meal.
+Treat dataset subtotals as ground truth for matched foods. Only estimate nutrition for unknown components listed above.
 Return ONLY strict JSON with numeric fields:
 kcal, protein, carbs, fiber, sugar, fat, saturatedFat, polyunsaturatedFat, monounsaturatedFat, transFat, cholesterolMg, sodiumMg, potassiumMg, vitaminAMcg, vitaminCMg, calciumMg, ironMg, confidence.
 Do not leave fat subtype fields as all-zero when total fat is present; provide realistic saturated/polyunsaturated/monounsaturated split.
@@ -3433,16 +3659,17 @@ async function aiEstimateMeal() {
 
   await loadFoodDatasetIfNeeded();
 
-  const qtyInput = parseOptionalNumber("mealQty");
+  const qtyParsed = getMealQuantityParsed(description);
   const db = getMergedFoodDb();
-  const hybrid = buildHybridMealComponents(description, qtyInput, db);
-  const qty = Number(hybrid.totalGrams || qtyInput || inferQuantityFromDescription(description, 100) || 100);
+  const hybrid = buildHybridMealComponents(description, qtyParsed, db);
+  const qty = Number(hybrid.totalGrams || getMealQuantityInput(description) || inferQuantityFromDescription(description, 100) || 100);
+  const matchScore = getBestFoodMatchScore(description, db);
 
   setText("mealStatus", "Analyzing meal with AI nutrition engine...");
 
   try {
     const prompt = buildHybridCompositionPrompt(hybrid, description, db);
-    const heuristic = estimateFromFoodDb(description, qtyInput);
+    const heuristic = estimateFromFoodDb(description, qtyParsed);
 
     const raw = await callOpenRouter(
       [
@@ -3463,7 +3690,7 @@ async function aiEstimateMeal() {
     const parsed = extractJsonObject(raw);
 
     const llmFinal = parseAiNutritionPayload(parsed);
-    const corrected = harmonizeAiNutritionEstimate(description, llmFinal, hybrid.knownTotals, heuristic, qty);
+    const corrected = harmonizeAiNutritionEstimate(description, llmFinal, hybrid.knownTotals, heuristic, qty, matchScore);
 
     fillMealFormFromEstimate(corrected);
 
@@ -3478,7 +3705,7 @@ async function aiEstimateMeal() {
     const referenceCount = findTopFoodMatches(description, db, 8).length;
     setText("mealStatus", `AI estimate ready${confidenceText}. Review values before saving.`);
   } catch {
-    const fallback = estimateFromFoodDb(description, qty);
+    const fallback = estimateFromFoodDb(description, qtyParsed);
     fillMealFormFromEstimate(fallback);
     setText("mealStatus", "AI estimate failed. Used Indian dataset + heuristic composition estimate instead.");
   }
@@ -3680,11 +3907,11 @@ function handleMealFormSubmit(e) {
     return;
   }
 
-  const qtyInput = parseOptionalNumber("mealQty");
-  const qty = Number(qtyInput || inferQuantityFromDescription(description, 100) || 100);
+  const qtyParsed = getMealQuantityParsed(description);
+  const qty = Number(getMealQuantityInput(description) || inferQuantityFromDescription(description, 100) || 100);
 
   const manualKcal = parseOptionalNumber("mealCalories");
-  const estimated = normalizeNutrition(estimateFromFoodDb(description, qty));
+  const estimated = normalizeNutrition(estimateFromFoodDb(description, qtyParsed));
 
   const finalNutrition = {};
   nutrientFields.forEach((field) => {

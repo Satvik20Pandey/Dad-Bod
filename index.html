@@ -223,7 +223,7 @@
               <div class="card-icon nutrition"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M4 10h16M6 6h12M8 14h8"/></svg></div>
               <h2 style="margin-bottom:0">Log Meal</h2>
             </div>
-            <p class="ai-notice">Nutrition is estimated via AI or entered manually. We do not maintain a full food database — describe your meal, use AI estimate, or fill values you already know.</p>
+            <p class="ai-notice">Nutrition is matched from our Indian food dataset first (3,000+ foods, staples, and supplements). Describe your meal, enter quantity as count or grams (e.g. 4 or 200g), then use AI estimate only for unmatched parts.</p>
             <form id="mealForm" class="form-grid">
               <label>
                 <span class="label-text">Meal Type</span>
@@ -243,7 +243,7 @@
               </label>
               <label>
                 <span class="label-text">Quantity (count or grams, optional)</span>
-                <input type="number" id="mealQty" min="1" placeholder="e.g. 4 eggs or 250g" />
+                <input type="text" id="mealQty" inputmode="decimal" placeholder="e.g. 4 or 200g" />
               </label>
               <label>
                 <span class="label-text">Calories</span>
