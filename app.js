@@ -451,6 +451,9 @@ const builtInFoodDb = {
   paneer: { kcal: 265, protein: 18.3, carbs: 1.2, fiber: 0, sugar: 0.5, fat: 20.8, satFat: 13, polyFat: 0.6, monoFat: 4.5, transFat: 0.8, cholesterol: 56, sodium: 22, potassium: 104, vitaminA: 210, vitaminC: 0, calcium: 208, iron: 0.7 },
   "indian curry gravy": { kcal: 118, protein: 2.8, carbs: 7.5, fiber: 1.5, sugar: 2.5, fat: 8.2, satFat: 2.1, polyFat: 2.4, monoFat: 3.2, transFat: 0.05, cholesterol: 0, sodium: 280, potassium: 180, vitaminA: 85, vitaminC: 6, calcium: 28, iron: 0.9 },
   "paneer curry": { kcal: 176.52, protein: 7.8, carbs: 8.4, fiber: 1.4, sugar: 6.29, fat: 12.38, satFat: 4.2, polyFat: 1.8, monoFat: 3.6, transFat: 0.05, cholesterol: 18, sodium: 216, potassium: 120, vitaminA: 45, vitaminC: 20, calcium: 189, iron: 0.81 },
+  "boiled rice": { kcal: 130, protein: 2.7, carbs: 28, fiber: 0.4, sugar: 0.1, fat: 0.3, satFat: 0.1, polyFat: 0.1, monoFat: 0.1, transFat: 0, cholesterol: 0, sodium: 1, potassium: 35, vitaminA: 0, vitaminC: 0, calcium: 10, iron: 1.2 },
+  "chicken breast cooked": { kcal: 165, protein: 31, carbs: 0, fiber: 0, sugar: 0, fat: 3.6, satFat: 1, polyFat: 0.8, monoFat: 1.2, transFat: 0.05, cholesterol: 85, sodium: 74, potassium: 256, vitaminA: 13, vitaminC: 0, calcium: 15, iron: 1 },
+  "dal cooked": { kcal: 116, protein: 9, carbs: 20, fiber: 8, sugar: 1.8, fat: 0.4, satFat: 0.1, polyFat: 0.2, monoFat: 0.1, transFat: 0, cholesterol: 0, sodium: 2, potassium: 369, vitaminA: 8, vitaminC: 1.5, calcium: 19, iron: 3.3 },
   chicken: { kcal: 239, protein: 27, carbs: 0, fiber: 0, sugar: 0, fat: 14, satFat: 3.8, polyFat: 3.2, monoFat: 6.4, transFat: 0.1, cholesterol: 88, sodium: 82, potassium: 223, vitaminA: 13, vitaminC: 0, calcium: 15, iron: 1.3 },
   potato: { kcal: 87, protein: 1.9, carbs: 20.1, fiber: 1.8, sugar: 0.9, fat: 0.1, satFat: 0, polyFat: 0.1, monoFat: 0, transFat: 0, cholesterol: 0, sodium: 6, potassium: 379, vitaminA: 0, vitaminC: 13, calcium: 5, iron: 0.8 },
   curd: { kcal: 63, protein: 3.5, carbs: 4.7, fiber: 0, sugar: 4.7, fat: 3.3, satFat: 2.1, polyFat: 0.1, monoFat: 0.9, transFat: 0.1, cholesterol: 13, sodium: 46, potassium: 141, vitaminA: 27, vitaminC: 0, calcium: 121, iron: 0.1 },
@@ -481,7 +484,51 @@ const CANONICAL_STAPLE_KEYS = new Set([
   "urad",
   "soy",
   "whey",
+  "indian curry gravy",
+  "curry gravy",
+  "boiled rice",
+  "chawal",
+  "chicken breast",
+  "murgh",
+  "dal cooked",
+  "cooked dal",
 ]);
+
+const MISLEADING_DISH_TOKENS = new Set([
+  "salad",
+  "samosa",
+  "sandwich",
+  "roll",
+  "kheer",
+  "cutlet",
+  "smoothie",
+  "shake",
+  "cake",
+  "cookie",
+  "biscuit",
+  "namkeen",
+  "pakora",
+  "fries",
+  "chips",
+  "juice",
+  "candy",
+  "ice",
+  "cream",
+  "pastry",
+  "muffin",
+  "donut",
+]);
+
+const STAPLE_INGREDIENT_RESOLVERS = [
+  { test: /^(paneer|cottage cheese|indian cottage cheese)$/, key: "paneer", block: /(curry|masala|bhurji|tikka|korma|biryani|roll|sandwich|salad|paratha|kofta|handi|do pyaza|jalfrezi|palak|matar|butter|cutlet|kheer|samosa)/ },
+  { test: /^(egg|eggs|anda|whole egg|boiled egg)$/, key: "egg", block: /(curry|bhurji|omelet|omlette|omelette|roll|sandwich|biryani|fried)/ },
+  { test: /^(chicken breast|chicken|murgh|grilled chicken|boiled chicken)$/, key: "chicken breast cooked", fallback: "chicken", block: /(curry|biryani|tikka|korma|roll|sandwich|soup|fried|manchurian|65)/ },
+  { test: /^(fish|rohu|bangda|surmai|pomfret)$/, key: "fish", block: /(curry|fry|biryani|roll|fried|manchurian)/ },
+  { test: /^(mutton|lamb|goat|keema)$/, key: "mutton", block: /(curry|biryani|roll|korma|kebab)/ },
+  { test: /^(tofu|soya|soy)$/, key: "tofu", block: /(curry|roll|manchurian|fried)/ },
+  { test: /^(rice|chawal|boiled rice|cooked rice|steamed rice)$/, key: "boiled rice", fallback: "rice", block: /(biryani|pulao|fried|lemon|jeera|curd)/ },
+  { test: /^(dal|lentil|arhar|toor|moong dal|masoor dal)$/, key: "dal cooked", fallback: "dal", block: /(biryani|pakora|vada|halwa)/ },
+];
 
 const massDefaultFoodPattern = /(paneer|chicken|fish|mutton|lamb|beef|pork|rice|dal|lentil|curd|yogurt|milk|tofu|soya|soy|meat|cheese|potato|oats|besan|atta|maida|semolina|suji|poha|upma|khichdi|biryani|pulao)/i;
 
@@ -501,6 +548,10 @@ const foodCategorySanityRules = {
 let externalFoodDb = {};
 let externalFoodMeta = {};
 let foodDatasetEntries = [];
+let foodCanonicalKeys = [];
+let foodDisplayNames = {};
+let foodExactAliasToKey = {};
+let foodInvertedIndex = {};
 let foodDatasetLoaded = false;
 let foodDatasetLoadPromise = null;
 
@@ -704,7 +755,11 @@ function isCanonicalStapleKey(key) {
 
 function getFoodMetaForKey(key) {
   const normalized = normalizeFoodKey(key);
-  return externalFoodMeta[normalized] || null;
+  if (externalFoodMeta[normalized]) return externalFoodMeta[normalized];
+  const canonical = foodExactAliasToKey[normalized];
+  if (canonical && externalFoodMeta[canonical]) return externalFoodMeta[canonical];
+  const match = Object.values(externalFoodMeta).find((meta) => meta?.key === normalized);
+  return match || null;
 }
 
 function getDefaultPortionGrams(key, description = "") {
@@ -791,6 +846,27 @@ async function loadFoodDatasetIfNeeded() {
       const index = {};
       const metaIndex = {};
       const entries = [];
+      const canonicalKeys = [];
+      const displayNames = {};
+      const exactAliasToKey = {};
+      const aliasConfidenceMap = {};
+      const invertedIndex = {};
+
+      const registerAlias = (alias, canonicalKey, confidence = 0.85) => {
+        if (!alias || !canonicalKey) return;
+        if (CANONICAL_STAPLE_KEYS.has(alias) && alias !== canonicalKey && canonicalKey.split(" ").length > 1) {
+          return;
+        }
+        const existingConfidence = Number(aliasConfidenceMap[alias] || 0);
+        if (!exactAliasToKey[alias] || confidence >= existingConfidence) {
+          exactAliasToKey[alias] = canonicalKey;
+          aliasConfidenceMap[alias] = confidence;
+        }
+        alias.split(" ").filter((token) => token.length > 1).forEach((token) => {
+          if (!invertedIndex[token]) invertedIndex[token] = new Set();
+          invertedIndex[token].add(canonicalKey);
+        });
+      };
 
       foods.forEach((food) => {
         const nutrition = mapFoodPayloadToNutrition(food);
@@ -810,6 +886,9 @@ async function loadFoodDatasetIfNeeded() {
           confidence: Number(food?.confidence || 0.85),
         };
 
+        canonicalKeys.push(canonicalKey);
+        displayNames[canonicalKey] = String(food?.name || canonicalKey);
+
         aliases.forEach((alias) => {
           if (CANONICAL_STAPLE_KEYS.has(alias) && alias !== canonicalKey && canonicalKey.split(" ").length > 1) {
             return;
@@ -818,25 +897,41 @@ async function loadFoodDatasetIfNeeded() {
             index[alias] = nutrition;
             metaIndex[alias] = meta;
           }
+          registerAlias(alias, canonicalKey, meta.confidence);
         });
+
+        registerAlias(canonicalKey, canonicalKey, meta.confidence);
 
         entries.push({
           name: String(food?.name || food?.key || aliases[0]),
           key: canonicalKey || aliases[0],
           nutrition,
           category: meta.category,
+          confidence: meta.confidence,
         });
+      });
+
+      Object.keys(invertedIndex).forEach((token) => {
+        invertedIndex[token] = [...invertedIndex[token]];
       });
 
       externalFoodDb = index;
       externalFoodMeta = metaIndex;
       foodDatasetEntries = entries;
+      foodCanonicalKeys = [...new Set(canonicalKeys)];
+      foodDisplayNames = displayNames;
+      foodExactAliasToKey = exactAliasToKey;
+      foodInvertedIndex = invertedIndex;
       foodDatasetLoaded = true;
     } catch (error) {
       console.warn("Food dataset load failed, using built-in DB only.", error);
       externalFoodDb = {};
       externalFoodMeta = {};
       foodDatasetEntries = [];
+      foodCanonicalKeys = [];
+      foodDisplayNames = {};
+      foodExactAliasToKey = {};
+      foodInvertedIndex = {};
       foodDatasetLoaded = false;
     } finally {
       foodDatasetLoadPromise = null;
@@ -865,67 +960,119 @@ function getMergedFoodDb() {
   return merged;
 }
 
+function getFoodSearchKeys(db) {
+  const builtInKeys = Object.keys(builtInFoodDb || {});
+  if (foodCanonicalKeys.length) {
+    return [...new Set([...builtInKeys, ...foodCanonicalKeys])];
+  }
+  return Object.keys(db || {});
+}
+
+function getCandidateKeysForQuery(normalizedText, textTokens) {
+  if (!textTokens.length) return getFoodSearchKeys(getMergedFoodDb());
+
+  const candidateSet = new Set();
+  textTokens.forEach((token) => {
+    (foodInvertedIndex[token] || []).forEach((key) => candidateSet.add(key));
+  });
+
+  if (candidateSet.size) return [...candidateSet];
+
+  const db = getMergedFoodDb();
+  return getFoodSearchKeys(db).filter((key) =>
+    textTokens.some((token) => key.includes(token) || token.includes(key))
+  );
+}
+
 function scoreFoodKeyMatch(normalizedText, textTokens, dbKey) {
   if (!normalizedText || !dbKey) return 0;
+  const dbTokens = dbKey.split(" ").filter(Boolean);
+  const meta = getFoodMetaForKey(dbKey);
+  const confidenceBoost = Number(meta?.confidence || 0.85) * 14;
+
   if (normalizedText === dbKey) {
-    return isCanonicalStapleKey(dbKey) ? 120 : 100;
+    return (isCanonicalStapleKey(dbKey) ? 120 : 100) + confidenceBoost;
   }
 
-  const dbTokens = dbKey.split(" ").filter(Boolean);
+  if (foodExactAliasToKey[normalizedText] === dbKey) {
+    return 112 + confidenceBoost;
+  }
+
   const overlapTokens = dbTokens.filter((token) => textTokens.includes(token));
   const overlap = overlapTokens.length;
 
-  let score = 0;
+  let score = confidenceBoost;
 
-  if (normalizedText.includes(dbKey)) score += 60;
-  if (dbKey.includes(normalizedText)) score += 30;
+  if (normalizedText.includes(dbKey)) score += 62;
+  if (dbKey.includes(normalizedText) && normalizedText.length >= 4) score += 34;
 
-  score += overlap * 9;
+  score += overlap * 11;
 
-  if (dbTokens.length > 1 && overlap === dbTokens.length) score += 18;
+  if (dbTokens.length > 1 && overlap === dbTokens.length && overlap === textTokens.length) {
+    score += 28;
+  } else if (dbTokens.length > 1 && overlap === dbTokens.length) {
+    score += 16;
+  }
 
   if (textTokens.length === 1 && dbTokens.length === 1 && textTokens[0] === dbTokens[0]) {
-    score += isCanonicalStapleKey(dbKey) ? 25 : 12;
+    score += isCanonicalStapleKey(dbKey) ? 30 : 14;
   }
 
-  if (textTokens.length <= 2 && dbTokens.length >= 3 && normalizedText === textTokens.join(" ")) {
-    score -= 28;
-  }
+  const extraDbTokens = dbTokens.filter((token) => !textTokens.includes(token));
+  score -= extraDbTokens.filter((token) => !genericFoodTokens.has(token)).length * 9;
 
-  // Avoid overfitting a single generic ingredient token to a full dish string.
+  if (textTokens.length <= 2 && dbTokens.length >= 4) score -= 24;
+  if (textTokens.length <= 2 && dbTokens.length >= 3 && overlap < dbTokens.length) score -= 18;
+
+  extraDbTokens.forEach((token) => {
+    if (MISLEADING_DISH_TOKENS.has(token)) score -= 38;
+  });
+
   if (dbTokens.length === 1 && textTokens.length >= 2) {
     const token = dbTokens[0];
-    if (genericFoodTokens.has(token)) {
-      score -= 22;
-    }
-
-    if (!textTokens.includes(token)) {
-      score -= 30;
-    }
+    if (genericFoodTokens.has(token)) score -= 22;
+    if (!textTokens.includes(token)) score -= 32;
   }
 
   if (dbTokens.length >= 2) {
     const overlapRatio = overlap / dbTokens.length;
-    if (overlapRatio >= 0.6) score += 16;
-    if (overlapRatio < 0.35 && !normalizedText.includes(dbKey)) score -= 14;
+    if (overlapRatio >= 0.75) score += 18;
+    if (overlapRatio < 0.4 && !normalizedText.includes(dbKey)) score -= 20;
   }
 
-  return score;
+  const prefixMatch = textTokens.length > 0 && dbKey.startsWith(textTokens.join(" "));
+  if (prefixMatch) score += 12;
+
+  return Math.max(0, score);
 }
 
 function findTopFoodMatches(text, db, limit = 8) {
   const normalizedText = normalizeFoodKey(text);
   if (!normalizedText) return [];
 
+  if (db[normalizedText]) {
+    return [{ key: normalizedText, score: isCanonicalStapleKey(normalizedText) ? 120 : 100, nutrition: db[normalizedText] }];
+  }
+
+  const exactCanonical = foodExactAliasToKey[normalizedText];
+  if (exactCanonical && db[exactCanonical]) {
+    return [{ key: exactCanonical, score: 112, nutrition: db[exactCanonical] }];
+  }
+
   const tokens = tokenizeFoodText(normalizedText);
-  const ranked = Object.keys(db || {})
+  if (tokens.length === 1 && db[tokens[0]]) {
+    return [{ key: tokens[0], score: isCanonicalStapleKey(tokens[0]) ? 118 : 96, nutrition: db[tokens[0]] }];
+  }
+
+  const candidateKeys = getCandidateKeysForQuery(normalizedText, tokens);
+  const ranked = candidateKeys
     .map((key) => ({
       key,
       score: scoreFoodKeyMatch(normalizedText, tokens, key),
       nutrition: db[key],
     }))
-    .filter((entry) => entry.score > 0)
-    .sort((a, b) => b.score - a.score);
+    .filter((entry) => entry.score > 0 && entry.nutrition)
+    .sort((a, b) => b.score - a.score || a.key.length - b.key.length);
 
   return ranked.slice(0, Math.max(1, limit));
 }
@@ -2321,10 +2468,11 @@ function renderMealSuggestions(items, preserveIndex = false) {
   box.innerHTML = mealSuggestionResults
     .map((item, idx) => {
       const activeClass = idx === mealSuggestionActiveIndex ? " active" : "";
+      const sourceLabel = item.source === "dataset" ? "Dataset" : "Recent";
       return `
         <button type="button" class="meal-suggestion-item${activeClass}" data-suggestion-index="${idx}">
           <span class="meal-suggestion-title">${escapeHtml(item.description)}</span>
-          <span class="meal-suggestion-meta">${formatNum(item.kcal, 0)} kcal | P ${formatNum(item.protein, 1)}g | C ${formatNum(item.carbs, 1)}g | F ${formatNum(item.fat, 1)}g</span>
+          <span class="meal-suggestion-meta">${sourceLabel} | ${formatNum(item.kcal, 0)} kcal | P ${formatNum(item.protein, 1)}g | C ${formatNum(item.carbs, 1)}g | F ${formatNum(item.fat, 1)}g</span>
         </button>
       `;
     })
@@ -2339,7 +2487,7 @@ function hideMealSuggestions() {
 
 function getMealSuggestions(inputText) {
   const query = normalizeMealPhrase(inputText);
-  if (!query || query.length < 3) return [];
+  if (!query || query.length < 2) return [];
 
   const history = ensureFoodHistory();
   const historyMatches = history
@@ -2349,7 +2497,7 @@ function getMealSuggestions(inputText) {
     })
     .sort((a, b) => Number(b.lastUsedAt || 0) - Number(a.lastUsedAt || 0));
 
-  const mapped = historyMatches.slice(0, 8).map((entry) => ({
+  const mappedHistory = historyMatches.slice(0, 4).map((entry) => ({
     description: String(entry.description || ""),
     qty: Number(entry.qty || 0),
     kcal: Number(entry.kcal || 0),
@@ -2357,9 +2505,15 @@ function getMealSuggestions(inputText) {
     carbs: Number(entry.carbs || 0),
     fat: Number(entry.fat || 0),
     nutrients: withNutritionDefaults(entry.nutrients || entry),
+    source: "history",
   }));
 
-  return mapped;
+  const historyKeys = new Set(mappedHistory.map((entry) => normalizeMealPhrase(entry.description)));
+  const datasetMatches = buildDatasetMealSuggestions(query, 6).filter(
+    (entry) => !historyKeys.has(normalizeMealPhrase(entry.description))
+  );
+
+  return [...mappedHistory, ...datasetMatches].slice(0, 8);
 }
 
 function applyMealSuggestion(item) {
@@ -2942,7 +3096,47 @@ function findBestFoodMatch(text, db) {
     return null;
   }
 
-  return top.score >= 16 ? top.key : null;
+  return top.score >= 24 ? top.key : null;
+}
+
+function buildDatasetMealSuggestions(query, limit = 6) {
+  const db = getMergedFoodDb();
+  const normalizedQuery = normalizeFoodKey(query);
+  if (!normalizedQuery || normalizedQuery.length < 2) return [];
+
+  const matches = findTopFoodMatches(normalizedQuery, db, limit);
+  return matches
+    .filter((match) => match.score >= 42)
+    .map((match) => {
+      const grams = Math.max(1, Number(getDefaultPortionGrams(match.key, normalizedQuery) || 100));
+      const meta = getFoodMetaForKey(match.key);
+      const nutrition = scaleNutrition(match.nutrition || db[match.key], grams, meta);
+      const label = foodDisplayNames[match.key] || match.key;
+      return {
+        description: label,
+        qty: grams,
+        kcal: nutrition.kcal,
+        protein: nutrition.protein,
+        carbs: nutrition.carbs,
+        fat: nutrition.fat,
+        nutrients: nutrition,
+        source: "dataset",
+        matchScore: match.score,
+        matchedKey: match.key,
+      };
+    });
+}
+
+function formatHybridBreakdown(hybrid) {
+  const parts = (hybrid?.components || []).map((component) => {
+    const grams = Math.round(Number(component.grams || 0));
+    if (component.source === "dataset") {
+      const name = component.label || foodDisplayNames[component.matchedKey] || component.matchedKey;
+      return `${name} (${grams}g)`;
+    }
+    return `${component.label} (~${grams}g)`;
+  });
+  return parts.filter(Boolean).join(" + ");
 }
 
 function getBestFoodMatchScore(text, db) {
@@ -3054,31 +3248,53 @@ function parseMeasuredUnitToGrams(value, unit) {
   return amount;
 }
 
-function hasSeparatePaneerWeight(mealContext) {
-  return /(\d+(?:\.\d+)?)\s*(?:kg|g|gram|grams|gm|ml|l|litre|liter)\s*(?:of\s+)?paneer\b/i.test(String(mealContext || ""));
+function hasSeparateIngredientWeight(mealContext, ingredientToken) {
+  const token = String(ingredientToken || "").trim();
+  if (!token) return false;
+  const pattern = new RegExp(
+    `(\\d+(?:\\.\\d+)?)\\s*(?:kg|g|gram|grams|gm|ml|l|litre|liter)\\s*(?:of\\s+)?${token}\\b`,
+    "i"
+  );
+  return pattern.test(String(mealContext || ""));
+}
+
+function resolveStapleIngredientKey(foodText, db) {
+  const food = normalizeFoodKey(foodText);
+  for (const resolver of STAPLE_INGREDIENT_RESOLVERS) {
+    if (!resolver.test.test(food)) continue;
+    if (resolver.block.test(food)) continue;
+    if (db[resolver.key]) return resolver.key;
+    if (resolver.fallback && db[resolver.fallback]) return resolver.fallback;
+  }
+  return null;
 }
 
 function resolveMeasuredFoodKey(foodText, mealContext, db) {
   const food = normalizeFoodKey(foodText);
   if (!food) return null;
 
-  const plainPaneer = /^(paneer|cottage cheese|indian cottage cheese)$/.test(food)
-    || (/\bpaneer\b/.test(food) && !/(curry|masala|bhurji|tikka|korma|biryani|roll|sandwich|salad|paratha|kofta|handi|do pyaza|jalfrezi|palak|matar|butter|cutlet|kheer|samosa)/.test(food));
+  const stapleKey = resolveStapleIngredientKey(food, db);
+  if (stapleKey) return stapleKey;
 
-  if (plainPaneer) {
-    const key = findBestFoodMatch("paneer", db);
-    if (key && (key === "paneer" || isCanonicalStapleKey(key))) return "paneer";
-    return db.paneer ? "paneer" : key;
-  }
-
-  if (/curry|gravy|masala|salan|sabzi/.test(food)) {
-    if (hasSeparatePaneerWeight(mealContext) && /paneer/.test(food)) {
+  const sauceDish = /curry|gravy|masala|salan|sabzi/.test(food);
+  if (sauceDish) {
+    if (/paneer/.test(food) && hasSeparateIngredientWeight(mealContext, "paneer")) {
+      return findBestFoodMatch("indian curry gravy", db) || "indian curry gravy";
+    }
+    if (/chicken/.test(food) && hasSeparateIngredientWeight(mealContext, "chicken")) {
+      return findBestFoodMatch("indian curry gravy", db) || "indian curry gravy";
+    }
+    if (/(egg|anda)/.test(food) && hasSeparateIngredientWeight(mealContext, "egg")) {
       return findBestFoodMatch("indian curry gravy", db) || "indian curry gravy";
     }
     if (/paneer/.test(food)) return findBestFoodMatch("paneer curry", db) || "paneer curry";
-    if (/egg|anda/.test(food)) return findBestFoodMatch("egg curry", db) || "egg curry";
-    if (/chicken/.test(food)) return findBestFoodMatch("chicken curry", db);
-    return findBestFoodMatch(food, db) || findBestFoodMatch("indian curry gravy", db) || "indian curry gravy";
+    if (/(egg|anda)/.test(food)) return findBestFoodMatch("egg curry", db) || "egg curry";
+    if (/chicken/.test(food)) return findBestFoodMatch("chicken curry", db) || findBestFoodMatch("butter chicken", db);
+    if (/fish/.test(food)) return findBestFoodMatch("fish curry", db);
+    if (/mutton|lamb|goat/.test(food)) return findBestFoodMatch("mutton curry", db);
+    if (/dal|lentil/.test(food)) return findBestFoodMatch("dal cooked", db) || "dal cooked";
+    const gravy = findBestFoodMatch("indian curry gravy", db) || "indian curry gravy";
+    if (db[gravy]) return gravy;
   }
 
   const direct = findBestFoodMatch(food, db);
@@ -3111,6 +3327,13 @@ function pushMeasuredComponent(components, foodLabel, grams, mealContext, db) {
   });
 }
 
+function trimMeasuredFoodLabel(rawLabel) {
+  return String(rawLabel || "")
+    .replace(/\s+(with|and|plus|of|in)\s*$/i, "")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function extractExplicitMeasuredComponents(description, db) {
   const text = String(description || "");
   const components = [];
@@ -3134,9 +3357,7 @@ function extractExplicitMeasuredComponents(description, db) {
     const end = start + full.length;
     if (!overlapsExisting(start, end)) {
       const grams = parseMeasuredUnitToGrams(qtyText, unit);
-      const food = String(foodText || "")
-        .replace(/\s+(with|and|plus)$/i, "")
-        .trim();
+      const food = trimMeasuredFoodLabel(foodText);
       if (food && grams > 0) {
         pushMeasuredComponent(components, food, grams, text, db);
         markRange(start, end);
@@ -3551,7 +3772,8 @@ async function estimateMealFromBtn() {
       status = `Dataset matched ${knownCount} part(s); AI unavailable — used heuristic fallback.`;
     }
   } else if (knownCount > 0) {
-    status = `Estimated from dataset (${knownCount} matched part${knownCount === 1 ? "" : "s"}). Protein ~${Number(estimation.protein || 0).toFixed(1)}g. Review before saving.`;
+    const breakdown = formatHybridBreakdown(hybrid);
+    status = `Estimated from dataset (${knownCount} part${knownCount === 1 ? "" : "s"}): ${breakdown}. Protein ~${Number(estimation.protein || 0).toFixed(1)}g.`;
   } else {
     status = "Estimated using built-in food intelligence. Review before saving.";
   }

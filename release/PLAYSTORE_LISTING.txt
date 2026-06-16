@@ -3,7 +3,7 @@
 ## App identity
 - App name: Dad Bod
 - Package: com.dadbod.app
-- Version: 1.1.0 (versionCode 4)
+- Version: 1.1.0 (versionCode 5)
 - Category: Health & Fitness
 - Content rating: Everyone (questionnaire: no violence, user-generated photos stored locally)
 

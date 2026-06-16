@@ -10,6 +10,7 @@
     "build:food-dataset": "node scripts/build-food-dataset.js",
     "validate:food-dataset": "node scripts/validate-food-dataset.js",
     "test:meal-estimates": "node scripts/test-meal-estimates.js",
+    "test:meal-resolver": "node scripts/test-meal-resolver.js",
     "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
     "setup:android": "powershell -ExecutionPolicy Bypass -File scripts/setup-android-sdk.ps1",
     "build:ios": "npx cap build ios --release",

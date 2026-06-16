@@ -14,6 +14,8 @@ const CANONICAL_STAPLE_KEYS = new Set([
   "bread", "milk", "curd", "yogurt", "ghee", "oil", "butter", "chicken", "fish", "mutton",
   "potato", "onion", "tomato", "banana", "apple", "oats", "besan", "atta", "maida", "tofu",
   "soy", "whey", "idli", "dosa", "poha", "upma", "sambar", "rajma", "chole", "chana",
+  "moong", "masoor", "toor", "urad", "indian curry gravy", "curry gravy", "boiled rice",
+  "chawal", "chicken breast", "murgh", "dal cooked", "cooked dal",
 ]);
 
 const DISH_PROFILES = {
