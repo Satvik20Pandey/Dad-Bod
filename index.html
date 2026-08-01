@@ -207,7 +207,7 @@
         <div class="search-hero">
           <div class="search-bar">
             <i data-icon="search" data-icon-size="19"></i>
-            <input type="text" id="foodSearchInput" placeholder="Search food — “200g paneer with 2 roti”" autocomplete="off" enterkeyhint="search" />
+            <input type="text" id="foodSearchInput" placeholder="Search food" autocomplete="off" enterkeyhint="search" />
             <button type="button" class="search-tool" id="voiceBtn" aria-label="Voice input"><i data-icon="mic" data-icon-size="19"></i></button>
             <button type="button" class="search-tool" id="barcodeBtn" aria-label="Scan barcode"><i data-icon="scan" data-icon-size="19"></i></button>
             <button type="button" class="search-tool" id="labelScanBtn" aria-label="Scan nutrition label"><i data-icon="camera" data-icon-size="19"></i></button>
@@ -431,7 +431,11 @@
 
         <div class="cc-group">
           <p class="cc-title">Rewards</p>
-          <article class="card rewards-card" id="rewardsCard"></article>
+          <button type="button" class="cc-row" data-open-sheet="rewardsSheet">
+            <span class="cc-icon gold"><i data-icon="medal" data-icon-size="19"></i></span>
+            <span class="cc-body"><b>Dad Coins</b><small id="rewardsRowSub">Earn by doing, not by opening</small></span>
+            <i data-icon="chevronRight" data-icon-size="17"></i>
+          </button>
         </div>
 
         <div class="cc-group">
@@ -803,6 +807,17 @@
         </div>
         <input type="range" id="compareRange" min="0" max="100" value="50" class="compare-range" aria-label="Compare slider" />
         <button type="button" class="btn-ghost full-width" id="compareCloseBtn">Done</button>
+      </div>
+    </div>
+
+    <!-- Rewards sheet -->
+    <div class="sheet hidden" id="rewardsSheet" aria-hidden="true">
+      <div class="layer-backdrop" data-close-layer="rewardsSheet"></div>
+      <div class="sheet-panel tall">
+        <div class="sheet-grip"></div>
+        <button type="button" class="sheet-close" data-close-layer="rewardsSheet" aria-label="Close"><i data-icon="x" data-icon-size="18"></i></button>
+        <h2 class="sheet-title">Dad Coins</h2>
+        <div id="rewardsCard"></div>
       </div>
     </div>
 

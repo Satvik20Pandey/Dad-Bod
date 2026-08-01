@@ -178,18 +178,18 @@
 }
 
 .screen-header {
-  margin: 8px 2px 20px;
+  margin: 8px 2px 24px;
 }
 
 .screen-header h1 {
-  font-size: 1.65rem;
-  letter-spacing: -0.02em;
+  font-size: 1.85rem;
+  letter-spacing: -0.025em;
 }
 
 .screen-header p {
-  color: var(--text-dim);
+  color: var(--text-faint);
   font-size: 0.84rem;
-  margin-top: 3px;
+  margin-top: 4px;
 }
 
 /* ============ HOME ============ */
@@ -198,7 +198,7 @@
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  margin: 8px 2px 22px;
+  margin: 8px 2px 24px;
 }
 
 .greet-line {
@@ -207,7 +207,7 @@
 }
 
 .greet-name {
-  font-size: 1.8rem;
+  font-size: 1.95rem;
   letter-spacing: -0.02em;
   background: linear-gradient(135deg, #ffffff 40%, #9be9ff);
   -webkit-background-clip: text;
@@ -271,7 +271,7 @@
 
 .mission-card {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: 16px;
   align-items: center;
   background:
@@ -290,6 +290,12 @@
   position: relative;
   width: 132px;
   height: 132px;
+  animation: score-settle 1s var(--ease-out);
+}
+
+@keyframes score-settle {
+  from { transform: scale(0.94); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .score-center {
@@ -303,9 +309,10 @@
 }
 
 .score-center b {
-  font-size: 2.15rem;
+  font-size: 2.3rem;
   font-weight: 800;
   letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
 }
 
 .score-center span {
@@ -328,13 +335,14 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  min-width: 0;
 }
 
 .mission-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 11px;
+  gap: 12px;
+  padding: 10px 12px;
   border-radius: var(--r-md);
   background: rgba(7, 11, 19, 0.45);
   border: 1px solid var(--card-border);
@@ -385,10 +393,13 @@
 .mission-detail {
   font-size: 0.68rem;
   color: var(--text-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .mission-bar {
-  width: 44px;
+  width: 34px;
   height: 4px;
   border-radius: 4px;
   background: rgba(148, 163, 184, 0.14);
@@ -411,7 +422,7 @@
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-around;
-  gap: 12px;
+  gap: 16px;
 }
 
 .ring-block {
@@ -465,13 +476,14 @@
   .macro-stack {
     flex-basis: 100%;
     border-top: 1px solid var(--card-border);
-    padding-top: 13px;
+    padding-top: 16px;
+    margin-top: 4px;
   }
 }
 
 .macro-line {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   grid-template-areas: "dot name value" "bar bar bar";
   align-items: center;
   column-gap: 7px;
@@ -525,7 +537,7 @@
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--r-widget);
-  padding: 17px;
+  padding: 18px 16px;
   backdrop-filter: blur(18px);
   box-shadow: var(--shadow-1), inset 0 1px 0 rgba(255, 255, 255, 0.04);
   transition: transform var(--t-fast) var(--ease-out), border-color var(--t-fast);
@@ -584,8 +596,9 @@
 }
 
 .tile-title {
-  font-size: 1.28rem;
-  font-weight: 700;
+  font-size: 1.4rem;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
 }
 
@@ -659,9 +672,9 @@
 .water-actions {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 12px;
   width: 100%;
-  margin-top: 2px;
+  margin-top: 4px;
 }
 
 .water-btn {
@@ -689,6 +702,8 @@
 }
 
 .water-count {
+  flex: 1;
+  text-align: center;
   font-size: 0.72rem;
   color: var(--text-dim);
 }
@@ -753,7 +768,8 @@
 .activity-rows {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  padding: 2px 0;
   font-size: 0.82rem;
   color: var(--text-dim);
 }
@@ -918,7 +934,8 @@
 .donut-row {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 24px;
+  padding: 4px 2px;
 }
 
 .donut-holder {
@@ -1012,7 +1029,7 @@
 }
 
 .micro-label {
-  width: 108px;
+  width: 112px;
   font-size: 0.74rem;
   color: var(--text-dim);
   flex-shrink: 0;
@@ -1275,16 +1292,16 @@
 }
 
 .hero-title {
-  font-size: 1.5rem;
+  font-size: 1.6rem;
   letter-spacing: -0.02em;
 }
 
 .hero-stats {
   display: flex;
-  gap: 15px;
+  gap: 18px;
   font-size: 0.76rem;
   color: var(--text-dim);
-  margin: 10px 0;
+  margin: 12px 0 14px;
 }
 
 .hero-stats span {
@@ -1294,7 +1311,7 @@
 }
 
 .hero-bar {
-  margin-bottom: 13px;
+  margin-bottom: 16px;
 }
 
 .hero-cta {
@@ -1361,14 +1378,14 @@
 .exercise-list {
   display: flex;
   flex-direction: column;
-  gap: 11px;
+  gap: 12px;
 }
 
 .exercise-card {
   background: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: var(--r-lg);
-  padding: 13px 14px;
+  border-radius: var(--r-widget);
+  padding: 16px;
   backdrop-filter: blur(14px);
   transition: border-color var(--t-med), background var(--t-med);
 }
@@ -1430,8 +1447,8 @@
 .exercise-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9px;
-  margin: 10px 0 2px 34px;
+  gap: 12px;
+  margin: 12px 0 0 35px;
 }
 
 .exercise-inputs label {
@@ -1453,7 +1470,7 @@
 .exercise-actions {
   display: flex;
   gap: 8px;
-  margin: 10px 0 0 34px;
+  margin: 12px 0 0 35px;
 }
 
 .exercise-card.compact .exercise-actions {
@@ -1714,7 +1731,8 @@
 }
 
 .weight-big {
-  font-size: 2.5rem;
+  font-size: 2.6rem;
+  font-variant-numeric: tabular-nums;
   font-weight: 800;
   letter-spacing: -0.03em;
   line-height: 1;
@@ -2033,31 +2051,32 @@
   font-size: 0.78rem;
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cc-group {
-  margin-bottom: 17px;
+  margin-bottom: 24px;
 }
 
 .cc-title {
-  font-size: 0.68rem;
+  font-size: 0.66rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.11em;
+  letter-spacing: 0.12em;
   color: var(--text-faint);
-  margin: 0 4px 8px;
+  margin: 0 4px 10px;
 }
 
 .cc-row {
   display: flex;
   align-items: center;
-  gap: 13px;
+  gap: 14px;
   width: 100%;
   text-align: left;
   background: var(--card);
   border: 1px solid var(--card-border);
-  border-radius: var(--r-md);
-  padding: 13px 14px;
+  border-radius: var(--r-widget);
+  padding: 14px 16px;
   margin-bottom: 8px;
   backdrop-filter: blur(14px);
   transition: transform var(--t-fast);
@@ -2106,14 +2125,15 @@
 .cc-actions {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 9px;
+  gap: 8px;
+  margin-top: 4px;
 }
 
 .version-footer {
   text-align: center;
   font-size: 0.68rem;
   color: var(--text-faint);
-  padding: 20px 0 8px;
+  padding: 24px 0 8px;
 }
 
 /* USDA box */
@@ -2371,8 +2391,9 @@
 .coins-chip {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   padding: 8px 12px;
+  font-variant-numeric: tabular-nums;
   border-radius: 999px;
   background: rgba(246, 196, 83, 0.1);
   border: 1px solid rgba(246, 196, 83, 0.28);
@@ -2384,8 +2405,8 @@
 .coins-hero {
   display: flex;
   align-items: center;
-  gap: 14px;
-  margin-bottom: 14px;
+  gap: 16px;
+  margin-bottom: 16px;
 }
 
 .coins-badge {
@@ -2407,7 +2428,8 @@
 }
 
 .coins-hero-body b {
-  font-size: 1.7rem;
+  font-size: 1.9rem;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
@@ -2419,17 +2441,18 @@
 
 .earn-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px 14px;
+  grid-template-columns: repeat(auto-fit, minmax(148px, 1fr));
+  gap: 6px 16px;
 }
 
 .earn-row {
   display: flex;
   align-items: center;
-  gap: 7px;
+  gap: 8px;
   font-size: 0.76rem;
   color: var(--text-dim);
-  padding: 4px 0;
+  padding: 5px 0;
+  min-width: 0;
 }
 
 .earn-row .earn-icon {
@@ -2456,6 +2479,8 @@
 .earn-coins {
   font-weight: 700;
   color: var(--text);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
 }
 
 .earn-row.milestone .earn-coins {
@@ -2494,6 +2519,7 @@
 
 .mission-cta-slot {
   grid-column: 1 / -1;
+  margin-top: 4px;
 }
 
 .mission-cta {
@@ -2548,11 +2574,11 @@
   display: flex;
   gap: 12px;
   align-items: flex-start;
+  margin-bottom: 16px;
   background: rgba(0, 229, 255, 0.05);
   border: 1px solid rgba(0, 229, 255, 0.16);
   border-radius: var(--r-widget);
   padding: 14px 16px;
-  margin-bottom: 14px;
 }
 
 .todays-tip:empty {

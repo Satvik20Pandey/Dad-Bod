@@ -1,6 +1,6 @@
 /* Dad Bod — offline cache. Version bump invalidates all previous caches. */
 
-const CACHE_NAME = "dad-bod-cache-v23";
+const CACHE_NAME = "dad-bod-cache-v24";
 const ASSETS = [
   "./",
   "./index.html",

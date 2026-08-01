@@ -6,7 +6,7 @@
   --bg-raise: #0d1420;
   --card: rgba(17, 24, 39, 0.62);
   --card-solid: #111827;
-  --card-border: rgba(148, 163, 184, 0.1);
+  --card-border: rgba(148, 163, 184, 0.09);
   --card-border-strong: rgba(148, 163, 184, 0.18);
 
   /* Brand + semantic */
@@ -48,6 +48,16 @@
   --r-lg: 24px;
   --r-xl: 28px;
 
+  /* Spacing scale — the only allowed gaps/paddings: 4 8 12 16 20 24 32 40 */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+
   /* Motion */
   --ease-spring: cubic-bezier(0.34, 1.4, 0.42, 1);
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
@@ -55,7 +65,7 @@
   --t-med: 280ms;
 
   /* Layout */
-  --nav-height: 74px;
+  --nav-height: 68px;
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
 }

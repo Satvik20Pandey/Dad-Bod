@@ -449,6 +449,15 @@ export function renderMore() {
   select("userSheetExportBtn")?.classList.toggle("hidden", !currentUser?.isAdmin);
   setText("versionFooter", `${APP_NAME} v${APP_VERSION} · Crafted by Satvik Pandey`);
 
+  const coins = getCoins();
+  const earnedToday = todaysEarned();
+  setText(
+    "rewardsRowSub",
+    coins > 0
+      ? `${coins.toLocaleString()} coins${earnedToday > 0 ? ` · +${earnedToday.toLocaleString()} today` : ""}`
+      : "Earn by doing, not by opening"
+  );
+
   renderAccount();
   renderRewards();
   renderGoalsForm();

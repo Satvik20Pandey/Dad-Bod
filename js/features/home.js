@@ -104,7 +104,7 @@ function renderGreeting() {
   setText("streakCount", String(streak));
   select("streakChip")?.classList.toggle("hot", streak >= 3);
 
-  setText("coinsCount", getCoins().toLocaleString());
+  animateNumber(select("coinsCount"), getCoins(), { digits: 0 });
   renderAvatar();
 }
 
