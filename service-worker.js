@@ -1,6 +1,6 @@
 /* Dad Bod — offline cache. Version bump invalidates all previous caches. */
 
-const CACHE_NAME = "dad-bod-cache-v21";
+const CACHE_NAME = "dad-bod-cache-v22";
 const ASSETS = [
   "./",
   "./index.html",
@@ -11,6 +11,7 @@ const ASSETS = [
   "./styles/screens.css",
   "./js/main.js",
   "./js/config.js",
+  "./js/firebase-config.js",
   "./js/utils.js",
   "./js/core/bus.js",
   "./js/core/nutrition.js",
@@ -27,6 +28,8 @@ const ASSETS = [
   "./js/services/myplate.js",
   "./js/services/wger.js",
   "./js/services/overpass.js",
+  "./js/services/firebase.js",
+  "./js/services/backup.js",
   "./js/ui/icons.js",
   "./js/ui/components.js",
   "./js/ui/charts.js",
@@ -39,6 +42,7 @@ const ASSETS = [
   "./js/features/nearby.js",
   "./js/features/recipes.js",
   "./js/features/more.js",
+  "./js/features/account.js",
   "./assets/logo-premium.svg",
   "./assets/splash-hero.svg",
   "./assets/food-dataset.json",

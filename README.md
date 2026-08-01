@@ -16,7 +16,7 @@ with Capacitor for Android.
 | **Train** | Structured weekly splits with form cues, load/rep logging, full-screen rest timer with haptics, session celebrations, cardio + abs, 700+ exercise library |
 | **Progress** | Animated weight trend with goal line, before/after photo compare slider, consistency heatmap, strength PR board with estimated 1RM, CSV export |
 | **Scan** | Center-nav fullscreen scanner (brackets + laser + haptics): BarcodeDetector → ZXing fallback; OFF v2 → OFF v0 → UPCItemDB name lookup — never a dead end |
-| **Dad Bod HQ** | Dad Coins rewards (earn by doing: workouts, protein, hydration, streaks), goals with USDA cross-check, training setup, nearby, recipes, backup/restore |
+| **Dad Bod HQ** | Account (Google or offline), Dad Coins rewards, encrypted cloud backup, goals with USDA cross-check, training setup, nearby, recipes |
 
 ## Production API architecture
 
@@ -63,7 +63,7 @@ js/
     program.js             Training splits, schedules, prescriptions
     bus.js                 Render bus (no circular imports)
   services/                API clients (http cache, edamam, openfoodfacts,
-                           myplate, wger, overpass)
+                           myplate, wger, overpass, firebase, backup)
   ui/                      Icons (inline Lucide-style), components
                            (sheets/toasts/confetti/haptics), canvas charts
   features/                Screen controllers (home, diet, workout, progress,
@@ -77,6 +77,24 @@ release/                   Signed artifacts + Play Store listing pack
 
 All user data stays on-device (localStorage mirrored to IndexedDB). Storage
 keys are stable across versions — v1.x users upgrade in place.
+
+## Accounts and privacy
+
+Two ways in, both first-class:
+
+- **Continue with Google** - Firebase Authentication provides identity (name,
+  email, photo) and unlocks encrypted cloud backup.
+- **Continue Offline** - no network, no account, nothing uploaded, ever.
+
+Cloud backup is **end-to-end encrypted on the device** (PBKDF2-SHA256 ->
+AES-GCM-256) with a passphrase only you know; the server holds an opaque blob.
+Signing in never discards existing local data - see the migration rules in
+[CHANGELOG.md](CHANGELOG.md). Full setup, Firestore rules, and troubleshooting:
+[docs/FIREBASE.md](docs/FIREBASE.md).
+
+```bash
+npm run sync:firebase   # regenerate js/firebase-config.js after any console change
+```
 
 ## Quick start (web)
 
@@ -92,7 +110,7 @@ Open http://localhost:8080
 ## Tests
 
 ```bash
-npm test              # dataset validation + resolver regression + service units
+npm test              # dataset + resolver + service + auth/encryption units
 npm run test:smoke    # Playwright end-to-end (screenshots → scripts/screenshots/)
 ```
 
@@ -116,8 +134,8 @@ npm run build:android
 
 Outputs land in `release/`:
 
-- `DadBod-v2.1.0-signed.apk` — side-load / testers
-- `DadBod-v2.1.0-signed.aab` — Play Store upload
+- `DadBod-v2.2.0-signed.apk` — side-load / testers
+- `DadBod-v2.2.0-signed.aab` — Play Store upload
 - `DadBod-latest-signed.apk` / `.aab` — rolling aliases
 
 Keystore password override (PKCS12 uses one password for store + key):

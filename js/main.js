@@ -13,7 +13,9 @@ import {
   clearActiveUser,
   saveState,
   buildAdminWeeklyPlan,
+  resolveGoogleAccount,
 } from "./core/store.js";
+import { getCurrentUser, signOutFirebase } from "./services/firebase.js";
 import { calculateTargetsFromProfile } from "./core/profile.js";
 import { loadFoodDatasetIfNeeded } from "./core/dataset.js";
 import { getWaterTargetMl } from "./services/myplate.js";
@@ -28,6 +30,7 @@ import { initProgress, renderProgress } from "./features/progress.js";
 import { initNearby } from "./features/nearby.js";
 import { initRecipes, notifyRecipeLogged } from "./features/recipes.js";
 import { initMore, renderMore } from "./features/more.js";
+import { initAccount } from "./features/account.js";
 
 const SCREENS = ["home", "diet", "train", "progress", "more"];
 const SCREEN_RENDERERS = {
@@ -108,9 +111,32 @@ function activateUser(user) {
   refreshWaterTargetQuietly();
 }
 
-function logout() {
+async function logout() {
+  await signOutFirebase();
   clearActiveUser();
   showAuthShell();
+}
+
+/* Which profile should open on launch?
+ * A live Google session wins; otherwise the last profile used on this device.
+ * Firebase is given a bounded window so a slow network can never block boot. */
+async function resolveStartupUser() {
+  const localUser = authStore.users.find((u) => u.id === authStore.activeUserId) || null;
+
+  try {
+    const googleUser = await Promise.race([
+      getCurrentUser(),
+      new Promise((resolve) => setTimeout(() => resolve(null), 5000)),
+    ]);
+    if (googleUser?.uid) {
+      const { user } = resolveGoogleAccount(googleUser);
+      return user;
+    }
+  } catch (error) {
+    console.warn("Session restore failed, falling back to local profile", error?.message || error);
+  }
+
+  return localUser;
 }
 
 /* Personalize the hydration goal from USDA water-intake once per profile weight. */
@@ -169,6 +195,7 @@ function init() {
     notifyRecipeLogged(payload.description);
   });
   initMore(logout);
+  initAccount();
   bindScanAction();
 
   document.querySelectorAll(".nav-btn[data-screen]").forEach((btn) => {
@@ -186,17 +213,20 @@ function init() {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
   }
 
-  hydratePersistentStorage().finally(() => {
-    const activeUser = authStore.users.find((u) => u.id === authStore.activeUserId);
+  /* Restore the session while the splash plays, so sign-in costs no extra wait. */
+  const splashHold = new Promise((resolve) => setTimeout(resolve, 1300));
+  const session = hydratePersistentStorage()
+    .catch(() => {})
+    .then(() => resolveStartupUser())
+    .catch(() => null);
 
-    setTimeout(() => {
-      hideSplash();
-      if (activeUser) {
-        activateUser(activeUser);
-      } else {
-        showAuthShell();
-      }
-    }, 1300);
+  Promise.all([splashHold, session]).then(([, user]) => {
+    hideSplash();
+    if (user) {
+      activateUser(user);
+    } else {
+      showAuthShell();
+    }
   });
 
   setInterval(() => {

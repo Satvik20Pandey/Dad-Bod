@@ -13,6 +13,7 @@ import {
 } from "../core/store.js";
 import { calculateTargetsFromProfile, ACTIVITY_LEVELS } from "../core/profile.js";
 import { getCoins, todaysEarned, REWARD_RULES, STREAK_MILESTONES, recentLedger } from "../core/rewards.js";
+import { renderAccount } from "./account.js";
 import { getBmi, getCalorieNeeds, getWaterTargetMl } from "../services/myplate.js";
 import { isOnline } from "../services/http.js";
 import { icon } from "../ui/icons.js";
@@ -348,7 +349,11 @@ function openPrivacyPolicy() {
     "Privacy Policy",
     `<p><em>Last updated: August 2026</em></p>
      <h3>Your data stays on your device</h3>
-     <p>Meal logs, workouts, weight entries, photos, and profile details are stored locally on your device. Dad Bod has no accounts, no analytics SDKs, and no server of its own.</p>
+     <p>Meal logs, workouts, weight entries, photos, and profile details are stored locally on your device. Dad Bod has no analytics SDKs and no server of its own.</p>
+     <h3>Sign-in (optional)</h3>
+     <p>Signing in with Google shares your name, email, and profile photo with the app to identify your profile. Choosing "Continue Offline" skips this entirely - no account is created and nothing is uploaded.</p>
+     <h3>Cloud backup (optional)</h3>
+     <p>If you enable backup, your data is encrypted on this device with a passphrase only you know (AES-GCM-256) before upload. We store an unreadable blob and cannot decrypt it. Delete it any time from Dad Bod HQ.</p>
      <h3>Network services</h3>
      <p>Some features contact public nutrition and fitness APIs with the minimum data needed, and only when you use them:</p>
      <ul>
@@ -441,13 +446,10 @@ function renderRewards() {
 export function renderMore() {
   if (!state) return;
 
-  setText("moreName", currentUser?.name || "Athlete");
-  setText("moreEmail", currentUser?.email || "");
-  setText("moreAvatarInitial", (currentUser?.name || "A").trim().charAt(0).toUpperCase());
-  select("moreAdminChip")?.classList.toggle("hidden", !currentUser?.isAdmin);
   select("userSheetExportBtn")?.classList.toggle("hidden", !currentUser?.isAdmin);
   setText("versionFooter", `${APP_NAME} v${APP_VERSION} · Crafted by Satvik Pandey`);
 
+  renderAccount();
   renderRewards();
   renderGoalsForm();
   renderWorkoutPrefsForm();

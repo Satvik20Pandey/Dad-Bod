@@ -59,20 +59,50 @@
         <p class="auth-quote" id="welcomeQuote">"One day or day one. You decide."</p>
       </div>
 
-      <form id="welcomeForm" class="auth-card">
-        <label class="field">
-          <span class="field-label">Your Name</span>
-          <input type="text" id="welcomeName" required placeholder="What should we call you?" autocomplete="name" />
-        </label>
-        <label class="field">
-          <span class="field-label">Email</span>
-          <input type="email" id="welcomeEmail" required placeholder="you@email.com" autocomplete="email" />
-        </label>
-        <button type="submit" class="btn-primary btn-hero full-width" id="welcomeSubmitBtn">
-          Start My Transformation
-        </button>
-        <p class="auth-note">Everything stays on this device. No account, no password, no cloud.</p>
-      </form>
+      <div class="auth-card">
+        <div class="auth-choices" id="authChoices">
+          <button type="button" class="btn-google full-width" id="googleSignInBtn">
+            <span class="google-mark" aria-hidden="true">
+              <svg viewBox="0 0 48 48" width="20" height="20">
+                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
+                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
+                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
+                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
+              </svg>
+            </span>
+            <span class="btn-google-label">Continue with Google</span>
+          </button>
+
+          <button type="button" class="btn-secondary full-width" id="offlineToggleBtn">
+            Continue Offline
+          </button>
+
+          <p class="auth-note">
+            Google saves your identity and enables encrypted backup.<br />
+            Offline keeps everything on this device — nothing is ever uploaded.
+          </p>
+        </div>
+
+        <div class="offline-panel hidden" id="offlinePanel">
+          <form id="welcomeForm">
+            <label class="field">
+              <span class="field-label">Your Name</span>
+              <input type="text" id="welcomeName" placeholder="What should we call you?" autocomplete="name" />
+            </label>
+            <label class="field">
+              <span class="field-label">Email <span class="field-optional">optional</span></span>
+              <input type="email" id="welcomeEmail" placeholder="you@email.com" autocomplete="email" />
+            </label>
+            <button type="submit" class="btn-primary btn-hero full-width" id="welcomeSubmitBtn">
+              Start My Transformation
+            </button>
+          </form>
+          <button type="button" class="btn-ghost full-width" id="offlineBackBtn">Back</button>
+          <p class="auth-note">Offline profiles stay on this device. Back up any time with Export.</p>
+        </div>
+
+        <p class="auth-status" id="authStatus" role="status" aria-live="polite"></p>
+      </div>
     </section>
 
     <!-- ============ APP ============ -->
@@ -397,14 +427,7 @@
           <p>Rewards, goals, training, and your data</p>
         </header>
 
-        <article class="card profile-card">
-          <div class="avatar large" id="moreAvatarInitial">A</div>
-          <div class="profile-body">
-            <b id="moreName">Athlete</b>
-            <small id="moreEmail"></small>
-          </div>
-          <span class="chip accent hidden" id="moreAdminChip">Owner</span>
-        </article>
+        <article class="card profile-card" id="accountCard"></article>
 
         <div class="cc-group">
           <p class="cc-title">Rewards</p>
@@ -446,6 +469,11 @@
 
         <div class="cc-group">
           <p class="cc-title">Your Data</p>
+          <button type="button" class="cc-row" id="backupOpenBtn">
+            <span class="cc-icon mint"><i data-icon="shield" data-icon-size="19"></i></span>
+            <span class="cc-body"><b>Encrypted Cloud Backup</b><small>Not set up yet</small></span>
+            <i data-icon="chevronRight" data-icon-size="17"></i>
+          </button>
           <div class="cc-actions">
             <button type="button" class="btn-secondary" id="exportBtn"><i data-icon="download" data-icon-size="16"></i> Export</button>
             <label class="btn-secondary file-label"><i data-icon="upload" data-icon-size="16"></i> Import<input type="file" id="importInput" accept="application/json" /></label>
@@ -775,6 +803,28 @@
         </div>
         <input type="range" id="compareRange" min="0" max="100" value="50" class="compare-range" aria-label="Compare slider" />
         <button type="button" class="btn-ghost full-width" id="compareCloseBtn">Done</button>
+      </div>
+    </div>
+
+    <!-- Encrypted backup sheet -->
+    <div class="sheet hidden" id="backupSheet" aria-hidden="true">
+      <div class="layer-backdrop" data-close-layer="backupSheet"></div>
+      <div class="sheet-panel">
+        <div class="sheet-grip"></div>
+        <button type="button" class="sheet-close" data-close-layer="backupSheet" aria-label="Close"><i data-icon="x" data-icon-size="18"></i></button>
+        <h2 class="sheet-title">Encrypted Cloud Backup</h2>
+        <div class="backup-intro" id="backupIntro"></div>
+        <label class="field">
+          <span class="field-label">Backup passphrase</span>
+          <input type="password" id="backupPassphrase" placeholder="At least 8 characters" autocomplete="new-password" />
+        </label>
+        <p class="status-line" id="backupStatus"></p>
+        <div class="btn-row">
+          <button type="button" class="btn-primary grow" id="backupRunBtn"><i data-icon="upload" data-icon-size="16"></i> Back Up Now</button>
+          <button type="button" class="btn-secondary grow" id="backupRestoreBtn"><i data-icon="download" data-icon-size="16"></i> Restore</button>
+        </div>
+        <button type="button" class="btn-ghost full-width" id="backupDeleteBtn">Delete cloud backup</button>
+        <p class="source-line">AES-GCM-256 · PBKDF2-SHA256 · encrypted on this device</p>
       </div>
     </div>
 

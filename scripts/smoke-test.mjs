@@ -70,9 +70,13 @@ try {
   /* Splash clears itself, landing appears */
   await page.waitForSelector("#authShell:not(.hidden)", { timeout: 9000 });
   await page.screenshot({ path: path.join(shotsDir, "01-landing.png") });
-  check("Landing screen renders", await page.isVisible("#welcomeForm"));
+  check("Landing offers Continue with Google", await page.isVisible("#googleSignInBtn"));
+  check("Landing offers Continue Offline", await page.isVisible("#offlineToggleBtn"));
 
-  /* Onboard */
+  /* Offline onboarding must work with no Firebase involvement at all */
+  await page.click("#offlineToggleBtn");
+  await page.waitForSelector("#offlinePanel:not(.hidden)", { timeout: 4000 });
+  check("Offline form opens", await page.isVisible("#welcomeForm"));
   await page.fill("#welcomeName", "Test Athlete");
   await page.fill("#welcomeEmail", "athlete@example.com");
   await page.click("#welcomeSubmitBtn");
@@ -178,6 +182,20 @@ try {
   check("HQ rows render", (await page.locator(".cc-row").count()) >= 7);
   check("HQ title updated", (await page.textContent("#screen-more .screen-header h1"))?.includes("Dad Bod HQ"));
   check("Rewards card lists earn rules", (await page.locator("#rewardsCard .earn-row").count()) >= 7);
+  check(
+    "Account card shows offline profile",
+    (await page.textContent("#accountCard"))?.includes("Offline profile")
+  );
+
+  /* Backup sheet must explain itself and stay locked for offline profiles */
+  await page.click("#backupOpenBtn");
+  await page.waitForSelector("#backupSheet.open", { timeout: 4000 });
+  await page.waitForTimeout(300);
+  check("Backup sheet explains Google requirement", (await page.textContent("#backupIntro"))?.includes("Google account"));
+  check("Backup actions disabled when offline profile", await page.isDisabled("#backupRunBtn"));
+  await page.screenshot({ path: path.join(shotsDir, "12-backup.png") });
+  await page.click('[data-close-layer="backupSheet"] >> nth=1');
+  await page.waitForTimeout(400);
 
   await page.click('[data-open-sheet="goalsSheet"]');
   await page.waitForSelector("#goalsSheet.open");

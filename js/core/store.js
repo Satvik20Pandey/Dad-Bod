@@ -6,7 +6,7 @@
  */
 
 import { AUTH_KEY, LEGACY_STATE_KEY, SECURITY_CONFIG_KEY, IDB_NAME, PLAN_DAYS_ORDER } from "../config.js";
-import { clone, uid, normalizeEmail } from "../utils.js";
+import { clone, uid, normalizeEmail, deriveNameFromEmail } from "../utils.js";
 import { setUserFoodLibraryProvider } from "./dataset.js";
 
 /* Owner profile — ships with the founder's preloaded plan. The optional passkey
@@ -347,9 +347,119 @@ export function upsertUserProfile(name, email) {
   }
 
   user.name = name?.trim() || user.name || "Member";
-  user.provider = "email-profile";
+  if (!user.provider) user.provider = "email-profile";
   if (!user.isAdmin) user.isAdmin = isConfiguredAdminEmail(normalizedEmail);
   user.email = normalizedEmail;
+  saveAuthStore();
+  return user;
+}
+
+/* ---- Google account linking + local profile migration ----
+ *
+ * Signing in must never orphan existing data. Resolution order:
+ *   1. Same Google account seen before      → reuse that profile
+ *   2. Local profile with the same email    → link it in place (data untouched)
+ *   3. One unlinked local profile with data → adopt it into this account
+ *   4. Otherwise                            → start a fresh profile
+ *
+ * Profile records are only ever updated or added — nothing is deleted, so a
+ * mistaken adoption stays recoverable through Export.
+ */
+
+export function findUserByGoogleUid(googleUid) {
+  if (!googleUid) return null;
+  return authStore.users.find((u) => u.googleUid === googleUid) || null;
+}
+
+export function hasMeaningfulData(userId) {
+  const state = authStore.userStates[userId];
+  if (!state) return false;
+
+  const mealCount = Object.values(state.mealsByDate || {}).reduce(
+    (sum, meals) => sum + (Array.isArray(meals) ? meals.length : 0),
+    0
+  );
+  if (mealCount > 0) return true;
+
+  const workoutLogged = Object.values(state.gymLogsByDate || {}).some((log) =>
+    Object.values(log?.exerciseDone || {}).some(Boolean)
+  );
+  if (workoutLogged) return true;
+
+  if ((state.weightEntries || []).length > 0) return true;
+  if ((state.photoEntries || []).length > 0) return true;
+  if (Number(state.rewards?.coins || 0) > 0) return true;
+
+  return false;
+}
+
+function findAdoptableProfile() {
+  const unlinked = authStore.users.filter((u) => !u.googleUid && hasMeaningfulData(u.id));
+  if (!unlinked.length) return null;
+
+  /* Prefer the profile in use right now — that is the one the person is
+   * looking at when they decide to sign in. */
+  const active = unlinked.find((u) => u.id === authStore.activeUserId);
+  if (active) return active;
+
+  return unlinked.length === 1 ? unlinked[0] : null;
+}
+
+export function resolveGoogleAccount(googleUser) {
+  const email = normalizeEmail(googleUser.email);
+  const name = String(googleUser.name || "").trim() || deriveNameFromEmail(email) || "Member";
+  const now = new Date().toISOString();
+
+  const applyIdentity = (user, migration) => {
+    user.googleUid = googleUser.uid;
+    user.email = email || user.email;
+    user.name = name || user.name;
+    user.photoUrl = googleUser.photoUrl || user.photoUrl || null;
+    user.provider = "google";
+    user.lastSignInAt = now;
+    if (!user.isAdmin) user.isAdmin = isConfiguredAdminEmail(email);
+    saveAuthStore();
+    return { user, migration };
+  };
+
+  const byUid = findUserByGoogleUid(googleUser.uid);
+  if (byUid) return applyIdentity(byUid, "existing-account");
+
+  const byEmail = findUserByEmail(email);
+  if (byEmail) return applyIdentity(byEmail, "linked-by-email");
+
+  const adoptable = findAdoptableProfile();
+  if (adoptable) {
+    const previousEmail = adoptable.email;
+    if (previousEmail && previousEmail !== email) {
+      adoptable.previousEmails = [...new Set([...(adoptable.previousEmails || []), previousEmail])];
+    }
+    adoptable.migratedAt = now;
+    return applyIdentity(adoptable, "adopted-local");
+  }
+
+  const user = {
+    id: uid("user"),
+    googleUid: googleUser.uid,
+    name,
+    email,
+    photoUrl: googleUser.photoUrl || null,
+    provider: "google",
+    isAdmin: isConfiguredAdminEmail(email),
+    createdAt: now,
+    lastSignInAt: now,
+  };
+  authStore.users.push(user);
+  authStore.userStates[user.id] = user.isAdmin ? clone(adminDefaultState) : clone(genericDefaultState);
+  saveAuthStore();
+  return { user, migration: "new-account" };
+}
+
+/* Offline profiles are device-local and never touch the network. */
+export function createOfflineProfile(name, email) {
+  const user = upsertUserProfile(name, email);
+  if (!user.googleUid) user.provider = "offline";
+  user.lastSignInAt = new Date().toISOString();
   saveAuthStore();
   return user;
 }

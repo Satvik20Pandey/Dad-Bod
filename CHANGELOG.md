@@ -2,6 +2,63 @@
 
 All notable changes to Dad Bod.
 
+## [2.2.0] - 2026-08-01 - "Your Account, Your Keys"
+
+Google Sign-In, and a cloud backup only you can read.
+
+### Sign in
+- **Continue with Google** - native account sheet on Android via
+  `@capacitor-firebase/authentication`; name, email, and profile photo come from
+  the Google account and the photo becomes your in-app avatar.
+- **Continue Offline** stays first-class: no Firebase call, no network, nothing
+  uploaded. The app boots and works fully even if Firebase is unreachable,
+  unconfigured, or disabled.
+- Sessions persist across restarts and are restored during the splash, so
+  signing in costs no extra launch time. Sign-out clears both the Firebase
+  session and the local active profile.
+- Provider errors are translated into plain language - including error 10,
+  named as an unregistered signing certificate rather than a bare number.
+
+### Migration - nothing is lost
+Signing in resolves against existing data in this order:
+1. Same Google account seen before -> reuse that profile.
+2. Local profile with the same email -> link it in place, data untouched.
+3. One unlinked local profile that has data -> adopt it into the account,
+   keeping meals, workouts, weights, photos and Dad Coins (the previous email
+   is retained for traceability).
+4. Otherwise -> start a clean profile.
+
+Profiles are only ever updated or added, never deleted, so an unexpected
+adoption stays recoverable through Export.
+
+### End-to-end encrypted cloud backup
+- Encrypted **on the device** with a passphrase only you know:
+  PBKDF2-SHA256 (210k iterations, random salt) -> AES-GCM-256. Firestore stores
+  an opaque blob; nobody - including us and Google - can decrypt it.
+- The passphrase is never stored or transmitted; it lives in memory for the
+  session only. A wrong passphrase fails the AES-GCM auth tag and is reported
+  as such rather than returning corrupt data.
+- Transport is the Firestore REST API with the Firebase ID token, so no
+  Firestore SDK (and no bundler) is needed.
+- Photos stay on the device when the payload would exceed Firestore's 1 MiB
+  document limit - metadata is kept and the user is told.
+- Restore **merges** and never clears local photos.
+- Backup is inert until Firestore is enabled, degrading with an actionable
+  message instead of failing silently. Setup and rules: `docs/FIREBASE.md`.
+
+### Engineering
+- `js/firebase-config.js` is generated from `android/app/google-services.json`
+  by `npm run sync:firebase`, which `build:dist` runs automatically so a release
+  can never ship a stale config. The generator warns when the file predates the
+  SHA-1 registration.
+- `rgcfaIncludeGoogle = true` in `android/variables.gradle` - without it the
+  Google Sign-In libraries are `compileOnly` and the app builds but crashes at
+  sign-in.
+- 14 new unit tests cover the encryption envelope (round-trip, wrong passphrase,
+  tampering, salt/IV uniqueness), payload shaping, and every migration branch.
+  Smoke suite extended to 29 checks.
+- versionCode 8.
+
 ## [2.1.0] — 2026-08-01 · "Scan, Earn, Refine"
 
 Device-feedback round: CRED-inspired restraint, a hero scanner, and rewards

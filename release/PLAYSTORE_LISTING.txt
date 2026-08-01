@@ -1,9 +1,9 @@
-# Dad Bod — Play Store Listing Pack (v2.1.0)
+# Dad Bod — Play Store Listing Pack (v2.2.0)
 
 ## App identity
 - App name: Dad Bod
 - Package: com.dadbod.app
-- Version: 2.1.0 (versionCode 7)
+- Version: 2.2.0 (versionCode 8)
 - Category: Health & Fitness
 - Content rating: Everyone (no violence; user photos stored locally only)
 
@@ -47,8 +47,14 @@ PROGRESS YOU CAN SEE
 • GitHub-style consistency heatmap
 • Strength CSV export, full JSON backup and restore
 
+YOUR ACCOUNT, YOUR KEYS
+Sign in with Google to keep your identity and enable encrypted cloud backup, or
+continue completely offline, where nothing ever leaves the device. Backups are
+encrypted on your phone with a passphrase only you know, so nobody can read
+them, including us.
+
 PRIVATE BY DESIGN
-No account. No subscription. No ads. Your data lives on your device —
+No subscription. No ads. Your data lives on your device —
 nutrition and fitness lookups use public APIs with only the text you search.
 
 Built Dream Physique.
@@ -59,6 +65,10 @@ Built Dream Physique.
 - Support email: satvikofficial20@gmail.com
 
 ## Data safety (Play Console)
+- Account (optional): name, email, and profile photo from Google Sign-In, used
+  only to identify your profile in-app. Offline profiles collect nothing.
+- Cloud backup (optional): an end-to-end encrypted blob the developer cannot
+  decrypt, stored under the user's own Firebase UID
 - Collects: nothing by default; all logs are on-device
 - Location: approximate location used only in-session when the user opens
   "Nearby Gyms & Parks" (not collected, not shared, optional)
@@ -69,14 +79,14 @@ Built Dream Physique.
 - Account: local profile on device (name + email for multi-profile support)
 
 ## Release artifacts
-- APK (side-load / testers): release/DadBod-v2.1.0-signed.apk
-- AAB (Play Store upload): release/DadBod-v2.1.0-signed.aab
+- APK (side-load / testers): release/DadBod-v2.2.0-signed.apk
+- AAB (Play Store upload): release/DadBod-v2.2.0-signed.aab
 - Latest aliases: release/DadBod-latest-signed.apk / .aab
 
 ## Upload checklist
 1. Build signed AAB: npm run build:android
 2. Play Console → Create release → Internal testing → Production
-3. Upload DadBod-v2.1.0-signed.aab
+3. Upload DadBod-v2.2.0-signed.aab
 4. Add screenshots (phone 1080x2400): Home mission, Diet search, Food sheet,
    Train hero, Rest timer, Progress chart, Photo compare, Control Center
 5. Feature graphic 1024x500 (dark aurora + DB logo)
@@ -85,3 +95,7 @@ Built Dream Physique.
    for Nearby (optional); no data shared or sold
 8. Link privacy policy + data deletion pages
 9. Target API 36 — already configured
+10. AFTER the first upload: copy the Play App Signing SHA-1 from
+    Play Console → Setup → App signing, add it to Firebase, re-download
+    google-services.json, and run `npm run sync:firebase`. Without this,
+    Google Sign-In fails for Play Store installs (error 10).

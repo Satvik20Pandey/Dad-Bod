@@ -105,7 +105,36 @@ function renderGreeting() {
   select("streakChip")?.classList.toggle("hot", streak >= 3);
 
   setText("coinsCount", getCoins().toLocaleString());
-  setText("avatarInitial", (currentUser?.name || "A").trim().charAt(0).toUpperCase());
+  renderAvatar();
+}
+
+function renderAvatar() {
+  const el = select("avatarInitial");
+  if (!el) return;
+
+  const initial = (currentUser?.name || "A").trim().charAt(0).toUpperCase();
+  const photo = currentUser?.photoUrl || "";
+
+  /* Only touch the DOM when the identity actually changes. */
+  if (el.dataset.photo === photo && el.dataset.initial === initial) return;
+  el.dataset.photo = photo;
+  el.dataset.initial = initial;
+
+  if (photo) {
+    el.classList.add("has-photo");
+    el.innerHTML = `<img src="${escapeHtml(photo)}" alt="" referrerpolicy="no-referrer" />`;
+    const img = el.querySelector("img");
+    if (img) {
+      img.onerror = () => {
+        el.classList.remove("has-photo");
+        el.textContent = initial;
+      };
+    }
+    return;
+  }
+
+  el.classList.remove("has-photo");
+  el.textContent = initial;
 }
 
 function renderMission() {

@@ -86,6 +86,7 @@
       <h2>2. Information We Process</h2>
       <ul>
         <li>Profile details you enter, such as name and email.</li>
+        <li>If you sign in with Google: your name, email address, and profile photo, used only to identify your profile in the app.</li>
         <li>Fitness and health entries you create, such as meals, workouts, weight, hydration, and photos.</li>
         <li>Optional voice input if you use voice meal logging (processed by your device's speech service).</li>
         <li>Your approximate location, only while you use the optional "Nearby Gyms &amp; Parks" feature.</li>
@@ -110,7 +111,9 @@
         the minimum data needed and no personal identifiers:
       </p>
       <ul>
-        <li><strong>Edamam</strong> — the food text you search online, for nutrition parsing.</li>
+        <li><strong>Google / Firebase Authentication</strong> &mdash; only if you choose to sign in, to verify your Google account.</li>
+        <li><strong>Firebase Firestore</strong> &mdash; only if you enable cloud backup. The stored blob is encrypted on your device with your passphrase and cannot be read by us or by Google.</li>
+        <li><strong>Edamam</strong> &mdash; the food text you search online, for nutrition parsing.</li>
         <li><strong>Open Food Facts</strong> — barcodes you scan, for packaged-food data.</li>
         <li><strong>UPCItemDB</strong> — barcodes not found on Open Food Facts, for product-name lookup only.</li>
         <li><strong>MyPlate.food</strong> — age, sex, height, weight, and activity level for USDA calculators; recipe search terms.</li>

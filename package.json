@@ -1,16 +1,16 @@
 {
   "name": "dad-bod",
-  "version": "2.1.0",
-  "description": "Dad Bod — The Dad Physique OS. Premium free fitness tracker: nutrition with a 5,200+ Indian food dataset, Edamam/Open Food Facts/MyPlate integrations, structured training, hydration, and progress tracking.",
+  "version": "2.2.0",
+  "description": "Dad Bod \u2014 The Dad Physique OS. Premium free fitness tracker: nutrition with a 5,200+ Indian food dataset, Edamam/Open Food Facts/MyPlate integrations, structured training, hydration, and progress tracking.",
   "author": "Satvik Pandey",
   "license": "MIT",
   "type": "commonjs",
   "scripts": {
     "build": "npm run build:dist",
-    "build:dist": "node scripts/build-dist.js",
+    "build:dist": "node scripts/sync-firebase-config.js && node scripts/build-dist.js",
     "build:food-dataset": "node scripts/build-food-dataset.js",
     "validate:food-dataset": "node scripts/validate-food-dataset.js",
-    "test": "npm run validate:food-dataset && npm run test:meal-estimates && npm run test:meal-resolver && npm run test:services",
+    "test": "npm run validate:food-dataset && npm run test:meal-estimates && npm run test:meal-resolver && npm run test:services && npm run test:auth",
     "test:meal-estimates": "node scripts/test-meal-estimates.js",
     "test:meal-resolver": "node scripts/test-meal-resolver.js",
     "test:services": "node scripts/test-services.mjs",
@@ -18,7 +18,9 @@
     "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
     "setup:android": "powershell -ExecutionPolicy Bypass -File scripts/setup-android-sdk.ps1",
     "sync": "npx cap sync",
-    "dev": "npx cap open android"
+    "dev": "npx cap open android",
+    "sync:firebase": "node scripts/sync-firebase-config.js",
+    "test:auth": "node scripts/test-auth.mjs"
   },
   "keywords": [
     "fitness",
@@ -30,6 +32,7 @@
   ],
   "dependencies": {
     "@capacitor-community/speech-recognition": "^7.0.1",
+    "@capacitor-firebase/authentication": "^8.3.0",
     "@capacitor/android": "^8.2.0",
     "@capacitor/cli": "^8.2.0",
     "@capacitor/core": "^8.2.0",

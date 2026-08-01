@@ -3,10 +3,16 @@
   "appName": "Dad Bod",
   "webDir": "dist",
   "android": {
-    "backgroundColor": "#0A0E17",
+    "backgroundColor": "#070B13",
     "allowMixedContent": false
   },
   "server": {
     "androidScheme": "https"
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"]
+    }
   }
 }
