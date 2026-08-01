@@ -1,9 +1,9 @@
-# Dad Bod — Play Store Listing Pack (v2.2.0)
+# Dad Bod — Play Store Listing Pack (v1.0.0)
 
 ## App identity
 - App name: Dad Bod
 - Package: com.dadbod.app
-- Version: 2.2.0 (versionCode 8)
+- Version: 1.0.0 (versionCode 9)
 - Category: Health & Fitness
 - Content rating: Everyone (no violence; user photos stored locally only)
 
@@ -79,14 +79,14 @@ Built Dream Physique.
 - Account: local profile on device (name + email for multi-profile support)
 
 ## Release artifacts
-- APK (side-load / testers): release/DadBod-v2.2.0-signed.apk
-- AAB (Play Store upload): release/DadBod-v2.2.0-signed.aab
+- APK (side-load / testers): release/DadBod-v1.0.0-signed.apk
+- AAB (Play Store upload): release/DadBod-v1.0.0-signed.aab
 - Latest aliases: release/DadBod-latest-signed.apk / .aab
 
 ## Upload checklist
 1. Build signed AAB: npm run build:android
 2. Play Console → Create release → Internal testing → Production
-3. Upload DadBod-v2.2.0-signed.aab
+3. Upload DadBod-v1.0.0-signed.aab
 4. Add screenshots (phone 1080x2400): Home mission, Diet search, Food sheet,
    Train hero, Rest timer, Progress chart, Photo compare, Control Center
 5. Feature graphic 1024x500 (dark aurora + DB logo)

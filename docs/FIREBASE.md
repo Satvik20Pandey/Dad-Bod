@@ -106,7 +106,7 @@ state JSON ──AES-GCM encrypt (random 12-byte IV)──▶ ciphertext
 
 ```powershell
 npm run build:android
-# install release/DadBod-v2.2.0-signed.apk
+# install release/DadBod-v1.0.0-signed.apk
 ```
 
 Expected: tapping **Continue with Google** opens the native account sheet, and

@@ -134,8 +134,8 @@ npm run build:android
 
 Outputs land in `release/`:
 
-- `DadBod-v2.2.0-signed.apk` — side-load / testers
-- `DadBod-v2.2.0-signed.aab` — Play Store upload
+- `DadBod-v1.0.0-signed.apk` — side-load / testers
+- `DadBod-v1.0.0-signed.aab` — Play Store upload
 - `DadBod-latest-signed.apk` / `.aab` — rolling aliases
 
 Keystore password override (PKCS12 uses one password for store + key):
