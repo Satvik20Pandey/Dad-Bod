@@ -8,6 +8,7 @@ import { openLayer, closeLayer, skeletonCards, emptyState, haptic, HAPTIC, showT
 
 let activeGroup = "";
 let onLogRecipe = null;
+let loadedOnce = false;
 
 export function initRecipes(logRecipeCallback) {
   onLogRecipe = logRecipeCallback;
@@ -44,13 +45,16 @@ export function initRecipes(logRecipeCallback) {
     } catch {}
   });
 
-  select("recipesSheet")?.addEventListener("transitionend", () => {
-    const sheet = select("recipesSheet");
-    if (sheet?.classList.contains("open") && !sheet.dataset.loaded) {
-      sheet.dataset.loaded = "1";
-      runSearch();
-    }
+  document.addEventListener("layeropen", (event) => {
+    if (event.detail?.id === "recipesSheet") onRecipesSheetOpen();
   });
+}
+
+/* Called whenever the recipes sheet opens. */
+export function onRecipesSheetOpen() {
+  if (loadedOnce) return;
+  loadedOnce = true;
+  runSearch();
 }
 
 async function runSearch() {
@@ -75,22 +79,21 @@ async function runSearch() {
   }
 
   container.innerHTML = recipes
-    .map((recipe) => {
-      const kcal = Number(recipe?.nutrition?.calories ?? recipe?.calories ?? 0);
-      const protein = Number(recipe?.nutrition?.protein_g ?? recipe?.protein ?? 0);
-      const rating = Number(recipe?.rating || 0);
-      return `
-      <button type="button" class="recipe-row" data-recipe-slug="${escapeHtml(String(recipe.slug || ""))}">
-        ${recipe.image ? `<img class="recipe-thumb" src="${escapeHtml(String(recipe.image))}" alt="" loading="lazy" onerror="this.classList.add('hidden')" />` : `<span class="recipe-thumb placeholder">${icon("chef", "", 18)}</span>`}
+    .map(
+      (recipe) => `
+      <button type="button" class="recipe-row" data-recipe-slug="${escapeHtml(recipe.slug)}">
+        ${recipe.image
+          ? `<img class="recipe-thumb" src="${escapeHtml(recipe.image)}" alt="" loading="lazy" onerror="this.classList.add('hidden')" />`
+          : `<span class="recipe-thumb placeholder">${icon("chef", "", 18)}</span>`}
         <span class="recipe-body">
-          <span class="recipe-name">${escapeHtml(String(recipe.title || recipe.name || "Recipe"))}</span>
+          <span class="recipe-name">${escapeHtml(recipe.name)}</span>
           <span class="recipe-meta">
-            ${kcal > 0 ? `${formatNum(kcal, 0)} kcal` : "USDA recipe"}${protein > 0 ? ` · P ${formatNum(protein, 0)}g` : ""}${rating > 0 ? ` · ★ ${formatNum(rating, 1)}` : ""}
+            ${recipe.calories > 0 ? `${formatNum(recipe.calories, 0)} kcal/serving` : "USDA recipe"}${recipe.rating > 0 ? ` · ★ ${formatNum(recipe.rating, 1)}` : ""}${recipe.category ? ` · ${escapeHtml(recipe.category)}` : ""}
           </span>
         </span>
         ${icon("chevronRight", "row-chevron", 17)}
-      </button>`;
-    })
+      </button>`
+    )
     .join("");
 }
 
@@ -108,50 +111,41 @@ async function openRecipeDetail(slug) {
     return;
   }
 
-  const title = String(recipe.title || recipe.name || "Recipe");
-  const serves = recipe.servings || recipe.yield || null;
-  const nutrition = recipe.nutrition || {};
-  const kcal = Number(nutrition.calories ?? 0);
-  const protein = Number(nutrition.protein_g ?? nutrition.protein ?? 0);
-  const carbs = Number(nutrition.carbohydrates_g ?? nutrition.carbs ?? 0);
-  const fat = Number(nutrition.total_fat_g ?? nutrition.fat ?? 0);
-
-  const ingredients = Array.isArray(recipe.ingredients) ? recipe.ingredients : [];
-  const directions = Array.isArray(recipe.directions)
-    ? recipe.directions
-    : Array.isArray(recipe.instructions)
-      ? recipe.instructions
-      : [];
-
+  const n = recipe.nutrition;
   const logPayload = JSON.stringify({
-    description: `${title} (1 serving)`,
-    kcal,
-    protein,
-    carbs,
-    fat,
+    description: `${recipe.name} (1 serving)`,
+    kcal: n.kcal,
+    protein: n.protein,
+    carbs: n.carbs,
+    fat: n.fat,
   }).replace(/"/g, "&quot;");
 
   body.innerHTML = `
-    <h2 class="sheet-title">${escapeHtml(title)}</h2>
+    <h2 class="sheet-title">${escapeHtml(recipe.name)}</h2>
     <div class="chip-row">
-      ${kcal > 0 ? `<span class="chip accent">${formatNum(kcal, 0)} kcal/serving</span>` : ""}
-      ${protein > 0 ? `<span class="chip protein">P ${formatNum(protein, 0)}g</span>` : ""}
-      ${serves ? `<span class="chip">Serves ${escapeHtml(String(serves))}</span>` : ""}
+      ${n.kcal > 0 ? `<span class="chip accent">${formatNum(n.kcal, 0)} kcal/serving</span>` : ""}
+      ${n.protein > 0 ? `<span class="chip protein">P ${formatNum(n.protein, 0)}g</span>` : ""}
+      ${recipe.servings ? `<span class="chip">${escapeHtml(recipe.servings)}</span>` : ""}
+      ${recipe.rating > 0 ? `<span class="chip">★ ${formatNum(recipe.rating, 1)}</span>` : ""}
     </div>
-    ${ingredients.length
-      ? `<div class="guide-block"><h4>${icon("list", "", 15)} Ingredients</h4><ul class="recipe-list">${ingredients
+    ${recipe.servingSize ? `<p class="sheet-sub">Serving: ${escapeHtml(recipe.servingSize)}</p>` : ""}
+    ${recipe.ingredients.length
+      ? `<div class="guide-block"><h4>${icon("list", "", 15)} Ingredients</h4><ul class="recipe-list">${recipe.ingredients
           .slice(0, 20)
-          .map((item) => `<li>${escapeHtml(typeof item === "string" ? item : item?.text || item?.name || "")}</li>`)
+          .map((item) => `<li>${escapeHtml(item)}</li>`)
           .join("")}</ul></div>`
       : ""}
-    ${directions.length
-      ? `<div class="guide-block"><h4>${icon("bookOpen", "", 15)} Directions</h4><ol class="recipe-list">${directions
+    ${recipe.steps.length
+      ? `<div class="guide-block"><h4>${icon("bookOpen", "", 15)} Directions</h4><ol class="recipe-list">${recipe.steps
           .slice(0, 15)
-          .map((step) => `<li>${escapeHtml(typeof step === "string" ? step : step?.text || "")}</li>`)
+          .map((step) => `<li>${escapeHtml(step)}</li>`)
           .join("")}</ol></div>`
       : ""}
-    <p class="source-line">Source: ${escapeHtml(String(recipe.source || "USDA MyPlate Kitchen"))}</p>
-    ${kcal > 0 ? `<button type="button" class="btn-primary full-width" data-log-recipe="${logPayload}">${icon("plus", "", 17)} Log 1 Serving as a Meal</button>` : ""}
+    ${n.carbs > 0 || n.fat > 0
+      ? `<div class="guide-block"><h4>${icon("target", "", 15)} Per serving</h4><p>P ${formatNum(n.protein, 1)}g · C ${formatNum(n.carbs, 1)}g · F ${formatNum(n.fat, 1)}g${n.fiber ? ` · Fiber ${formatNum(n.fiber, 1)}g` : ""}</p></div>`
+      : ""}
+    <p class="source-line">${escapeHtml(recipe.source)}</p>
+    ${n.kcal > 0 ? `<button type="button" class="btn-primary full-width" data-log-recipe="${logPayload}">${icon("plus", "", 17)} Log 1 Serving as a Meal</button>` : ""}
   `;
 }
 

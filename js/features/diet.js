@@ -66,7 +66,7 @@ import {
   skeletonCards,
 } from "../ui/components.js";
 import { drawMacroDonut } from "../ui/charts.js";
-import { renderApp } from "../core/bus.js";
+import { renderApp, goToScreen } from "../core/bus.js";
 import { startVoiceInput, scanLabelFile, startBarcodeCamera, stopBarcodeCamera, barcodeCameraSupported } from "./capture.js";
 
 const nutrientInputIds = {
@@ -117,7 +117,7 @@ export function initDiet() {
     });
   });
 
-  select("barcodeBtn")?.addEventListener("click", openBarcodeSheet);
+  select("barcodeBtn")?.addEventListener("click", openScanner);
   select("labelScanBtn")?.addEventListener("click", () => select("labelPhotoInput")?.click());
   select("labelPhotoInput")?.addEventListener("change", handleLabelScan);
 
@@ -137,21 +137,23 @@ export function initDiet() {
     closeLayer("foodSheet");
   });
 
-  /* Barcode sheet */
-  select("barcodeLookupBtn")?.addEventListener("click", () => {
-    const code = select("barcodeManualInput")?.value || "";
+  /* Fullscreen scanner */
+  select("scanLookupBtn")?.addEventListener("click", () => {
+    const code = select("scanManualInput")?.value || "";
     if (code.trim()) handleBarcodeDetected(code);
   });
-  select("barcodeManualInput")?.addEventListener("keydown", (event) => {
+  select("scanManualInput")?.addEventListener("keydown", (event) => {
     if (event.key === "Enter") {
       event.preventDefault();
-      const code = select("barcodeManualInput")?.value || "";
+      const code = select("scanManualInput")?.value || "";
       if (code.trim()) handleBarcodeDetected(code);
     }
   });
-  select("barcodeCloseBtn")?.addEventListener("click", () => {
-    stopBarcodeCamera("barcodeVideo");
-    closeLayer("barcodeSheet");
+  select("scanCloseBtn")?.addEventListener("click", closeScanner);
+  select("scanSearchNameBtn")?.addEventListener("click", () => {
+    closeScanner();
+    goToScreen("diet");
+    setTimeout(() => select("foodSearchInput")?.focus(), 350);
   });
 
   /* Meal timeline actions */
@@ -560,48 +562,81 @@ export function logPrefilledMeal({ description, kcal = 0, protein = 0, carbs = 0
   setText("mealStatus", "Prefilled from USDA MyPlate Kitchen (per serving). Review and save.");
 }
 
-/* ---- Barcode ---- */
+/* ---- Fullscreen premium scanner ---- */
 
-function openBarcodeSheet() {
-  openLayer("barcodeSheet");
-  const manual = select("barcodeManualInput");
+export function openScanner() {
+  openLayer("scanOverlay");
+  select("scanOverlay")?.classList.remove("locked", "missed");
+  const manual = select("scanManualInput");
   if (manual) manual.value = "";
-  setText("barcodeStatus", barcodeCameraSupported() ? "Starting camera…" : "Type the barcode number below.");
-  startBarcodeCamera("barcodeVideo", "barcodeStatus", handleBarcodeDetected);
+  select("scanFallbackRow")?.classList.add("hidden");
+  setText("scanStatus", barcodeCameraSupported() ? "Starting camera…" : "Type the barcode number below.");
+  startBarcodeCamera("scanVideo", "scanStatus", handleBarcodeDetected);
+}
+
+export function closeScanner() {
+  stopBarcodeCamera("scanVideo");
+  closeLayer("scanOverlay");
 }
 
 async function handleBarcodeDetected(code) {
-  setText("barcodeStatus", `Looking up ${String(code).trim()}…`);
-  haptic(HAPTIC.tap);
+  const overlay = select("scanOverlay");
+  overlay?.classList.remove("missed");
+  overlay?.classList.add("locked");
+  haptic(HAPTIC.success);
+  setText("scanStatus", `Found ${String(code).trim()} — looking up…`);
 
   const result = await lookupBarcode(code);
 
   if (result.status === "ok") {
-    stopBarcodeCamera("barcodeVideo");
-    closeLayer("barcodeSheet");
-
-    const grams = Number(result.servingG || 100);
-    const scaled = scaleNutrition(result.per100g, grams);
-    state.editingMealId = null;
-    openFoodSheet();
-    select("mealDescription").value = [result.name, result.brand].filter(Boolean).join(" — ");
-    select("mealQty").value = Math.round(grams);
-    fillMealFormFromEstimate(scaled);
-    setText(
-      "mealStatus",
-      `From Open Food Facts${result.servingSize ? ` · serving ${escapeHtml(result.servingSize)}` : " · per 100g"}. Adjust quantity and save.`
-    );
+    setTimeout(() => {
+      closeScanner();
+      const grams = Number(result.servingG || 100);
+      const scaled = scaleNutrition(result.per100g, grams);
+      state.editingMealId = null;
+      openFoodSheet();
+      select("mealDescription").value = [result.name, result.brand].filter(Boolean).join(" — ");
+      select("mealQty").value = Math.round(grams);
+      fillMealFormFromEstimate(scaled);
+      setText(
+        "mealStatus",
+        `${result.source}${result.servingSize ? ` · serving ${result.servingSize}` : " · per 100g"}. Adjust quantity and save.`
+      );
+    }, 420);
     return;
   }
 
+  if (result.status === "name_only") {
+    setTimeout(async () => {
+      closeScanner();
+      state.editingMealId = null;
+      openFoodSheet();
+      const label = [result.name, result.brand && !result.name.includes(result.brand) ? result.brand : ""]
+        .filter(Boolean)
+        .join(" — ");
+      select("mealDescription").value = label;
+      setText("mealStatus", `Identified via ${result.source} — estimating nutrition from the name…`);
+      await runEstimate();
+    }, 420);
+    return;
+  }
+
+  /* No product anywhere — keep the user moving, never dead-end. */
+  overlay?.classList.remove("locked");
+  overlay?.classList.add("missed");
+  haptic(HAPTIC.warn);
   const messages = {
-    invalid: "That doesn't look like a valid barcode.",
+    invalid: "That doesn't look like a valid barcode. Try again or type it below.",
     offline: "You're offline — barcode lookup needs internet.",
-    not_found: "Product not found on Open Food Facts. Try logging it by name.",
-    no_nutrition: "Product found but it has no nutrition data. Log it by name instead.",
-    error: "Barcode lookup failed. Check your connection and retry.",
+    not_found: "Not in any product database yet. Search it by name instead — it takes 5 seconds.",
+    error: "Lookup failed. Check your connection, retry, or search by name.",
   };
-  setText("barcodeStatus", messages[result.status] || messages.error);
+  setText("scanStatus", messages[result.status] || messages.error);
+  select("scanFallbackRow")?.classList.remove("hidden");
+
+  /* Re-arm the camera for another attempt, keeping the guidance text visible. */
+  stopBarcodeCamera("scanVideo");
+  startBarcodeCamera("scanVideo", null, handleBarcodeDetected);
 }
 
 /* ---- Label scan ---- */

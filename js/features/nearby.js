@@ -10,10 +10,10 @@ let loading = false;
 
 export function initNearby() {
   select("nearbyRefreshBtn")?.addEventListener("click", () => loadNearby(true));
-  select("nearbySheet")?.addEventListener("transitionend", () => {
-    /* First open triggers a load automatically. */
+  document.addEventListener("layeropen", (event) => {
+    if (event.detail?.id !== "nearbySheet") return;
     const sheet = select("nearbySheet");
-    if (sheet?.classList.contains("open") && !sheet.dataset.loaded) {
+    if (sheet && !sheet.dataset.loaded) {
       sheet.dataset.loaded = "1";
       loadNearby(false);
     }

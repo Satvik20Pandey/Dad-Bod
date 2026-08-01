@@ -1,9 +1,9 @@
-# Dad Bod — Play Store Listing Pack (v2.0.0)
+# Dad Bod — Play Store Listing Pack (v2.1.0)
 
 ## App identity
 - App name: Dad Bod
 - Package: com.dadbod.app
-- Version: 2.0.0 (versionCode 6)
+- Version: 2.1.0 (versionCode 7)
 - Category: Health & Fitness
 - Content rating: Everyone (no violence; user photos stored locally only)
 
@@ -23,7 +23,8 @@ NUTRITION THAT UNDERSTANDS YOU
 • Search-first logging with a 5,200+ item Indian food dataset (works offline)
 • Type it like you say it: "200g paneer with 2 roti" — portions are understood
 • Online food parsing by Edamam for anything unusual
-• Barcode scanning powered by Open Food Facts
+• Fullscreen barcode scanner with a triple product database
+  (Open Food Facts + legacy + UPCItemDB) — Indian products included
 • Nutrition-label photo reader (on-device OCR)
 • Voice logging, full macros plus 13 micronutrients
 • 1,000+ healthy USDA MyPlate Kitchen recipes, loggable in one tap
@@ -35,6 +36,10 @@ TRAINING THAT PUSHES YOU
 • Cardio + abs circuit tracking, steps and sleep burn
 • 700+ exercise library with images (wger open database)
 • Find gyms and parks near you (OpenStreetMap)
+
+DAD COINS
+Earn coins for real behavior — workouts, protein, hydration, weigh-ins,
+photos, and streaks (7-day +700, 30-day +5,000). No coins for idle opens.
 
 PROGRESS YOU CAN SEE
 • Animated weight trend with goal line
@@ -64,14 +69,14 @@ Built Dream Physique.
 - Account: local profile on device (name + email for multi-profile support)
 
 ## Release artifacts
-- APK (side-load / testers): release/DadBod-v2.0.0-signed.apk
-- AAB (Play Store upload): release/DadBod-v2.0.0-signed.aab
+- APK (side-load / testers): release/DadBod-v2.1.0-signed.apk
+- AAB (Play Store upload): release/DadBod-v2.1.0-signed.aab
 - Latest aliases: release/DadBod-latest-signed.apk / .aab
 
 ## Upload checklist
 1. Build signed AAB: npm run build:android
 2. Play Console → Create release → Internal testing → Production
-3. Upload DadBod-v2.0.0-signed.aab
+3. Upload DadBod-v2.1.0-signed.aab
 4. Add screenshots (phone 1080x2400): Home mission, Diet search, Food sheet,
    Train hero, Rest timer, Progress chart, Photo compare, Control Center
 5. Feature graphic 1024x500 (dark aurora + DB logo)

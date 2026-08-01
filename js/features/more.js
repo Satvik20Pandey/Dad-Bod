@@ -12,6 +12,7 @@ import {
   getDefaultStateFor,
 } from "../core/store.js";
 import { calculateTargetsFromProfile, ACTIVITY_LEVELS } from "../core/profile.js";
+import { getCoins, todaysEarned, REWARD_RULES, STREAK_MILESTONES, recentLedger } from "../core/rewards.js";
 import { getBmi, getCalorieNeeds, getWaterTargetMl } from "../services/myplate.js";
 import { isOnline } from "../services/http.js";
 import { icon } from "../ui/icons.js";
@@ -190,10 +191,14 @@ async function runUsdaVerification() {
   if (bmi?.bmi) {
     rows.push(`<div class="usda-row"><span>BMI</span><b>${formatNum(Number(bmi.bmi), 1)} · ${escapeHtml(String(bmi.classification_label || bmi.classification || ""))}</b></div>`);
   }
-  const bmr = Number(needs?.bmr?.mifflin_st_jeor ?? needs?.bmr ?? 0);
+  const bmr = Number(needs?.bmr ?? 0);
   if (bmr > 0) rows.push(`<div class="usda-row"><span>BMR (Mifflin-St Jeor)</span><b>${formatNum(bmr, 0)} kcal</b></div>`);
-  const tdee = Number(needs?.tdee?.calories ?? needs?.tdee ?? 0);
+  const tdee = Number(needs?.tdee ?? 0);
   if (tdee > 0) rows.push(`<div class="usda-row"><span>TDEE</span><b>${formatNum(tdee, 0)} kcal</b></div>`);
+  const standardCut = (needs?.weight_loss_targets || []).find((t) => t?.key === "standard");
+  if (standardCut?.intake) {
+    rows.push(`<div class="usda-row"><span>Standard cut (-0.45 kg/wk)</span><b>${formatNum(Number(standardCut.intake), 0)} kcal</b></div>`);
+  }
   if (waterMl) rows.push(`<div class="usda-row"><span>Water target</span><b>${(waterMl / 1000).toFixed(1)} L/day</b></div>`);
 
   const source = String(bmi?.source || needs?.source || "USDA equations via myplate.food");
@@ -348,7 +353,7 @@ function openPrivacyPolicy() {
      <p>Some features contact public nutrition and fitness APIs with the minimum data needed, and only when you use them:</p>
      <ul>
        <li><strong>Edamam</strong> — the food text you search online</li>
-       <li><strong>Open Food Facts</strong> — barcodes you scan</li>
+       <li><strong>Open Food Facts / UPCItemDB</strong> — barcodes you scan</li>
        <li><strong>MyPlate.food</strong> — age, sex, height, weight, activity for USDA calculations; recipe searches</li>
        <li><strong>wger.de</strong> — exercise names you search</li>
        <li><strong>Overpass / OpenStreetMap</strong> — your approximate location, only when you open Nearby</li>
@@ -380,6 +385,57 @@ function openTerms() {
   );
 }
 
+/* ---- Rewards ---- */
+
+function renderRewards() {
+  const card = select("rewardsCard");
+  if (!card) return;
+
+  const coins = getCoins();
+  const today = todaysEarned();
+  const ledger = recentLedger(5);
+
+  card.innerHTML = `
+    <div class="coins-hero">
+      <span class="coins-badge">${icon("medal", "", 26)}</span>
+      <div class="coins-hero-body">
+        <b>${coins.toLocaleString()}</b>
+        <span>Dad Coins${today > 0 ? ` · +${today.toLocaleString()} today` : ""}</span>
+      </div>
+    </div>
+    <div class="earn-grid">
+      ${REWARD_RULES.map(
+        (rule) => `
+        <div class="earn-row">
+          <span class="earn-icon">${icon(rule.icon, "", 15)}</span>
+          <span class="earn-label">${escapeHtml(rule.label)}</span>
+          <span class="earn-coins">+${rule.coins}</span>
+        </div>`
+      ).join("")}
+      ${STREAK_MILESTONES.map(
+        (m) => `
+        <div class="earn-row milestone">
+          <span class="earn-icon">${icon("flame", "", 15)}</span>
+          <span class="earn-label">${escapeHtml(m.label)}</span>
+          <span class="earn-coins">+${m.coins.toLocaleString()}</span>
+        </div>`
+      ).join("")}
+    </div>
+    ${ledger.length
+      ? `<div class="ledger">${ledger
+          .map(
+            (entry) => `
+          <div class="ledger-row">
+            <span>${escapeHtml(entry.label)}</span>
+            <span class="ledger-meta">${entry.date}</span>
+            <b>+${Number(entry.coins).toLocaleString()}</b>
+          </div>`
+          )
+          .join("")}</div>`
+      : `<p class="muted" style="margin-top:10px;">Complete today's missions to start earning.</p>`}
+    <p class="source-line">Coins unlock future premium coaching. Earned by doing, not by opening.</p>`;
+}
+
 /* ---- Render ---- */
 
 export function renderMore() {
@@ -392,6 +448,7 @@ export function renderMore() {
   select("userSheetExportBtn")?.classList.toggle("hidden", !currentUser?.isAdmin);
   setText("versionFooter", `${APP_NAME} v${APP_VERSION} · Crafted by Satvik Pandey`);
 
+  renderRewards();
   renderGoalsForm();
   renderWorkoutPrefsForm();
 }

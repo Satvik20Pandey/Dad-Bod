@@ -370,13 +370,15 @@ async function handleLibrarySearch() {
   container.innerHTML = results
     .map(
       (result) => `
-      <button type="button" class="library-row" data-base-id="${result.id}" data-name="${escapeHtml(result.name)}">
-        ${result.thumbnail || result.image
-          ? `<img class="library-thumb" src="${result.thumbnail || result.image}" alt="" loading="lazy" onerror="this.classList.add('hidden')" />`
+      <button type="button" class="library-row" data-ex-id="${result.id}" data-name="${escapeHtml(result.name)}">
+        ${result.thumb || result.image
+          ? `<img class="library-thumb" src="${result.thumb || result.image}" alt="" loading="lazy" onerror="this.classList.add('hidden')" />`
           : `<span class="library-thumb placeholder">${icon("dumbbell", "", 18)}</span>`}
         <span class="library-body">
           <span class="library-name">${escapeHtml(result.name)}</span>
-          ${result.category ? `<span class="library-cat">${escapeHtml(result.category)}</span>` : ""}
+          ${result.category || result.muscles.length
+            ? `<span class="library-cat">${escapeHtml([result.category, result.muscles.slice(0, 2).join(", ")].filter(Boolean).join(" · "))}</span>`
+            : ""}
         </span>
         ${icon("chevronRight", "row-chevron", 17)}
       </button>`
@@ -385,7 +387,7 @@ async function handleLibrarySearch() {
 }
 
 async function handleLibraryResultClick(event) {
-  const row = event.target.closest("[data-base-id]");
+  const row = event.target.closest("[data-ex-id]");
   if (!row) return;
   haptic(HAPTIC.tap);
 
@@ -393,7 +395,7 @@ async function handleLibraryResultClick(event) {
   setHtml("exerciseSheetBody", `<h2 class="sheet-title">${escapeHtml(name)}</h2>${skeletonCards(2)}`);
   openLayer("exerciseSheet");
 
-  const detail = await getExerciseDetail(row.getAttribute("data-base-id"));
+  const detail = await getExerciseDetail(row.getAttribute("data-ex-id"));
   if (!detail) {
     showExerciseSheet({ name, sets: "—", cues: "Details unavailable right now.", videoQuery: `${name} proper form` });
     return;
@@ -403,8 +405,10 @@ async function handleLibraryResultClick(event) {
     "exerciseSheetBody",
     `
     <h2 class="sheet-title">${escapeHtml(detail.name)}</h2>
-    ${detail.images.length ? `<div class="guide-media"><img src="${detail.images[0]}" alt="${escapeHtml(detail.name)}" loading="lazy" onerror="this.parentElement.remove()" /></div>` : ""}
-    ${detail.muscles.length ? `<div class="chip-row">${detail.muscles.map((m) => `<span class="chip protein">${escapeHtml(m)}</span>`).join("")}${detail.musclesSecondary.map((m) => `<span class="chip">${escapeHtml(m)}</span>`).join("")}</div>` : ""}
+    ${detail.image ? `<div class="guide-media"><img src="${detail.image}" alt="${escapeHtml(detail.name)}" loading="lazy" onerror="this.parentElement.remove()" /></div>` : ""}
+    ${detail.muscles.length || detail.musclesSecondary.length
+      ? `<div class="chip-row">${detail.muscles.map((m) => `<span class="chip protein">${escapeHtml(m)}</span>`).join("")}${detail.musclesSecondary.map((m) => `<span class="chip">${escapeHtml(m)}</span>`).join("")}</div>`
+      : ""}
     ${detail.equipment.length ? `<div class="guide-block"><h4>${icon("dumbbell", "", 15)} Equipment</h4><p>${escapeHtml(detail.equipment.join(", "))}</p></div>` : ""}
     ${detail.description ? `<div class="guide-block"><h4>${icon("list", "", 15)} How to perform</h4><p>${escapeHtml(detail.description)}</p></div>` : ""}
     <p class="source-line">Source: ${escapeHtml(detail.source)}</p>
@@ -488,16 +492,7 @@ function renderExerciseList() {
   const log = completion.log;
   const isAdmin = Boolean(currentUser?.isAdmin);
 
-  const scienceBox = select("scienceRules");
-  if (scienceBox) {
-    if (isAdmin && SCIENCE_RULES.length) {
-      scienceBox.classList.remove("hidden");
-      scienceBox.innerHTML = `<h4>${icon("sparkles", "", 15)} Science rules for quick results</h4><ul>${SCIENCE_RULES.map((rule) => `<li>${escapeHtml(rule)}</li>`).join("")}</ul>`;
-    } else {
-      scienceBox.classList.add("hidden");
-      scienceBox.innerHTML = "";
-    }
-  }
+  renderTodaysTip();
 
   if (workout.isOff) {
     list.innerHTML = emptyState("moon", "Recovery day", "Hydrate, stretch lightly, and sleep well.");
@@ -564,6 +559,26 @@ function renderAbsList() {
       </article>`;
     })
     .join("");
+}
+
+/* One rotating coaching cue per day — replaces the wall of science text. */
+const DAILY_TIPS = [
+  ...SCIENCE_RULES,
+  "Warm up with 2 lighter ramp-up sets before your first heavy set of each lift.",
+  "Grip the floor with your feet on presses — full-body tension adds reps.",
+  "Log the load immediately after the set. Memory lies; the PR board doesn't.",
+  "Hit protein within a couple of hours around training — total daily intake still matters most.",
+];
+
+function renderTodaysTip() {
+  const box = select("todaysTip");
+  if (!box) return;
+  const start = new Date(new Date().getFullYear(), 0, 0);
+  const dayOfYear = Math.floor((Date.now() - start.getTime()) / 86400000);
+  const tip = DAILY_TIPS[dayOfYear % DAILY_TIPS.length];
+  box.innerHTML = `
+    <span class="tip-icon">${icon("sparkles", "", 17)}</span>
+    <span class="tip-body"><b>Today's Tip</b><p>${escapeHtml(tip)}</p></span>`;
 }
 
 function renderCardioForms() {

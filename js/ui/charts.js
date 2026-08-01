@@ -7,8 +7,11 @@ const MINT = "#00D084";
 function prepareCanvas(canvas) {
   const dpr = window.devicePixelRatio || 1;
   const rect = canvas.getBoundingClientRect();
-  const width = rect.width || canvas.clientWidth || 300;
-  const height = rect.height || canvas.clientHeight || 180;
+  const width = rect.width || canvas.clientWidth;
+  const height = rect.height || canvas.clientHeight;
+  /* Hidden screens measure 0×0 — skip drawing; the screen switcher re-renders
+   * every screen the moment it becomes visible. */
+  if (!width || !height || width < 5 || height < 5) return null;
   canvas.width = width * dpr;
   canvas.height = height * dpr;
   const ctx = canvas.getContext("2d");
@@ -19,7 +22,9 @@ function prepareCanvas(canvas) {
 /* Animated weight line with gradient fill and goal line. */
 export function drawWeightChart(canvas, entries, goalWeight = null, animate = true) {
   if (!canvas) return;
-  const { ctx, width, height } = prepareCanvas(canvas);
+  const prepared = prepareCanvas(canvas);
+  if (!prepared) return;
+  const { ctx, width, height } = prepared;
   ctx.clearRect(0, 0, width, height);
 
   const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
@@ -154,7 +159,9 @@ export function drawWeightChart(canvas, entries, goalWeight = null, animate = tr
 /* Macro donut: [{value, color}] with rounded gaps. */
 export function drawMacroDonut(canvas, segments) {
   if (!canvas) return;
-  const { ctx, width, height } = prepareCanvas(canvas);
+  const prepared = prepareCanvas(canvas);
+  if (!prepared) return;
+  const { ctx, width, height } = prepared;
   ctx.clearRect(0, 0, width, height);
 
   const cx = width / 2;
@@ -207,7 +214,9 @@ export function renderHeatmap(container, cells) {
 /* Tiny sparkline for bento tiles. */
 export function drawSparkline(canvas, values, color = MINT) {
   if (!canvas || !values.length) return;
-  const { ctx, width, height } = prepareCanvas(canvas);
+  const prepared = prepareCanvas(canvas);
+  if (!prepared) return;
+  const { ctx, width, height } = prepared;
   ctx.clearRect(0, 0, width, height);
   if (values.length < 2) return;
 

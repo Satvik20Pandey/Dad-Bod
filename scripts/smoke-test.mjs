@@ -124,6 +124,20 @@ try {
   const waterText = await page.textContent(".tile-water .tile-title");
   check("Water tile increments", waterText?.includes("0.3") || waterText?.includes("0.2"));
 
+  /* Dad Coins: daily check-in should have been granted on first render */
+  const coinsText = (await page.textContent("#coinsCount"))?.trim();
+  check(`Dad Coins granted (chip shows ${coinsText})`, Number((coinsText || "0").replace(/,/g, "")) >= 100);
+  check("Mission CTA renders", await page.isVisible("#missionCta .mission-cta"));
+
+  /* Fullscreen scanner opens from the center nav button */
+  await page.click("#scanBtn");
+  await page.waitForSelector("#scanOverlay.open", { timeout: 4000 });
+  await page.screenshot({ path: path.join(shotsDir, "11-scanner.png") });
+  check("Scan overlay opens with frame", await page.isVisible(".scan-frame"));
+  await page.click("#scanCloseBtn");
+  await page.waitForTimeout(400);
+  check("Scan overlay closes", !(await page.isVisible("#scanOverlay.open")));
+
   /* Train screen */
   await page.click('.nav-btn[data-screen="train"]');
   await page.waitForSelector("#screen-train.active");
@@ -156,11 +170,14 @@ try {
   check("Weight hero shows entry", (await page.textContent("#weightHero"))?.includes("82.5"));
   await page.screenshot({ path: path.join(shotsDir, "08-progress.png") });
 
-  /* Control center */
+  /* Dad Bod HQ */
   await page.click('.nav-btn[data-screen="more"]');
   await page.waitForSelector("#screen-more.active");
+  await page.waitForTimeout(400);
   await page.screenshot({ path: path.join(shotsDir, "09-more.png") });
-  check("Control center rows render", (await page.locator(".cc-row").count()) >= 7);
+  check("HQ rows render", (await page.locator(".cc-row").count()) >= 7);
+  check("HQ title updated", (await page.textContent("#screen-more .screen-header h1"))?.includes("Dad Bod HQ"));
+  check("Rewards card lists earn rules", (await page.locator("#rewardsCard .earn-row").count()) >= 7);
 
   await page.click('[data-open-sheet="goalsSheet"]');
   await page.waitForSelector("#goalsSheet.open");

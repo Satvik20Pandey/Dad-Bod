@@ -11,11 +11,12 @@ with Capacitor for Android.
 
 | Screen | What it does |
 | --- | --- |
-| **Home — Daily Mission** | Animated **Dad Physique Score** (protein · calories · training · hydration · streak), calorie + burn rings, bento grid into every feature |
+| **Home — Daily Mission** | Animated **Dad Physique Score**, contextual hero action (Start/Continue Workout), Dad Coins + streak chips, calorie + burn rings, bento grid |
 | **Diet** | Search-first logging: 5,277-food Indian dataset (offline), voice input, barcode scan, label OCR, live suggestions, macro donut + 13 micronutrients, weekly meal plan |
 | **Train** | Structured weekly splits with form cues, load/rep logging, full-screen rest timer with haptics, session celebrations, cardio + abs, 700+ exercise library |
 | **Progress** | Animated weight trend with goal line, before/after photo compare slider, consistency heatmap, strength PR board with estimated 1RM, CSV export |
-| **Control Center** | Goals with USDA cross-check, training setup, nearby gyms & parks, 1,000+ USDA recipes, backup/restore, policies |
+| **Scan** | Center-nav fullscreen scanner (brackets + laser + haptics): BarcodeDetector → ZXing fallback; OFF v2 → OFF v0 → UPCItemDB name lookup — never a dead end |
+| **Dad Bod HQ** | Dad Coins rewards (earn by doing: workouts, protein, hydration, streaks), goals with USDA cross-check, training setup, nearby, recipes, backup/restore |
 
 ## Production API architecture
 
@@ -27,10 +28,11 @@ Food search      →  On-device dataset (5,277 Indian foods, instant, offline)
                  →  Edamam natural-language parsing   (unmatched portions)
                  →  Heuristic estimation → manual edit (always available)
 
-Barcode          →  Camera BarcodeDetector / manual   →  Open Food Facts
+Barcode          →  BarcodeDetector → ZXing (lazy) → manual
+                 →  Open Food Facts v2 → v0 → UPCItemDB (name) → estimate
 Label photo      →  On-device OCR (Tesseract, lazy-loaded)
 Recipes + USDA   →  MyPlate.food (BMI, calorie needs, water, 1,072 recipes)
-Exercise library →  wger.de open database
+Exercise library →  wger.de catalog, downloaded once + cached 30d (offline search)
 Nearby           →  Geolocation → Overpass/OpenStreetMap (gyms, parks)
 ```
 
@@ -114,8 +116,8 @@ npm run build:android
 
 Outputs land in `release/`:
 
-- `DadBod-v2.0.0-signed.apk` — side-load / testers
-- `DadBod-v2.0.0-signed.aab` — Play Store upload
+- `DadBod-v2.1.0-signed.apk` — side-load / testers
+- `DadBod-v2.1.0-signed.aab` — Play Store upload
 - `DadBod-latest-signed.apk` / `.aab` — rolling aliases
 
 Keystore password override (PKCS12 uses one password for store + key):

@@ -2,6 +2,49 @@
 
 All notable changes to Dad Bod.
 
+## [2.1.0] — 2026-08-01 · "Scan, Earn, Refine"
+
+Device-feedback round: CRED-inspired restraint, a hero scanner, and rewards
+for real behavior.
+
+### Scan is now the hero
+- The center nav button is a labeled **Scan** action opening a fullscreen
+  Google-Lens-style scanner: corner brackets, animated laser, haptic lock-on,
+  green success state, and nutrition sliding straight into the food sheet.
+- Decoder chain now covers WebViews without the Shape Detection API:
+  native BarcodeDetector → lazy-loaded ZXing → manual entry.
+- Barcode data chain never dead-ends: Open Food Facts v2 → OFF v0 (legacy)
+  → UPCItemDB name lookup → name-based estimation → search-by-name/manual.
+
+### Dad Coins
+- Rewards for doing, not opening: check-in +100, workout +250, protein +150,
+  calories +120, hydration +100, weigh-in +50, photo +80, 7-day streak +700,
+  30-day streak +5,000. Once per day per category, streaks once per run.
+- Coins chip on Home, full Rewards card (earn rules + ledger) in HQ.
+
+### Fixed against live APIs (verified with real payloads)
+- **Recipes were empty**: MyPlate list shape is `results[]` with `name`/
+  `image_url`/`rating.value`; detail nutrition is a keyed row array and
+  directions are a single string. Mappers rewritten; recipes now load,
+  render, and log as meals.
+- **Calorie-needs**: activity enum (`moderately-active`…) and flat
+  `bmr`/`tdee` fields corrected; USDA cross-check now also shows the
+  standard-cut intake. Water target reads `result.headline.value`.
+- **Exercise library was dead**: wger retired `/exercise/search`. The app now
+  downloads the full English catalog once (paged `/exerciseinfo`), caches it
+  30 days, and searches on-device — the library also works offline.
+- **Device rendering bug**: charts drawn while their screen was hidden
+  measured 0×0 (oval donut on phones). Screens now re-render on activation
+  and hidden canvases skip drawing.
+
+### Design refinement (CRED × WHOOP restraint)
+- Natural radius scale (28/24/20/18/16), thinner 1.5px icon strokes, glow
+  reserved for CTAs/selection/rewards/completion, more whitespace.
+- Home leads with a contextual hero action: **Start/Continue Today's
+  Workout** → next meal → progress.
+- "More" is now **Dad Bod HQ**; science paragraphs replaced by a rotating
+  **Today's Tip**; splash gained particles and a slow breathing orb.
+
 ## [2.0.0] — 2026-08-01 · "The Dad Physique OS"
 
 Complete product redesign and production re-architecture.

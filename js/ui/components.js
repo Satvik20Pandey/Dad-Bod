@@ -48,6 +48,7 @@ export function openLayer(id) {
   layer.setAttribute("aria-hidden", "false");
   document.body.classList.add("layer-open");
   if (!openLayers.includes(id)) openLayers.push(id);
+  document.dispatchEvent(new CustomEvent("layeropen", { detail: { id } }));
   haptic(HAPTIC.tap);
 }
 

@@ -1,5 +1,9 @@
-/* Dad Bod — Open Food Facts barcode lookup (no key required).
- * Maps a scanned or typed barcode to per-100g nutrition + serving info. */
+/* Dad Bod — barcode resolution chain (no keys):
+ *   1. Open Food Facts v2  → full nutrition
+ *   2. Open Food Facts v0  → legacy records missed by v2
+ *   3. UPCItemDB (trial)   → product name only, estimated via food search
+ * The UI never dead-ends: name-only results flow into the food estimator,
+ * and unknown codes fall back to name search / manual entry. */
 
 import { API } from "../config.js";
 import { fetchJson, isOnline } from "./http.js";
@@ -52,41 +56,89 @@ export function mapOffNutriments(nutriments) {
   return nutrition;
 }
 
+function buildOkResult(code, product, sourceLabel) {
+  const per100g = mapOffNutriments(product.nutriments);
+  const hasData = per100g.kcal > 0 || per100g.protein > 0 || per100g.carbs > 0 || per100g.fat > 0;
+  if (!hasData) return null;
+
+  return {
+    status: "ok",
+    code,
+    name: String(product.product_name || "Packaged food").trim(),
+    brand: String(product.brands || "").split(",")[0].trim(),
+    image: product.image_front_small_url || null,
+    servingSize: product.serving_size || null,
+    servingG: Number(product.serving_quantity || 0) || null,
+    per100g,
+    source: sourceLabel,
+  };
+}
+
+async function tryOffEndpoint(url, cacheKey) {
+  try {
+    const payload = await fetchJson(url, { timeoutMs: 9000, cacheKey, cacheTtlMs: CACHE_TTL_MS });
+    if (!payload || payload.status === 0 || !payload.product) return null;
+    return payload.product;
+  } catch {
+    return null;
+  }
+}
+
+/* Name-only fallback for codes missing from Open Food Facts. */
+async function tryUpcItemDb(code) {
+  try {
+    const payload = await fetchJson(
+      `https://api.upcitemdb.com/prod/trial/lookup?upc=${encodeURIComponent(code)}`,
+      { timeoutMs: 9000, cacheKey: `upcdb:${code}`, cacheTtlMs: CACHE_TTL_MS }
+    );
+    const item = payload?.items?.[0];
+    if (!item?.title) return null;
+    return {
+      status: "name_only",
+      code,
+      name: String(item.title).trim(),
+      brand: String(item.brand || "").trim(),
+      source: "UPCItemDB product directory",
+    };
+  } catch {
+    return null;
+  }
+}
+
 export async function lookupBarcode(rawCode) {
   const code = String(rawCode || "").replace(/\D/g, "");
   if (code.length < 6) return { status: "invalid" };
   if (!isOnline()) return { status: "offline" };
 
-  try {
-    const payload = await fetchJson(
-      `${API.openFoodFacts.base}/${encodeURIComponent(code)}.json?fields=${FIELDS}`,
-      { timeoutMs: 9000, cacheKey: `off:${code}`, cacheTtlMs: CACHE_TTL_MS }
-    );
-
-    if (!payload || payload.status === 0 || !payload.product) {
-      return { status: "not_found", code };
-    }
-
-    const product = payload.product;
-    const per100g = mapOffNutriments(product.nutriments);
-    const servingG = Number(product.serving_quantity || 0) || null;
-
-    const hasData = per100g.kcal > 0 || per100g.protein > 0 || per100g.carbs > 0 || per100g.fat > 0;
-    if (!hasData) return { status: "no_nutrition", code, name: product.product_name || "" };
-
-    return {
-      status: "ok",
-      code,
-      name: String(product.product_name || "Packaged food").trim(),
-      brand: String(product.brands || "").split(",")[0].trim(),
-      image: product.image_front_small_url || null,
-      servingSize: product.serving_size || null,
-      servingG,
-      per100g,
-      source: "Open Food Facts",
-    };
-  } catch (error) {
-    console.warn("Open Food Facts lookup failed", error?.message || error);
-    return { status: "error", code };
+  const v2Product = await tryOffEndpoint(
+    `${API.openFoodFacts.base}/${encodeURIComponent(code)}.json?fields=${FIELDS}`,
+    `off:${code}`
+  );
+  if (v2Product) {
+    const result = buildOkResult(code, v2Product, "Open Food Facts");
+    if (result) return result;
   }
+
+  const v0Product = await tryOffEndpoint(
+    `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(code)}.json`,
+    `offv0:${code}`
+  );
+  if (v0Product) {
+    const result = buildOkResult(code, v0Product, "Open Food Facts (legacy)");
+    if (result) return result;
+    if (v0Product.product_name) {
+      return {
+        status: "name_only",
+        code,
+        name: String(v0Product.product_name).trim(),
+        brand: String(v0Product.brands || "").split(",")[0].trim(),
+        source: "Open Food Facts",
+      };
+    }
+  }
+
+  const upcResult = await tryUpcItemDb(code);
+  if (upcResult) return upcResult;
+
+  return { status: "not_found", code };
 }

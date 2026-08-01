@@ -17,11 +17,12 @@ import {
 import { calculateTargetsFromProfile } from "./core/profile.js";
 import { loadFoodDatasetIfNeeded } from "./core/dataset.js";
 import { getWaterTargetMl } from "./services/myplate.js";
+import { evaluateRewards } from "./core/rewards.js";
 import { mountStaticIcons } from "./ui/icons.js";
-import { bindLayerDismissal, openLayer, closeLayer, dismissCelebration, haptic, HAPTIC } from "./ui/components.js";
+import { bindLayerDismissal, dismissCelebration, haptic, HAPTIC, showToast, fireConfetti } from "./ui/components.js";
 import { initOnboarding, showAuthShell, showAppShell } from "./features/onboarding.js";
-import { initHome, renderHome, adjustWater } from "./features/home.js";
-import { initDiet, renderDiet, quickLogMeal, logPrefilledMeal } from "./features/diet.js";
+import { initHome, renderHome } from "./features/home.js";
+import { initDiet, renderDiet, logPrefilledMeal, openScanner } from "./features/diet.js";
 import { initWorkout, renderWorkout } from "./features/workout.js";
 import { initProgress, renderProgress } from "./features/progress.js";
 import { initNearby } from "./features/nearby.js";
@@ -29,6 +30,13 @@ import { initRecipes, notifyRecipeLogged } from "./features/recipes.js";
 import { initMore, renderMore } from "./features/more.js";
 
 const SCREENS = ["home", "diet", "train", "progress", "more"];
+const SCREEN_RENDERERS = {
+  home: renderHome,
+  diet: renderDiet,
+  train: renderWorkout,
+  progress: renderProgress,
+  more: renderMore,
+};
 let activeScreen = "home";
 
 /* ---- Screen switching ---- */
@@ -49,12 +57,23 @@ function showScreen(name) {
   });
 
   window.scrollTo({ top: 0, behavior: "auto" });
+
+  /* Re-render the now-visible screen: canvases measured while hidden are 0×0. */
+  if (state) requestAnimationFrame(() => SCREEN_RENDERERS[activeScreen]?.());
 }
 
 /* ---- Global render ---- */
 
 function renderAll() {
   if (!state) return;
+
+  const { granted, total } = evaluateRewards();
+  if (total > 0) {
+    const headline = granted.length === 1 ? granted[0].label : `${granted.length} goals hit`;
+    showToast(`+${total.toLocaleString()} Dad Coins · ${headline}`, "success");
+    if (granted.some((g) => g.coins >= 700)) fireConfetti(2000);
+  }
+
   renderHome();
   renderDiet();
   renderWorkout();
@@ -120,34 +139,12 @@ function hideSplash() {
   setTimeout(() => splash.remove(), 550);
 }
 
-/* ---- Quick actions (FAB) ---- */
+/* ---- Center nav action: the scanner is the hero feature ---- */
 
-function bindQuickActions() {
-  select("fabBtn")?.addEventListener("click", () => {
+function bindScanAction() {
+  select("scanBtn")?.addEventListener("click", () => {
     haptic(HAPTIC.tap);
-    openLayer("quickSheet");
-  });
-
-  select("quickSheet")?.addEventListener("click", (event) => {
-    const btn = event.target.closest("[data-quick]");
-    if (!btn) return;
-    const action = btn.getAttribute("data-quick");
-    closeLayer("quickSheet");
-
-    if (action === "meal") {
-      showScreen("diet");
-      quickLogMeal();
-    } else if (action === "water") {
-      adjustWater(250);
-    } else if (action === "weight") {
-      showScreen("progress");
-      setTimeout(() => select("weightValue")?.focus(), 350);
-    } else if (action === "photo") {
-      showScreen("progress");
-      document.querySelector('#progressSeg [data-seg="photos"]')?.click();
-    } else if (action === "workout") {
-      showScreen("train");
-    }
+    openScanner();
   });
 }
 
@@ -172,7 +169,7 @@ function init() {
     notifyRecipeLogged(payload.description);
   });
   initMore(logout);
-  bindQuickActions();
+  bindScanAction();
 
   document.querySelectorAll(".nav-btn[data-screen]").forEach((btn) => {
     btn.addEventListener("click", () => {

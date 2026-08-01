@@ -13,6 +13,7 @@ import {
   workoutCompletion,
   activityHeatmap,
 } from "../core/metrics.js";
+import { getCoins } from "../core/rewards.js";
 import { icon } from "../ui/icons.js";
 import { setRingProgress, animateNumber, haptic, HAPTIC, openLayer, fireConfetti, showToast } from "../ui/components.js";
 import { drawSparkline, renderHeatmap } from "../ui/charts.js";
@@ -23,6 +24,12 @@ let waterCelebratedFor = "";
 export function initHome() {
   select("bentoGrid")?.addEventListener("click", handleBentoClick);
   select("missionCard")?.addEventListener("click", (event) => {
+    const cta = event.target.closest("[data-cta-screen]");
+    if (cta) {
+      haptic(HAPTIC.tap);
+      goToScreen(cta.getAttribute("data-cta-screen"));
+      return;
+    }
     const target = event.target.closest("[data-mission]");
     if (!target) return;
     const key = target.getAttribute("data-mission");
@@ -97,6 +104,7 @@ function renderGreeting() {
   setText("streakCount", String(streak));
   select("streakChip")?.classList.toggle("hot", streak >= 3);
 
+  setText("coinsCount", getCoins().toLocaleString());
   setText("avatarInitial", (currentUser?.name || "A").trim().charAt(0).toUpperCase());
 }
 
@@ -133,6 +141,38 @@ function renderMission() {
       </button>`
     )
     .join("");
+
+  renderMissionCta(missions);
+}
+
+/* One contextual next action — the thing that moves the score most right now. */
+function renderMissionCta(missions) {
+  const container = select("missionCta");
+  if (!container) return;
+
+  const completion = workoutCompletion();
+  const proteinDone = missions.find((m) => m.key === "protein")?.done;
+
+  let cta;
+  if (!completion.isRestDay && !completion.gymComplete && completion.gymTotal > 0) {
+    cta = {
+      screen: "train",
+      iconName: "play",
+      label: completion.gymDone > 0 ? "Continue Workout" : "Start Today's Workout",
+      sub: completion.workout.title,
+    };
+  } else if (!proteinDone) {
+    cta = { screen: "diet", iconName: "utensils", label: "Log Your Next Meal", sub: "Protein builds the physique" };
+  } else {
+    cta = { screen: "progress", iconName: "trending", label: "Review Your Progress", sub: "See how far you've come" };
+  }
+
+  container.innerHTML = `
+    <button type="button" class="mission-cta" data-cta-screen="${cta.screen}">
+      <span class="cta-icon">${icon(cta.iconName, "", 18)}</span>
+      <span class="cta-body"><b>${escapeHtml(cta.label)}</b><small>${escapeHtml(cta.sub)}</small></span>
+      ${icon("chevronRight", "", 17)}
+    </button>`;
 }
 
 function renderRings() {

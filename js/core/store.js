@@ -107,6 +107,7 @@ const adminDefaultState = {
   waterByDate: {},
   weightEntries: [],
   photoEntries: [],
+  rewards: { coins: 0, byDate: {}, ledger: [], streakKeys: {} },
   editingMealId: null,
 };
 
@@ -135,6 +136,7 @@ const genericDefaultState = {
   waterByDate: {},
   weightEntries: [],
   photoEntries: [],
+  rewards: { coins: 0, byDate: {}, ledger: [], streakKeys: {} },
   editingMealId: null,
 };
 
@@ -291,6 +293,9 @@ export function mergeState(baseState, savedState) {
     waterByDate: { ...(savedState?.waterByDate || {}) },
     weightEntries: Array.isArray(savedState?.weightEntries) ? savedState.weightEntries : [],
     photoEntries: Array.isArray(savedState?.photoEntries) ? savedState.photoEntries : [],
+    rewards: savedState?.rewards && typeof savedState.rewards === "object"
+      ? savedState.rewards
+      : { coins: 0, byDate: {}, ledger: [], streakKeys: {} },
     weeklyPlan: savedState?.weeklyPlan ? savedState.weeklyPlan : clone(baseState.weeklyPlan),
   };
 

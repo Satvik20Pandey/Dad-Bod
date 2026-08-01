@@ -2,7 +2,7 @@
 
 export const APP_NAME = "Dad Bod";
 export const APP_TAGLINE = "The Dad Physique OS";
-export const APP_VERSION = "2.0.0";
+export const APP_VERSION = "2.1.0";
 
 /* ---- Storage keys (stable across versions — do not rename, user data lives here) ---- */
 export const AUTH_KEY = "dadbod_auth_v1";

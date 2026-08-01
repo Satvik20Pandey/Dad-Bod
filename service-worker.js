@@ -1,6 +1,6 @@
 /* Dad Bod — offline cache. Version bump invalidates all previous caches. */
 
-const CACHE_NAME = "dad-bod-cache-v20";
+const CACHE_NAME = "dad-bod-cache-v21";
 const ASSETS = [
   "./",
   "./index.html",
@@ -20,6 +20,7 @@ const ASSETS = [
   "./js/core/store.js",
   "./js/core/profile.js",
   "./js/core/metrics.js",
+  "./js/core/rewards.js",
   "./js/services/http.js",
   "./js/services/edamam.js",
   "./js/services/openfoodfacts.js",

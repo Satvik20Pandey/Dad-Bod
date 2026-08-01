@@ -418,52 +418,56 @@ export async function scanLabelFile(file, statusId) {
   }
 }
 
-/* ---- Barcode scanning (BarcodeDetector when available, always manual fallback) ---- */
+/* ---- Barcode scanning ----
+ * Decoder chain: native BarcodeDetector → ZXing (lazy-loaded UMD) → manual
+ * entry. Works across Android WebViews that lack the Shape Detection API. */
 
 let barcodeStream = null;
 let barcodeLoopActive = false;
+let zxingReader = null;
+let zxingLoadPromise = null;
 
 export function barcodeCameraSupported() {
   return Boolean(navigator.mediaDevices?.getUserMedia);
 }
 
-export async function startBarcodeCamera(videoId, statusId, onCode) {
-  const video = select(videoId);
-  if (!video || !barcodeCameraSupported()) {
-    setText(statusId, "Camera not available — type the barcode number below.");
-    return false;
-  }
+function loadZxing() {
+  if (window.ZXing?.BrowserMultiFormatReader) return Promise.resolve(true);
+  if (zxingLoadPromise) return zxingLoadPromise;
 
-  try {
-    barcodeStream = await navigator.mediaDevices.getUserMedia({
-      video: { facingMode: "environment" },
-      audio: false,
-    });
-  } catch {
-    setText(statusId, "Camera permission denied — type the barcode number below.");
-    return false;
-  }
+  zxingLoadPromise = new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js";
+    script.async = true;
+    const timer = setTimeout(() => resolve(false), 15000);
+    script.onload = () => {
+      clearTimeout(timer);
+      resolve(Boolean(window.ZXing?.BrowserMultiFormatReader));
+    };
+    script.onerror = () => {
+      clearTimeout(timer);
+      zxingLoadPromise = null;
+      resolve(false);
+    };
+    document.head.appendChild(script);
+  });
 
-  video.srcObject = barcodeStream;
-  await video.play().catch(() => {});
+  return zxingLoadPromise;
+}
 
-  if (!("BarcodeDetector" in window)) {
-    setText(statusId, "Live detection unsupported here — align the code and type its number below.");
-    return true;
-  }
+async function startNativeDetectorLoop(video, onCode) {
+  if (!("BarcodeDetector" in window)) return false;
 
   let detector;
   try {
+    const supported = await window.BarcodeDetector.getSupportedFormats?.();
+    if (Array.isArray(supported) && !supported.length) return false;
     detector = new window.BarcodeDetector({
-      formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128"],
+      formats: ["ean_13", "ean_8", "upc_a", "upc_e", "code_128", "code_39"],
     });
   } catch {
-    setText(statusId, "Align the barcode and type its number below.");
-    return true;
+    return false;
   }
-
-  setText(statusId, "Point the camera at the barcode…");
-  barcodeLoopActive = true;
 
   const scanLoop = async () => {
     if (!barcodeLoopActive || !video.srcObject) return;
@@ -471,19 +475,85 @@ export async function startBarcodeCamera(videoId, statusId, onCode) {
       const codes = await detector.detect(video);
       const value = codes?.[0]?.rawValue;
       if (value) {
-        stopBarcodeCamera(videoId);
         onCode(String(value));
         return;
       }
     } catch {}
-    if (barcodeLoopActive) setTimeout(scanLoop, 260);
+    if (barcodeLoopActive) setTimeout(scanLoop, 240);
   };
   scanLoop();
   return true;
 }
 
+async function startZxingLoop(video, statusId, onCode) {
+  const ready = await loadZxing();
+  if (!ready) return false;
+
+  try {
+    zxingReader = new window.ZXing.BrowserMultiFormatReader();
+    zxingReader.decodeFromVideoElementContinuously(video, (result) => {
+      if (!barcodeLoopActive) return;
+      const value = result?.getText?.();
+      if (value) onCode(String(value));
+    });
+    return true;
+  } catch {
+    zxingReader = null;
+    return false;
+  }
+}
+
+export async function startBarcodeCamera(videoId, statusId, onCode) {
+  const video = select(videoId);
+  if (!video || !barcodeCameraSupported()) {
+    setText(statusId, "Camera unavailable — type the barcode number instead.");
+    return false;
+  }
+
+  try {
+    barcodeStream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: "environment", width: { ideal: 1280 }, height: { ideal: 720 } },
+      audio: false,
+    });
+  } catch {
+    setText(statusId, "Camera permission denied — type the barcode number instead.");
+    return false;
+  }
+
+  video.srcObject = barcodeStream;
+  await video.play().catch(() => {});
+  barcodeLoopActive = true;
+
+  const guardedOnCode = (value) => {
+    if (!barcodeLoopActive) return;
+    barcodeLoopActive = false;
+    onCode(value);
+  };
+
+  if (await startNativeDetectorLoop(video, guardedOnCode)) {
+    setText(statusId, "Align the barcode inside the frame");
+    return true;
+  }
+
+  setText(statusId, "Preparing decoder…");
+  if (await startZxingLoop(video, statusId, guardedOnCode)) {
+    setText(statusId, "Align the barcode inside the frame");
+    return true;
+  }
+
+  setText(statusId, "Live detection unavailable — type the barcode number instead.");
+  return true;
+}
+
 export function stopBarcodeCamera(videoId) {
   barcodeLoopActive = false;
+  if (zxingReader) {
+    try {
+      zxingReader.stopContinuousDecode?.();
+      zxingReader.reset?.();
+    } catch {}
+    zxingReader = null;
+  }
   const video = select(videoId);
   if (video) {
     video.pause();

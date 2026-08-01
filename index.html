@@ -35,12 +35,14 @@
 
     <!-- Splash -->
     <div class="splash-screen" id="splashScreen">
+      <div class="splash-particles" aria-hidden="true">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
       <div class="splash-orb">
         <img src="assets/logo-premium.svg" alt="Dad Bod" class="splash-logo" />
       </div>
       <div class="splash-wordmark">DAD&nbsp;BOD</div>
       <div class="splash-tagline">The Dad Physique OS</div>
-      <div class="splash-loader"><span></span></div>
     </div>
 
     <div class="toast" id="toast" role="status" aria-live="polite"></div>
@@ -84,6 +86,10 @@
             <p class="greet-meta"><span id="dateTimeText">Today</span> · <span id="journeyDay">Day 1</span></p>
           </div>
           <div class="home-header-side">
+            <div class="coins-chip" id="coinsChip">
+              <i data-icon="medal" data-icon-size="15"></i>
+              <b id="coinsCount">0</b>
+            </div>
             <div class="streak-chip" id="streakChip">
               <i data-icon="flame" data-icon-size="16"></i>
               <b id="streakCount">0</b>
@@ -115,6 +121,7 @@
             <p class="mission-hint" id="missionHint">Every logged meal and set moves this score.</p>
           </div>
           <div class="mission-list" id="missionList"></div>
+          <div class="mission-cta-slot" id="missionCta"></div>
         </article>
 
         <!-- Energy rings -->
@@ -228,7 +235,7 @@
         </div>
 
         <div id="trainStrengthPanel">
-          <div class="science-rules hidden" id="scienceRules"></div>
+          <div class="todays-tip" id="todaysTip"></div>
           <div class="exercise-list" id="exerciseList"></div>
         </div>
 
@@ -383,11 +390,11 @@
         </div>
       </section>
 
-      <!-- ===== MORE / CONTROL CENTER ===== -->
+      <!-- ===== DAD BOD HQ ===== -->
       <section class="screen" id="screen-more" hidden>
         <header class="screen-header">
-          <h1>Control Center</h1>
-          <p>Goals, training, data, and app info</p>
+          <h1>Dad Bod HQ</h1>
+          <p>Rewards, goals, training, and your data</p>
         </header>
 
         <article class="card profile-card">
@@ -398,6 +405,11 @@
           </div>
           <span class="chip accent hidden" id="moreAdminChip">Owner</span>
         </article>
+
+        <div class="cc-group">
+          <p class="cc-title">Rewards</p>
+          <article class="card rewards-card" id="rewardsCard"></article>
+        </div>
 
         <div class="cc-group">
           <p class="cc-title">Training &amp; Goals</p>
@@ -479,29 +491,14 @@
       <nav class="bottom-nav" aria-label="Main navigation">
         <button type="button" class="nav-btn active" data-screen="home"><i data-icon="home" data-icon-size="21"></i><small>Home</small></button>
         <button type="button" class="nav-btn" data-screen="diet"><i data-icon="utensils" data-icon-size="21"></i><small>Diet</small></button>
-        <span class="nav-fab-slot"><button type="button" class="fab" id="fabBtn" aria-label="Quick actions"><i data-icon="plus" data-icon-size="24"></i></button></span>
+        <span class="nav-fab-slot"><button type="button" class="fab" id="scanBtn" aria-label="Scan barcode"><i data-icon="scan" data-icon-size="23"></i><small>Scan</small></button></span>
         <button type="button" class="nav-btn" data-screen="train"><i data-icon="dumbbell" data-icon-size="21"></i><small>Train</small></button>
         <button type="button" class="nav-btn" data-screen="progress"><i data-icon="trending" data-icon-size="21"></i><small>Progress</small></button>
-        <button type="button" class="nav-btn more-nav" data-screen="more"><i data-icon="grid" data-icon-size="21"></i><small>More</small></button>
+        <button type="button" class="nav-btn more-nav" data-screen="more"><i data-icon="grid" data-icon-size="21"></i><small>HQ</small></button>
       </nav>
     </main>
 
     <!-- ============ SHEETS & OVERLAYS ============ -->
-
-    <!-- Quick actions -->
-    <div class="sheet hidden" id="quickSheet" aria-hidden="true">
-      <div class="layer-backdrop" data-close-layer="quickSheet"></div>
-      <div class="sheet-panel compact">
-        <div class="sheet-grip"></div>
-        <div class="quick-grid">
-          <button type="button" class="quick-btn" data-quick="meal"><span class="tile-icon accent"><i data-icon="utensils" data-icon-size="21"></i></span>Log Meal</button>
-          <button type="button" class="quick-btn" data-quick="water"><span class="tile-icon water"><i data-icon="droplet" data-icon-size="21"></i></span>+250 ml</button>
-          <button type="button" class="quick-btn" data-quick="weight"><span class="tile-icon mint"><i data-icon="scale" data-icon-size="21"></i></span>Weigh In</button>
-          <button type="button" class="quick-btn" data-quick="photo"><span class="tile-icon gold"><i data-icon="camera" data-icon-size="21"></i></span>Photo</button>
-          <button type="button" class="quick-btn" data-quick="workout"><span class="tile-icon protein"><i data-icon="dumbbell" data-icon-size="21"></i></span>Train</button>
-        </div>
-      </div>
-    </div>
 
     <!-- Food logging sheet -->
     <div class="sheet hidden" id="foodSheet" aria-hidden="true">
@@ -567,23 +564,26 @@
       </div>
     </div>
 
-    <!-- Barcode sheet -->
-    <div class="sheet hidden" id="barcodeSheet" aria-hidden="true">
-      <div class="layer-backdrop" data-close-layer="barcodeSheet"></div>
-      <div class="sheet-panel">
-        <div class="sheet-grip"></div>
-        <h2 class="sheet-title">Scan Barcode</h2>
-        <div class="barcode-stage">
-          <video id="barcodeVideo" playsinline muted></video>
-          <span class="scan-line"></span>
+    <!-- Fullscreen barcode scanner -->
+    <div class="scan-overlay hidden" id="scanOverlay" aria-hidden="true">
+      <video id="scanVideo" playsinline muted></video>
+      <div class="scan-vignette"></div>
+      <button type="button" class="scan-close" id="scanCloseBtn" aria-label="Close scanner"><i data-icon="x" data-icon-size="20"></i></button>
+      <div class="scan-frame">
+        <span class="scan-corner tl"></span><span class="scan-corner tr"></span>
+        <span class="scan-corner bl"></span><span class="scan-corner br"></span>
+        <span class="scan-laser"></span>
+      </div>
+      <div class="scan-panel">
+        <p class="scan-status" id="scanStatus">Align the barcode inside the frame</p>
+        <div class="scan-fallback hidden" id="scanFallbackRow">
+          <button type="button" class="btn-secondary" id="scanSearchNameBtn"><i data-icon="search" data-icon-size="16"></i> Search by Name</button>
         </div>
-        <p class="status-line" id="barcodeStatus"></p>
         <div class="barcode-manual">
-          <input type="text" id="barcodeManualInput" inputmode="numeric" placeholder="Or type the barcode number" />
-          <button type="button" class="btn-primary" id="barcodeLookupBtn">Look Up</button>
+          <input type="text" id="scanManualInput" inputmode="numeric" placeholder="Or type the barcode number" />
+          <button type="button" class="btn-primary" id="scanLookupBtn">Look Up</button>
         </div>
-        <button type="button" class="btn-ghost full-width" id="barcodeCloseBtn">Close</button>
-        <p class="source-line">Product data: Open Food Facts</p>
+        <p class="scan-source">Open Food Facts · UPCItemDB</p>
       </div>
     </div>
 
