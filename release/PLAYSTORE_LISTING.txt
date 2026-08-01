@@ -1,65 +1,82 @@
-# Dad Bod — Play Store Listing Pack (v1.1.0)
+# Dad Bod — Play Store Listing Pack (v2.0.0)
 
 ## App identity
 - App name: Dad Bod
 - Package: com.dadbod.app
-- Version: 1.1.0 (versionCode 5)
+- Version: 2.0.0 (versionCode 6)
 - Category: Health & Fitness
-- Content rating: Everyone (questionnaire: no violence, user-generated photos stored locally)
+- Content rating: Everyone (no violence; user photos stored locally only)
 
 ## Short description (max 80 chars)
-Track calories, macros, workouts, and progress with AI meal estimation.
+The Dad Physique OS — calories, workouts, hydration & progress. Free forever.
 
 ## Full description
-Dad Bod is a premium fitness and nutrition companion built for real-world consistency.
+Dad Bod is the Dad Physique OS — a premium, completely free fitness companion
+for building a lean, strong physique.
 
-Track your daily calories, protein, carbs, fats, and key micronutrients. Log meals with AI-powered estimation from plain English descriptions, voice input, or manual entry when you already know the numbers.
+DAILY MISSION
+Open the app and see your Dad Physique Score — one number that combines
+protein, calories, training, hydration, and consistency. Complete the mission,
+grow the score, keep the streak.
 
-Features:
-- Luxury dark UI designed for clarity and focus
-- AI meal estimation via your own OpenRouter key (GPT-4o Mini recommended)
-- Voice meal logging with live transcript preview
-- Structured weekly gym split with timers and form cues
-- Morning cardio + abs circuit tracking
-- Weight trend chart and progress photos
-- Weekly meal planner
-- Export/import your data anytime
+NUTRITION THAT UNDERSTANDS YOU
+• Search-first logging with a 5,200+ item Indian food dataset (works offline)
+• Type it like you say it: "200g paneer with 2 roti" — portions are understood
+• Online food parsing by Edamam for anything unusual
+• Barcode scanning powered by Open Food Facts
+• Nutrition-label photo reader (on-device OCR)
+• Voice logging, full macros plus 13 micronutrients
+• 1,000+ healthy USDA MyPlate Kitchen recipes, loggable in one tap
 
-Privacy first: your logs stay on your device. AI features only run when you add your own API key.
+TRAINING THAT PUSHES YOU
+• Structured weekly splits with form cues and rest timers
+• Full-screen rest timer with haptics
+• Session completion celebrations, PR board with estimated 1RM
+• Cardio + abs circuit tracking, steps and sleep burn
+• 700+ exercise library with images (wger open database)
+• Find gyms and parks near you (OpenStreetMap)
+
+PROGRESS YOU CAN SEE
+• Animated weight trend with goal line
+• Before/after photo compare slider
+• GitHub-style consistency heatmap
+• Strength CSV export, full JSON backup and restore
+
+PRIVATE BY DESIGN
+No account. No subscription. No ads. Your data lives on your device —
+nutrition and fitness lookups use public APIs with only the text you search.
 
 Built Dream Physique.
 
 ## Store URLs (update after deploy)
-- Privacy policy: https://YOUR-VERCEL-URL/privacy-policy.html
-- Data deletion: https://YOUR-VERCEL-URL/data-deletion.html
+- Privacy policy: https://YOUR-DEPLOY-URL/privacy-policy.html
+- Data deletion: https://YOUR-DEPLOY-URL/data-deletion.html
 - Support email: satvikofficial20@gmail.com
 
 ## Data safety (Play Console)
-Collects: None by default (local-only app)
-Shares: Optional meal text to OpenRouter when user configures AI
-Photos: Stored locally on device only
-Account: Local profile on device (name + email for multi-user on same phone)
+- Collects: nothing by default; all logs are on-device
+- Location: approximate location used only in-session when the user opens
+  "Nearby Gyms & Parks" (not collected, not shared, optional)
+- Network requests: food search text (Edamam), barcodes (Open Food Facts),
+  profile numbers for USDA calculators (myplate.food), exercise searches
+  (wger.de) — no identifiers attached
+- Photos: stored locally on device only
+- Account: local profile on device (name + email for multi-profile support)
 
 ## Release artifacts
-- APK (side-load / testers): release/DadBod-v1.1.0-signed.apk
-- AAB (Play Store upload): release/DadBod-v1.1.0-signed.aab
+- APK (side-load / testers): release/DadBod-v2.0.0-signed.apk
+- AAB (Play Store upload): release/DadBod-v2.0.0-signed.aab
 - Latest aliases: release/DadBod-latest-signed.apk / .aab
 
 ## Upload checklist
 1. Build signed AAB: npm run build:android
-2. Play Console → Create release → Production/Internal testing
-3. Upload DadBod-v1.1.0-signed.aab
-4. Add screenshots (phone: Home, Diet, Workout, Progress, Settings)
-5. Feature graphic 1024x500 (dark theme + DB logo)
-6. App icon 512x512 (use assets/logo-premium.svg exported to PNG)
-7. Complete Data safety form (no collection unless AI enabled by user)
+2. Play Console → Create release → Internal testing → Production
+3. Upload DadBod-v2.0.0-signed.aab
+4. Add screenshots (phone 1080x2400): Home mission, Diet search, Food sheet,
+   Train hero, Rest timer, Progress chart, Photo compare, Control Center
+5. Feature graphic 1024x500 (dark aurora + DB logo)
+6. App icon 512x512 (export assets/logo-premium.svg to PNG)
+7. Data safety form: local-only storage; in-session approximate location
+   for Nearby (optional); no data shared or sold
 8. Link privacy policy + data deletion pages
 9. Target API 36 — already configured
-
-## Screenshot suggestions
-Capture on Android device or emulator at 1080x2400:
-1. Splash / Home with calorie rings
-2. Diet tab with AI estimate panel
-3. Workout session expanded
-4. Weight chart on Progress tab
-5. AI Settings in More tab

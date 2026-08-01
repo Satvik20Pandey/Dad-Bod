@@ -75,7 +75,7 @@
   <body>
     <main>
       <h1>Dad Bod Privacy Policy</h1>
-      <p class="meta">Last updated: March 22, 2026</p>
+      <p class="meta">Last updated: August 1, 2026</p>
 
       <h2>1. Who We Are</h2>
       <p>
@@ -86,16 +86,16 @@
       <h2>2. Information We Process</h2>
       <ul>
         <li>Profile details you enter, such as name and email.</li>
-        <li>Fitness and health entries you create, such as meals, workouts, weight, and photos.</li>
-        <li>Optional voice input and text prompts if you choose those features.</li>
-        <li>Optional API key details you provide for AI features (stored locally on your device).</li>
+        <li>Fitness and health entries you create, such as meals, workouts, weight, hydration, and photos.</li>
+        <li>Optional voice input if you use voice meal logging (processed by your device's speech service).</li>
+        <li>Your approximate location, only while you use the optional "Nearby Gyms &amp; Parks" feature.</li>
       </ul>
 
       <h2>3. How We Use Information</h2>
       <ul>
-        <li>To provide nutrition, workout, and progress-tracking functionality.</li>
-        <li>To generate summaries, insights, and charts in the app.</li>
-        <li>To process optional AI features only when you trigger those actions.</li>
+        <li>To provide nutrition, workout, hydration, and progress-tracking functionality.</li>
+        <li>To generate scores, summaries, and charts in the app.</li>
+        <li>To answer the specific lookups you trigger (food search, barcode, recipes, nearby places).</li>
       </ul>
 
       <h2>4. Where Data Is Stored</h2>
@@ -105,16 +105,20 @@
       </p>
 
       <h2>5. Third-Party Services</h2>
-      <p>Dad Bod may interact with third-party services only for optional features you use:</p>
+      <p>
+        Dad Bod contacts public nutrition and fitness APIs only for the features you use, sending
+        the minimum data needed and no personal identifiers:
+      </p>
       <ul>
-        <li>
-          AI processing providers (for example, OpenRouter-connected models) when you submit AI
-          prompts or analysis requests.
-        </li>
-        <li>Tenor (or similar media providers) for exercise GIF/media lookup.</li>
+        <li><strong>Edamam</strong> — the food text you search online, for nutrition parsing.</li>
+        <li><strong>Open Food Facts</strong> — barcodes you scan, for packaged-food data.</li>
+        <li><strong>MyPlate.food</strong> — age, sex, height, weight, and activity level for USDA calculators; recipe search terms.</li>
+        <li><strong>wger.de</strong> — exercise names you search in the library.</li>
+        <li><strong>Overpass / OpenStreetMap</strong> — your approximate coordinates when you open Nearby, to list gyms and parks. Location is never used in the background.</li>
+        <li><strong>Tenor / media hosts</strong> — exercise demonstration GIFs.</li>
       </ul>
       <p>
-        Those providers may process data according to their own privacy policies. Review their
+        Those providers process requests according to their own privacy policies. Review their
         policies before using those features.
       </p>
 

@@ -1,0 +1,365 @@
+/* Dad Bod — training programs: gym splits, abs circuit, cardio catalog, schedule builder. */
+
+import { WEEK_DAYS } from "../config.js";
+
+export const EXERCISE_GIF_MAP = {
+  "incline dumbbell press": "https://media.tenor.com/gxDKFjIkO9kAAAAC/incline-dumbells-press.gif",
+  "incline dumbbell": "https://media.tenor.com/gxDKFjIkO9kAAAAC/incline-dumbells-press.gif",
+  "barbell bench press": "https://media.tenor.com/mXQJeQyJCi4AAAAC/bench-press-regular-bench-press.gif",
+  "bench press": "https://media.tenor.com/mXQJeQyJCi4AAAAC/bench-press-regular-bench-press.gif",
+  "flat barbell bench": "https://media.tenor.com/mXQJeQyJCi4AAAAC/bench-press-regular-bench-press.gif",
+  "cable cross": "https://media.tenor.com/p-__t8FMTtoAAAAC/cable-chest-fly.gif",
+  "cable crossover": "https://media.tenor.com/p-__t8FMTtoAAAAC/cable-chest-fly.gif",
+  "high-to-low fly": "https://media.tenor.com/p-__t8FMTtoAAAAC/cable-chest-fly.gif",
+  "cable fly": "https://media.tenor.com/p-__t8FMTtoAAAAC/cable-chest-fly.gif",
+  "tricep overhead": "https://media.tenor.com/TC6IqRAa9csAAAAC/dumbell-overhead-tricep-extension.gif",
+  "overhead cable extension": "https://media.tenor.com/TC6IqRAa9csAAAAC/dumbell-overhead-tricep-extension.gif",
+  "tricep pushdown": "https://media.tenor.com/g0EulFQO22wAAAAC/rope-push-down.gif",
+  "rope pushdown": "https://media.tenor.com/g0EulFQO22wAAAAC/rope-push-down.gif",
+  "rope triceps pushdown": "https://media.tenor.com/g0EulFQO22wAAAAC/rope-push-down.gif",
+  "lat pulldown": "https://media.tenor.com/hI6Koi1EXhcAAAAC/close-grip-pull-down.gif",
+  "close-grip lat": "https://media.tenor.com/hI6Koi1EXhcAAAAC/close-grip-pull-down.gif",
+  "pull down": "https://media.tenor.com/hI6Koi1EXhcAAAAC/close-grip-pull-down.gif",
+  "t-bar row": "https://media.tenor.com/DPfMJrsdpTAAAAAC/t-bar-row.gif",
+  "t bar row": "https://media.tenor.com/DPfMJrsdpTAAAAAC/t-bar-row.gif",
+  "chest-supported t-bar": "https://media.tenor.com/DPfMJrsdpTAAAAAC/t-bar-row.gif",
+  "cable row": "https://media.tenor.com/R069mkP-46sAAAAC/cable-row-back.gif",
+  "seated cable row": "https://media.tenor.com/R069mkP-46sAAAAC/cable-row-back.gif",
+  "single-arm cable row": "https://media.tenor.com/R069mkP-46sAAAAC/cable-row-back.gif",
+  "bicep curl": "https://media.tenor.com/j6wkDQurcm8AAAAC/incline-biceps-curl.gif",
+  "incline dumbbell bicep": "https://media.tenor.com/j6wkDQurcm8AAAAC/incline-biceps-curl.gif",
+  "preacher curl": "https://media.tenor.com/As5RbeZ43bEAAAAC/seated-biceps-curl.gif",
+  "bayesian cable curl": "https://media.tenor.com/GYDvpl2ycIYAAAAC/cable-bicesp-curl.gif",
+  "hammer curl": "https://media.tenor.com/rkexMgK5nn8AAAAC/reverse-cable-arm-curl.gif",
+  "squat": "https://media.tenor.com/Pfj8vy41k-0AAAAC/gym.gif",
+  "back squat": "https://media.tenor.com/Pfj8vy41k-0AAAAC/gym.gif",
+  "barbell back squat": "https://media.tenor.com/Pfj8vy41k-0AAAAC/gym.gif",
+  "romanian deadlift": "https://media.tenor.com/p4HVLW9g12sAAAAC/rdl.gif",
+  "rdl": "https://media.tenor.com/p4HVLW9g12sAAAAC/rdl.gif",
+  "leg extension": "https://media.tenor.com/jdljbWy_mdAAAAAC/leg-extension.gif",
+  "seated calf": "https://media.tenor.com/zJk03-z7WI4AAAAC/calf-raise-workout.gif",
+  "standing calf": "https://media1.tenor.com/m/7lh5yt8AO0gAAAAC/gym.gif",
+  "calf raise": "https://media1.tenor.com/m/7lh5yt8AO0gAAAAC/gym.gif",
+  "hanging knee": "https://i.giphy.com/media/9JCkIMm28EjjCML4h1/giphy.gif",
+  "hanging leg": "https://media.tenor.com/LuTjJGyFOoUAAAAC/hanging-leg-raise.gif",
+  "shoulder press": "https://media.tenor.com/X36vuP-nuVkAAAAC/dumbell-shoulder-press.gif",
+  "dumbbell shoulder press": "https://media.tenor.com/X36vuP-nuVkAAAAC/dumbell-shoulder-press.gif",
+  "cable lateral": "https://media.tenor.com/sxbft6ZWeK8AAAAC/cable-lateral-raise-single-arm.gif",
+  "dumbbell lateral": "https://media1.tenor.com/m/VdCASDhF7NMAAAAC/lateral-raise.gif",
+  "lateral raise": "https://media1.tenor.com/m/VdCASDhF7NMAAAAC/lateral-raise.gif",
+  "face pull": "https://media.tenor.com/FGsBtkQCchwAAAAC/face-pull.gif",
+  "reverse dumbbell fly": "https://media1.tenor.com/m/rThgGpqzFE8AAAAC/dumbell-reverse-fly.gif",
+  "reverse fly": "https://media1.tenor.com/m/rThgGpqzFE8AAAAC/dumbell-reverse-fly.gif",
+  "deadlift": "https://i.giphy.com/media/Uhzbmt0HWzeYYwQyX0/giphy.gif",
+  "conventional deadlift": "https://i.giphy.com/media/Uhzbmt0HWzeYYwQyX0/giphy.gif",
+  "barbell conventional deadlift": "https://i.giphy.com/media/Uhzbmt0HWzeYYwQyX0/giphy.gif",
+  "leg press": "https://media.tenor.com/e0qeS17dv7QAAAAC/legpress45-leg-press.gif",
+  "leg curl": "https://media.tenor.com/GLaVvK15troAAAAC/seated-leg-curl.gif",
+  "lying leg curl": "https://media.tenor.com/GLaVvK15troAAAAC/seated-leg-curl.gif",
+  "cable crunch": "https://media.tenor.com/Ja2_H5v54PQAAAAC/rope-crunch.gif",
+  "kneeling cable crunch": "https://media.tenor.com/Ja2_H5v54PQAAAAC/rope-crunch.gif",
+  "decline crunch": "https://media1.tenor.com/m/sI8lapnbh-oAAAAC/crunches-adam-b.gif",
+  "decline bench crunch": "https://media1.tenor.com/m/sI8lapnbh-oAAAAC/crunches-adam-b.gif",
+};
+
+export function resolveExerciseGif(name) {
+  if (!name) return null;
+  const lower = String(name).toLowerCase();
+  const keys = Object.keys(EXERCISE_GIF_MAP).sort((a, b) => b.length - a.length);
+  for (let i = 0; i < keys.length; i += 1) {
+    if (lower.includes(keys[i])) return EXERCISE_GIF_MAP[keys[i]];
+  }
+  return null;
+}
+
+export const SCIENCE_RULES = [
+  'Train to 1–2 RIR: "Reps in Reserve." Your last 1 or 2 repetitions of every single set must feel incredibly difficult, near total failure.',
+  "Control the Eccentric: Spend 2 to 3 seconds lowering the weight. The lowering phase causes the most muscle damage and subsequent growth.",
+  "Track Everything: Write down your weights. If you benched 60 kg for 8 reps this Monday, you must attempt 60 kg for 9 reps or 62.5 kg for 8 reps next Monday.",
+  "Prioritize Recovery: Complete physiological rest on rest days. Muscle growth happens during rest, not during the workout.",
+];
+
+export const morningActivityCatalog = {
+  running: {
+    label: "Running",
+    met: 8.8,
+    tips: "Land mid-foot, keep cadence steady, and breathe in a 3:2 rhythm. Warm up 5 minutes before picking up pace.",
+  },
+  racing: {
+    label: "Racing / Sprint Intervals",
+    met: 11,
+    tips: "Use full recovery between sprints. Drive knees, stay tall, and keep shoulders relaxed through each rep.",
+  },
+  swimming: {
+    label: "Swimming",
+    met: 8.3,
+    tips: "Long body line, rotate from hips, and exhale underwater. Start with easy laps before intensity.",
+  },
+  walk: {
+    label: "Brisk Walk",
+    met: 4.3,
+    tips: "Walk with purpose: upright posture, arm swing, and a pace where you can talk but not sing.",
+  },
+  custom: {
+    label: "Custom Activity",
+    met: 6.5,
+    tips: "Keep intensity controlled, track duration honestly, and note how the session felt in your notes.",
+  },
+  none: {
+    label: "None Today",
+    met: 0,
+    tips: "Recovery is part of the plan. Stay mobile with light stretching if you feel stiff.",
+  },
+};
+
+export const absCircuit = [
+  { name: "Reverse Crunch", sets: "4 x 15", cues: "Control hips up. Do not swing legs.", timerSec: 45 },
+  { name: "V-Up", sets: "4 x 12", cues: "Lift chest and legs together, controlled lowering.", timerSec: 45 },
+  { name: "Bicycle Crunch", sets: "4 x 24", cues: "Elbow to opposite knee, keep core braced.", timerSec: 50 },
+  { name: "Mountain Climbers", sets: "4 x 35 sec", cues: "Shoulders stacked over wrists, steady pace.", timerSec: 35 },
+  { name: "Forearm Plank", sets: "4 x 45 sec", cues: "Neutral spine and glutes tight.", timerSec: 45 },
+  { name: "Side Plank Hip Dip", sets: "3 x 14 each", cues: "Move from obliques, keep shoulder stable.", timerSec: 40 },
+  { name: "Dead Bug", sets: "3 x 14 each", cues: "Lower opposite arm-leg while back stays flat.", timerSec: 45 },
+  { name: "Hollow Body Hold", sets: "3 x 30 sec", cues: "Ribs down, lower back pressed to floor.", timerSec: 30 },
+];
+
+export const ADMIN_GYM_SPLIT = [
+  {
+    day: 1,
+    title: "Chest & Triceps",
+    label: "Day 1 – Chest & Triceps",
+    note: "90-Minute Elite High-Volume — push day with upper-chest stretch and triceps overload.",
+    muscles: ["Chest", "Triceps"],
+    isOff: false,
+    exercises: [
+      { name: "Incline Dumbbell Press", sets: "4 x 8-10", cues: "Drive elbows down and in. Maximum upper-chest fiber stretch at the bottom.", science: "Provides a greater range of motion and better upper-chest fiber activation than a barbell.", timerSec: 90, trackWeight: true },
+      { name: "Flat Barbell Bench Press", sets: "4 x 6-8", cues: "Scapula retracted, feet planted, bar to mid-chest with control.", science: "Maximum mechanical tension and heavy load for the sternal head of the chest.", timerSec: 120, trackWeight: true },
+      { name: "Cable High-to-Low Flyes", sets: "3 x 12-15", cues: "Soft elbows, high-to-low arc, squeeze chest at center. Constant tension throughout.", science: "Keeps constant tension on lower and mid chest, unlike dumbbells which lose tension at the top.", timerSec: 75, trackWeight: true },
+      { name: "Tricep Overhead Cable Extensions", sets: "4 x 10-12", cues: "Elbows fixed overhead, full stretch behind head, lock out at top.", science: "Overloads the tricep long head in its fully stretched position for superior hypertrophy.", timerSec: 90, trackWeight: true },
+      { name: "Tricep Rope Pushdowns", sets: "3 x 12-15", cues: "Elbows pinned to sides, split rope at bottom. Take the final set to absolute failure.", science: "Maximizes peak contraction and isolates the lateral head under high volume.", timerSec: 75, trackWeight: true },
+    ],
+  },
+  {
+    day: 2,
+    title: "Pull (Back & Biceps)",
+    label: "Day 2 – Pull (Back & Biceps)",
+    note: "Lat width, mid-back thickness, and complete biceps coverage.",
+    muscles: ["Back", "Biceps"],
+    isOff: false,
+    exercises: [
+      { name: "Lat Pulldowns (Medium Neutral Grip)", sets: "4 x 8-10", cues: "Pull elbows to ribs, chest high, squeeze lats at bottom.", science: "Best leverage for lat width with a shoulder-width neutral grip.", timerSec: 105, trackWeight: true },
+      { name: "Chest-Supported T-Bar Row", sets: "4 x 6-8", cues: "Drive elbows behind body, hold squeeze 1 sec, no lower-back swing.", science: "Heavy mid-back thickness without lower back fatigue.", timerSec: 120, trackWeight: true },
+      { name: "Single-Arm Cable Row", sets: "3 x 10-12", cues: "Pull to hip, neutral spine, full stretch and contraction each rep.", science: "Perfect alignment with lower lat fibers for a complete contraction.", timerSec: 90, trackWeight: true },
+      { name: "Incline Dumbbell Bicep Curls", sets: "4 x 8-10", cues: "Arms hang behind torso, stretch at bottom, no swinging.", science: "Puts biceps under an extreme stretch for growth.", timerSec: 75, trackWeight: true },
+      { name: "Standing Hammer Curls", sets: "3 x 10-12", cues: "Neutral grip, elbows fixed, controlled tempo both directions.", science: "Targets the brachialis for arm thickness.", timerSec: 75, trackWeight: true },
+    ],
+  },
+  {
+    day: 3,
+    title: "Legs & Abs",
+    label: "Day 3 – Legs & Abs",
+    note: "Quad-dominant compounds, hamstring stretch, and lower-ab finisher.",
+    muscles: ["Quads", "Hamstrings", "Abs"],
+    isOff: false,
+    exercises: [
+      { name: "Barbell Back Squats", sets: "4 x 6-8", cues: "Brace core, depth with neutral spine, drive through mid-foot.", science: "The ultimate quad and systemic growth builder.", timerSec: 150, trackWeight: true },
+      { name: "Romanian Deadlifts (RDLs)", sets: "4 x 8-10", cues: "Hip hinge, soft knees, slow eccentric, feel hamstring stretch.", science: "Loaded stretch for hamstrings and glutes.", timerSec: 120, trackWeight: true },
+      { name: "Leg Extensions", sets: "3 x 12-15", cues: "Pause at top contraction, control the negative 2–3 seconds.", science: "Isolates quads at the peak contraction.", timerSec: 75, trackWeight: true },
+      { name: "Seated Calf Raises", sets: "4 x 15", cues: "Full stretch at bottom, slow 3-second negative, hold peak squeeze 1 sec.", science: "Targets the soleus with high repetitions and controlled lowering.", timerSec: 60, trackWeight: true },
+      { name: "Hanging Knee Raises", sets: "4 x 12-15", cues: "Posterior pelvic tilt, no swinging, control knees up and down.", science: "Maximizes lower abdominal activation.", timerSec: 60, trackWeight: true },
+    ],
+  },
+  {
+    day: 4,
+    title: "Shoulders & Upper Back",
+    label: "Day 4 – Shoulders & Upper Back",
+    note: "Complete delt coverage, rear-delt health, and weighted ab work.",
+    muscles: ["Shoulders", "Upper Back", "Abs"],
+    isOff: false,
+    exercises: [
+      { name: "Seated Dumbbell Shoulder Press", sets: "4 x 8-10", cues: "Brace core, press straight up, no excessive lower-back arch.", science: "Heavy front delt builder with superior anterior delt activation.", timerSec: 105, trackWeight: true },
+      { name: "Cable Lateral Raises", sets: "4 x 12-15", cues: "Raise to shoulder height, slight forward lean, constant cable tension.", science: "Constant lateral tension for wide shoulders.", timerSec: 60, trackWeight: true },
+      { name: "Dumbbell Lateral Raises", sets: "3 x 15", cues: "Soft elbows, raise to shoulder height, control the negative.", science: "High-volume pump finisher for medial delts.", timerSec: 60, trackWeight: true },
+      { name: "Face Pulls", sets: "4 x 15", cues: "Pull to face, elbows high, external rotate at finish.", science: "Rear delt mass and crucial shoulder health.", timerSec: 60, trackWeight: true },
+      { name: "Kneeling Cable Crunches", sets: "4 x 12-15", cues: "Hips fixed, crunch ribs to pelvis, exhale on contraction.", science: "Progressive overload for deep six-pack cuts.", timerSec: 60, trackWeight: true },
+    ],
+  },
+  {
+    day: 5,
+    title: "Pull (Back & Biceps)",
+    label: "Day 5 – Pull (Back & Biceps)",
+    note: "Posterior chain power, lower-lat sweep, and strict arm isolation.",
+    muscles: ["Back", "Biceps"],
+    isOff: false,
+    exercises: [
+      { name: "Conventional Barbell Deadlifts", sets: "3 x 5", cues: "Neutral spine, bar close to shins, drive floor away, lock hips at top.", science: "Raw power and full-body thickness.", timerSec: 180, trackWeight: true },
+      { name: "Close-Grip Lat Pulldowns", sets: "4 x 10-12", cues: "Lean slightly back, pull to upper chest, squeeze lower lats.", science: "Deep sweep for lower lats with increased range of motion.", timerSec: 90, trackWeight: true },
+      { name: "Dumbbell Preacher Curls", sets: "4 x 10-12", cues: "Armpits on pad, no momentum, full extension at bottom.", science: "Strict isolation, zero cheating or momentum.", timerSec: 75, trackWeight: true },
+      { name: "Bayesian Cable Curls", sets: "3 x 12", cues: "Face away from cable, arm behind torso, constant tension curl.", science: "Constant tension behind the body through the entire stretch.", timerSec: 75, trackWeight: true },
+      { name: "Reverse Dumbbell Flyes", sets: "3 x 15", cues: "Hinge forward, soft elbows, squeeze rear delts at top.", science: "Rear deltoid thickness and upper-back detail.", timerSec: 60, trackWeight: true },
+    ],
+  },
+  {
+    day: 6,
+    title: "Legs & Abs",
+    label: "Day 6 – Legs & Abs",
+    note: "High-volume leg failure work and upper-ab isolation.",
+    muscles: ["Quads", "Hamstrings", "Calves", "Abs"],
+    isOff: false,
+    exercises: [
+      { name: "Leg Press", sets: "4 x 10-12", cues: "Full depth without lower-back rounding, feet shoulder-width.", science: "Safe environment to push legs to complete failure.", timerSec: 120, trackWeight: true },
+      { name: "Lying Leg Curls", sets: "4 x 10-12", cues: "Hips pinned to pad, curl heels to glutes, pause at contraction.", science: "Isolates hamstrings through knee flexion.", timerSec: 75, trackWeight: true },
+      { name: "Standing Calf Raises", sets: "4 x 15-20", cues: "Full stretch at bottom, pause at top, high-rep burn.", science: "High repetition burn for gastrocnemius development.", timerSec: 60, trackWeight: true },
+      { name: "Decline Bench Crunches", sets: "4 x 20", cues: "Decline set low-to-moderate, exhale on crunch, control the negative.", science: "Upper ab isolation under high volume.", timerSec: 60, trackWeight: true },
+    ],
+  },
+  {
+    day: 7,
+    title: "Strict Rest Day",
+    label: "Day 7 – Strict Rest Day",
+    note: "Total Recovery: Muscle tissue grows while you sleep and rest, not while you are lifting. Do not skip this day.",
+    muscles: [],
+    isOff: true,
+    exercises: [],
+  },
+];
+
+export const GENERIC_GYM_SPLIT = [
+  {
+    key: "push",
+    title: "Push — Chest, Shoulders & Triceps",
+    note: "Compound pressing with triceps finishers.",
+    muscles: ["Chest", "Shoulders", "Triceps"],
+    isOff: false,
+    exercises: [
+      { name: "Barbell Bench Press", sets: "4 x 6-8", cues: "Scapula retracted, controlled eccentric.", timerSec: 120, trackWeight: true },
+      { name: "Incline Dumbbell Press", sets: "3 x 8-10", cues: "Drive elbows down and in, full range.", timerSec: 105, trackWeight: true },
+      { name: "Seated Dumbbell Shoulder Press", sets: "3 x 8-10", cues: "Brace core, no overarch.", timerSec: 105, trackWeight: true },
+      { name: "Cable Fly", sets: "3 x 12-15", cues: "Soft elbows, squeeze chest at center.", timerSec: 75, trackWeight: true },
+      { name: "Rope Triceps Pushdown", sets: "3 x 10-12", cues: "Elbows fixed, full extension.", timerSec: 75, trackWeight: true },
+    ],
+  },
+  {
+    key: "pull",
+    title: "Pull — Back & Biceps",
+    note: "Row and pulldown focus with biceps work.",
+    muscles: ["Back", "Biceps"],
+    isOff: false,
+    exercises: [
+      { name: "Wide-Grip Lat Pulldown", sets: "4 x 8-10", cues: "Pull elbows to ribs, chest high.", timerSec: 105, trackWeight: true },
+      { name: "Seated Cable Row", sets: "4 x 8-10", cues: "Neutral spine, hold squeeze 1 sec.", timerSec: 105, trackWeight: true },
+      { name: "Face Pull", sets: "3 x 12-15", cues: "Elbows high, external rotation at finish.", timerSec: 75, trackWeight: true },
+      { name: "EZ-Bar Curl", sets: "3 x 8-10", cues: "No swinging, full elbow extension.", timerSec: 75, trackWeight: true },
+      { name: "Hammer Curl", sets: "3 x 10-12", cues: "Neutral grip, elbows fixed.", timerSec: 75, trackWeight: true },
+    ],
+  },
+  {
+    key: "legs",
+    title: "Legs & Core",
+    note: "Lower-body compounds plus calf and core work.",
+    muscles: ["Quads", "Hamstrings", "Calves", "Core"],
+    isOff: false,
+    exercises: [
+      { name: "Leg Press", sets: "4 x 10", cues: "Full depth without lower-back rounding.", timerSec: 120, trackWeight: true },
+      { name: "Romanian Deadlift", sets: "4 x 8", cues: "Hip hinge and slow hamstring stretch.", timerSec: 120, trackWeight: true },
+      { name: "Leg Extension", sets: "3 x 12", cues: "Pause at contraction, control negative.", timerSec: 75, trackWeight: true },
+      { name: "Seated Leg Curl", sets: "3 x 12", cues: "Pause hard at contraction.", timerSec: 75, trackWeight: true },
+      { name: "Seated Calf Raise", sets: "4 x 12-15", cues: "Full stretch and full squeeze.", timerSec: 60, trackWeight: true },
+    ],
+  },
+];
+
+/* ---- Schedule building ---- */
+
+export function getWeekdayIndex(day) {
+  const idx = WEEK_DAYS.indexOf(day);
+  return idx >= 0 ? idx : 0;
+}
+
+export function orderedWeekFromStart(startDay) {
+  const startIdx = getWeekdayIndex(startDay);
+  return [...WEEK_DAYS.slice(startIdx), ...WEEK_DAYS.slice(0, startIdx)];
+}
+
+export function buildProgramWeeklySchedule(split, closedDay, trainingStartDay) {
+  const schedule = {};
+  const orderedDays = orderedWeekFromStart(trainingStartDay);
+  let splitCursor = 0;
+
+  orderedDays.forEach((day) => {
+    if (day === closedDay) {
+      schedule[day] = {
+        key: "closed",
+        title: "Gym Closed Day",
+        note: "Recovery day. No gym workout scheduled.",
+        muscles: [],
+        exercises: [],
+        isOff: true,
+      };
+      return;
+    }
+
+    const template = split[splitCursor % split.length];
+    splitCursor += 1;
+
+    if (template.isOff) {
+      schedule[day] = {
+        ...template,
+        title: template.label || template.title,
+        exercises: [],
+        isOff: true,
+      };
+      return;
+    }
+
+    schedule[day] = {
+      ...template,
+      title: template.label || template.title,
+      exercises: (template.exercises || []).map((exercise) => ({ ...exercise })),
+      isOff: false,
+    };
+  });
+
+  return schedule;
+}
+
+/* Parse a "4 x 8-10" / "3 x 30 sec" prescription into sets/reps/seconds. */
+export function parseSetPrescription(text) {
+  const value = String(text || "").toLowerCase();
+  const setsMatch = value.match(/(\d+)\s*x/);
+  const sets = setsMatch ? Math.max(1, Number(setsMatch[1])) : 1;
+
+  const secMatch = value.match(/(\d+(?:\.\d+)?)\s*sec/);
+  if (secMatch) {
+    return { sets, secondsPerSet: Number(secMatch[1]) || 30, repsPerSet: null };
+  }
+
+  const minMatch = value.match(/(\d+(?:\.\d+)?)\s*min/);
+  if (minMatch) {
+    return { sets, secondsPerSet: (Number(minMatch[1]) || 1) * 60, repsPerSet: null };
+  }
+
+  const repMatch = value.match(/x\s*(\d+)(?:\s*-\s*(\d+))?/);
+  if (repMatch) {
+    const low = Number(repMatch[1]) || 10;
+    const high = Number(repMatch[2] || repMatch[1]) || low;
+    return { sets, secondsPerSet: null, repsPerSet: Math.max(4, (low + high) / 2) };
+  }
+
+  return { sets, secondsPerSet: 45, repsPerSet: null };
+}
+
+/* Rough total session duration in minutes (work + rest) for the hero card. */
+export function estimateWorkoutMinutes(workout) {
+  if (!workout || workout.isOff || !workout.exercises?.length) return 0;
+  return Math.round(
+    workout.exercises.reduce((sum, exercise) => {
+      const parsed = parseSetPrescription(exercise.sets);
+      const workSec = parsed.secondsPerSet
+        ? parsed.sets * parsed.secondsPerSet
+        : parsed.sets * ((parsed.repsPerSet || 10) * 3.2);
+      const restSec = parsed.sets * Math.max(45, Number(exercise.timerSec || 60));
+      return sum + (workSec + restSec) / 60;
+    }, 6)
+  );
+}

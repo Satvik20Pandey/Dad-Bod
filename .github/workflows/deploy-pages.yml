@@ -27,15 +27,23 @@ jobs:
       - name: Configure Pages
         uses: actions/configure-pages@v5
 
+      - name: Run tests
+        run: |
+          node scripts/validate-food-dataset.js
+          node scripts/test-meal-estimates.js
+          node scripts/test-meal-resolver.js
+          node scripts/test-services.mjs
+
       - name: Prepare static artifact
         run: |
           mkdir -p pages
           cp index.html pages/
-          cp app.js pages/
-          cp styles.css pages/
           cp manifest.webmanifest pages/
           cp service-worker.js pages/
           cp privacy-policy.html pages/
+          cp data-deletion.html pages/
+          cp -r styles pages/styles
+          cp -r js pages/js
           cp -r assets pages/assets
 
       - name: Upload static artifact

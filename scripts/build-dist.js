@@ -1,3 +1,5 @@
+/* Dad Bod — dist builder: mirrors the web app into dist/ for Capacitor. */
+
 const fs = require("fs");
 const path = require("path");
 
@@ -6,13 +8,11 @@ const distDir = path.join(rootDir, "dist");
 
 const filesToCopy = [
   "index.html",
-  "styles.css",
-  "persistence.js",
-  "gym-program.js",
-  "app.js",
   "service-worker.js",
   "manifest.webmanifest",
 ];
+
+const dirsToCopy = ["styles", "js", "assets"];
 
 function ensureDir(dirPath) {
   if (!fs.existsSync(dirPath)) {
@@ -45,8 +45,13 @@ function copyDirectory(srcRelative, destRelative) {
   }
 }
 
+/* Start clean so removed files never linger in the shipped bundle. */
+if (fs.existsSync(distDir)) {
+  fs.rmSync(distDir, { recursive: true, force: true });
+}
+
 ensureDir(distDir);
 filesToCopy.forEach(copyFile);
-copyDirectory("assets", "assets");
+dirsToCopy.forEach((dir) => copyDirectory(dir, dir));
 
-console.log("Dist folder updated successfully.");
+console.log("dist/ rebuilt successfully.");

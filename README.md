@@ -1,128 +1,158 @@
-# Dad Bod - Built Dream Physique
+# Dad Bod — The Dad Physique OS
 
-A premium mobile-first fitness and nutrition tracker with structured workouts, AI-powered meal estimation, progress tracking, and optional photo analysis.
+A premium, completely free fitness companion for building a lean, strong
+physique. Nutrition, training, hydration, and progress — one beautiful app,
+no account, no subscription, no ads.
 
-## Live Features
+Built as an offline-first PWA (vanilla ES modules, zero framework) wrapped
+with Capacitor for Android.
 
-- Luxury dark UI with compact, professional layout
-- Multi-user sign in and sign up flow (local storage based)
-- AI meal estimation via OpenRouter (GPT-4o Mini recommended)
-- Manual nutrient entry for users who know exact values
-- Voice meal description capture with live preview
-- 7-day structured workout split with timers and form cues
-- Diet logging with full macro and micronutrient tracking
-- Weight chart, progress photos, and daily workout completion
-- PWA support (manifest + service worker)
+## Product
 
-## Optional Admin Bootstrap (Secure)
+| Screen | What it does |
+| --- | --- |
+| **Home — Daily Mission** | Animated **Dad Physique Score** (protein · calories · training · hydration · streak), calorie + burn rings, bento grid into every feature |
+| **Diet** | Search-first logging: 5,277-food Indian dataset (offline), voice input, barcode scan, label OCR, live suggestions, macro donut + 13 micronutrients, weekly meal plan |
+| **Train** | Structured weekly splits with form cues, load/rep logging, full-screen rest timer with haptics, session celebrations, cardio + abs, 700+ exercise library |
+| **Progress** | Animated weight trend with goal line, before/after photo compare slider, consistency heatmap, strength PR board with estimated 1RM, CSV export |
+| **Control Center** | Goals with USDA cross-check, training setup, nearby gyms & parks, 1,000+ USDA recipes, backup/restore, policies |
 
-No admin credentials are hardcoded in source.
+## Production API architecture
 
-If you need an admin account bootstrap for local testing, configure runtime security values in browser local storage:
+Meal text resolves through a layered chain — fast and offline first, network
+only when needed:
 
-```js
-localStorage.setItem(
-	"dadbod_security_config_v1",
-	JSON.stringify({
-		adminEmail: "your-admin@gmail.com",
-		adminPasskey: "your-strong-passkey",
-		bootstrapApiKey: ""
-	})
-);
+```
+Food search      →  On-device dataset (5,277 Indian foods, instant, offline)
+                 →  Edamam natural-language parsing   (unmatched portions)
+                 →  Heuristic estimation → manual edit (always available)
+
+Barcode          →  Camera BarcodeDetector / manual   →  Open Food Facts
+Label photo      →  On-device OCR (Tesseract, lazy-loaded)
+Recipes + USDA   →  MyPlate.food (BMI, calorie needs, water, 1,072 recipes)
+Exercise library →  wger.de open database
+Nearby           →  Geolocation → Overpass/OpenStreetMap (gyms, parks)
 ```
 
-Then reload the app.
+Every service call is cached with a TTL (`js/services/http.js`) so free-tier
+quotas stretch far and repeat lookups work offline. Edamam credentials live in
+[js/config.js](js/config.js).
 
-## Quick Start (Web)
+## Codebase
+
+```
+index.html                 App shell: screens, sheets, overlays
+styles/                    Design system
+  tokens.css               Color/depth/motion tokens (single source of truth)
+  base.css                 Reset, aurora background, utilities
+  components.css           Buttons, cards, rings, sheets, nav, toasts
+  screens.css              Per-screen layout
+js/
+  main.js                  Composition root: boot, navigation, render cycle
+  config.js                App identity, storage keys, API endpoints
+  utils.js                 DOM/format/date helpers
+  core/                    Domain logic (no DOM assumptions beyond store)
+    store.js               Auth + state, localStorage/IndexedDB persistence
+    nutrition.js           Nutrient model, targets, scaling
+    dataset.js             Food dataset loading, indexing, fuzzy matching
+    resolver.js            Free-text meal → components → nutrition engine
+    profile.js             BMR/TDEE/macros target engine
+    metrics.js             Daily totals, burn, streak, physique score
+    program.js             Training splits, schedules, prescriptions
+    bus.js                 Render bus (no circular imports)
+  services/                API clients (http cache, edamam, openfoodfacts,
+                           myplate, wger, overpass)
+  ui/                      Icons (inline Lucide-style), components
+                           (sheets/toasts/confetti/haptics), canvas charts
+  features/                Screen controllers (home, diet, workout, progress,
+                           nearby, recipes, more, capture, onboarding)
+scripts/                   Build + test tooling
+assets/food-dataset.json   5,277-food nutrition dataset (generated)
+data/food-sources/         Canonical staples + supplements (dataset inputs)
+android/                   Capacitor Android project
+release/                   Signed artifacts + Play Store listing pack
+```
+
+All user data stays on-device (localStorage mirrored to IndexedDB). Storage
+keys are stable across versions — v1.x users upgrade in place.
+
+## Quick start (web)
 
 ```bash
 git clone https://github.com/Satvik20Pandey/Dad-Bod.git
 cd Dad-Bod
 npm install
-python -m http.server 8080
+python -m http.server 8080   # or any static server
 ```
 
 Open http://localhost:8080
 
-## Build Mobile Artifacts
+## Tests
+
+```bash
+npm test              # dataset validation + resolver regression + service units
+npm run test:smoke    # Playwright end-to-end (screenshots → scripts/screenshots/)
+```
+
+The smoke test drives the real app: onboarding → physique score → dataset
+search → meal logging → workout toggles → rest timer → weight entry →
+persistence across reload.
+
+## Build the Android release
 
 First-time setup (installs portable JDK 21 + Android SDK locally):
 
 ```powershell
 npm run setup:android
-. .\.android-env.ps1
 ```
 
-Build signed release APK + AAB (copied to `release/`):
+Build the signed release APK + AAB (auto-runs `build:dist` + `cap sync`):
 
 ```powershell
 npm run build:android
 ```
 
-Outputs:
-- `release/DadBod-v1.1.0-signed.apk`
-- `release/DadBod-v1.1.0-signed.aab`
-- `release/DadBod-latest-signed.apk` / `.aab`
+Outputs land in `release/`:
 
-Play Store upload checklist: see `release/PLAYSTORE_LISTING.txt`
+- `DadBod-v2.0.0-signed.apk` — side-load / testers
+- `DadBod-v2.0.0-signed.aab` — Play Store upload
+- `DadBod-latest-signed.apk` / `.aab` — rolling aliases
 
-Optional keystore password override (PKCS12 uses one password for store + key):
+Keystore password override (PKCS12 uses one password for store + key):
 
 ```powershell
 $env:DADBOD_STORE_PASSWORD = "your-store-password"
 npm run build:android
 ```
 
-## Signed Artifacts In This Repo
+Play Store checklist: [release/PLAYSTORE_LISTING.txt](release/PLAYSTORE_LISTING.txt)
 
-Generated files are committed in `release/`:
+## Deployment (web)
 
-- `release/DadBod-v1.1.0-signed.apk`
-- `release/DadBod-v1.1.0-signed.aab`
-- `release/DadBod-latest-signed.apk`
-- `release/DadBod-latest-signed.aab`
+- **Vercel**: repo includes `vercel.json` — import and deploy `main`.
+- **GitHub Pages**: `.github/workflows/deploy-pages.yml` tests and publishes
+  on every push to `main`.
 
-## OpenRouter API Key Setup
+## Owner profile (optional)
 
-Recommended model: **GPT-4o Mini** (`openai/gpt-4o-mini`) — best balance of accuracy and cost for nutrition estimation.
+No credentials are hardcoded in source. The owner email gets a preloaded
+training plan; to additionally gate it with a passkey on a shared device,
+set a runtime config in the browser console once:
 
-In the app:
-
-1. Open More tab
-2. Click `Get OpenRouter API Key`
-3. Create/copy key from OpenRouter
-4. Paste in `OpenRouter API Key` field, select model, and save
-
-Core app features work even without an API key.
-
-## Deployment
-
-### Vercel (recommended)
-
-This repo includes `vercel.json` for static deployment.
-
-1. Import this GitHub repo in Vercel dashboard
-2. Deploy the `main` branch
-3. Redeploy after each push
-
-If using CLI, login first:
-
-```bash
-npx vercel login
-npx vercel --prod
+```js
+localStorage.setItem(
+  "dadbod_security_config_v1",
+  JSON.stringify({ adminPasskey: "your-strong-passkey" })
+);
 ```
 
-## Project Structure
+## Rebuilding the food dataset
 
-- `index.html` - App shell and tabs
-- `app.js` - Main app logic
-- `styles.css` - Premium responsive UI
-- `assets/icon.svg` - Improved DB brand logo
-- `scripts/build-dist.js` - Dist sync helper for Capacitor
-- `scripts/setup-android-sdk.ps1` - Local Android SDK setup helper
-- `release/` - Signed APK and AAB
+```bash
+npm run build:food-dataset      # regenerates assets/food-dataset.json
+npm run validate:food-dataset   # integrity + alias sanity checks
+```
 
-## Notes
+## License
 
-- Android SDK is configured at `C:\Users\Admin\Android\Sdk` on this machine.
-- Capacitor uses `dist/` as webDir (`capacitor.config.json`).
+MIT © Satvik Pandey

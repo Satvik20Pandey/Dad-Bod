@@ -23,6 +23,7 @@ tools/android-sdk/
 *.swp
 *.swo
 *~
+scripts/screenshots/
 
 # Track distributable artifacts in release/
 !release/*.apk

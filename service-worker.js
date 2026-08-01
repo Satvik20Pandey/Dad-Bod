@@ -1,12 +1,43 @@
-const CACHE_NAME = "dad-bod-cache-v14";
+/* Dad Bod — offline cache. Version bump invalidates all previous caches. */
+
+const CACHE_NAME = "dad-bod-cache-v20";
 const ASSETS = [
   "./",
   "./index.html",
-  "./styles.css",
-  "./persistence.js",
-  "./gym-program.js",
-  "./app.js",
   "./manifest.webmanifest",
+  "./styles/tokens.css",
+  "./styles/base.css",
+  "./styles/components.css",
+  "./styles/screens.css",
+  "./js/main.js",
+  "./js/config.js",
+  "./js/utils.js",
+  "./js/core/bus.js",
+  "./js/core/nutrition.js",
+  "./js/core/program.js",
+  "./js/core/dataset.js",
+  "./js/core/resolver.js",
+  "./js/core/store.js",
+  "./js/core/profile.js",
+  "./js/core/metrics.js",
+  "./js/services/http.js",
+  "./js/services/edamam.js",
+  "./js/services/openfoodfacts.js",
+  "./js/services/myplate.js",
+  "./js/services/wger.js",
+  "./js/services/overpass.js",
+  "./js/ui/icons.js",
+  "./js/ui/components.js",
+  "./js/ui/charts.js",
+  "./js/features/onboarding.js",
+  "./js/features/home.js",
+  "./js/features/capture.js",
+  "./js/features/diet.js",
+  "./js/features/workout.js",
+  "./js/features/progress.js",
+  "./js/features/nearby.js",
+  "./js/features/recipes.js",
+  "./js/features/more.js",
   "./assets/logo-premium.svg",
   "./assets/splash-hero.svg",
   "./assets/food-dataset.json",
@@ -28,6 +59,14 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const url = new URL(event.request.url);
+
+  /* Never cache API calls — the app layers its own TTL cache over them. */
+  if (url.origin !== self.location.origin) {
+    return;
+  }
+
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;
