@@ -56,7 +56,9 @@ function showScreen(name) {
   });
 
   document.querySelectorAll(".nav-btn[data-screen]").forEach((btn) => {
-    btn.classList.toggle("active", btn.getAttribute("data-screen") === activeScreen);
+    const target = btn.getAttribute("data-screen");
+    const isActive = target === activeScreen || (activeScreen === "progress" && target === "more");
+    btn.classList.toggle("active", isActive);
   });
 
   window.scrollTo({ top: 0, behavior: "auto" });
@@ -209,7 +211,9 @@ function init() {
 
   loadFoodDatasetIfNeeded().catch(() => {});
 
-  if ("serviceWorker" in navigator) {
+  /* ?dev disables the service worker so live-preview edits are never cached. */
+  const isDevPreview = new URLSearchParams(location.search).has("dev");
+  if ("serviceWorker" in navigator && !isDevPreview) {
     navigator.serviceWorker.register("./service-worker.js").catch(() => {});
   }
 

@@ -165,8 +165,10 @@ try {
     await page.waitForTimeout(400);
   }
 
-  /* Progress */
-  await page.click('.nav-btn[data-screen="progress"]');
+  /* Progress (lives under HQ — not in the bottom nav) */
+  await page.click('.nav-btn[data-screen="more"]');
+  await page.waitForSelector("#screen-more.active");
+  await page.click("#openProgressFromHq");
   await page.waitForSelector("#screen-progress.active");
   await page.fill("#weightValue", "82.5");
   await page.click('#weightForm button[type="submit"]');
@@ -181,11 +183,24 @@ try {
   await page.screenshot({ path: path.join(shotsDir, "09-more.png") });
   check("HQ rows render", (await page.locator(".cc-row").count()) >= 7);
   check("HQ title updated", (await page.textContent("#screen-more .screen-header h1"))?.includes("Dad Bod HQ"));
+  await page.click('[data-open-sheet="rewardsSheet"]');
+  await page.waitForSelector("#rewardsSheet.open", { timeout: 4000 });
   check("Rewards card lists earn rules", (await page.locator("#rewardsCard .earn-row").count()) >= 7);
+  await page.locator('#rewardsSheet .sheet-close').click();
+  await page.waitForTimeout(300);
   check(
     "Account card shows offline profile",
     (await page.textContent("#accountCard"))?.includes("Offline profile")
   );
+
+  /* Training setup plan editor */
+  await page.click('[data-open-sheet="workoutSetupSheet"]');
+  await page.waitForSelector("#workoutSetupSheet.open", { timeout: 4000 });
+  await page.waitForTimeout(400);
+  check("Training setup day chips render", (await page.locator("#planDaySeg .plan-day-chip").count()) === 7);
+  check("Training setup editor present", (await page.locator("#planEditor").count()) === 1);
+  await page.locator('#workoutSetupSheet .sheet-close').click();
+  await page.waitForTimeout(300);
 
   /* Backup sheet must explain itself and stay locked for offline profiles */
   await page.click("#backupOpenBtn");

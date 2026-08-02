@@ -2,7 +2,7 @@
 
 import { todayDate, dayNameFromDate, currentDayName, localDateString } from "../utils.js";
 import { nutrientFields, normalizeNutrition, zeroNutritionTotals } from "./nutrition.js";
-import { state, currentUser, getDayMeals, ensureGymLogForDate, getWaterMl } from "./store.js";
+import { state, currentUser, getDayMeals, ensureGymLogForDate, getWaterMl, saveState } from "./store.js";
 import { getWorkoutPreferences } from "./profile.js";
 import {
   ADMIN_GYM_SPLIT,
@@ -42,7 +42,67 @@ export function buildWeeklySchedule() {
 export function getWorkoutForDay(day = currentDayName()) {
   const { trainingStartDay } = getWorkoutPreferences();
   const schedule = buildWeeklySchedule();
-  return schedule[day] || schedule[trainingStartDay] || getActiveSplit()[0];
+  const base = schedule[day] || schedule[trainingStartDay] || getActiveSplit()[0];
+  return applyWorkoutOverride(day, base);
+}
+
+/** Merge a user-customized exercise list onto the scheduled day template. */
+function applyWorkoutOverride(day, workout) {
+  const override = state?.workoutOverrides?.[day];
+  if (!override || typeof override !== "object") return workout;
+
+  const next = {
+    ...workout,
+    exercises: Array.isArray(override.exercises)
+      ? override.exercises.map((ex) => ({ ...ex }))
+      : (workout.exercises || []).map((ex) => ({ ...ex })),
+  };
+
+  if (typeof override.title === "string" && override.title.trim()) {
+    next.title = override.title.trim();
+  }
+  if (typeof override.note === "string") {
+    next.note = override.note;
+  }
+
+  /* Custom plan can turn a closed/rest day into a training day if exercises exist. */
+  if (next.exercises.length > 0) {
+    next.isOff = false;
+  } else if (override.isOff === true) {
+    next.isOff = true;
+  }
+
+  return next;
+}
+
+export function getEditableWorkoutForDay(day = currentDayName()) {
+  return getWorkoutForDay(day);
+}
+
+export function setDayExercises(day, exercises) {
+  if (!state) return;
+  if (!state.workoutOverrides || typeof state.workoutOverrides !== "object") {
+    state.workoutOverrides = {};
+  }
+  const list = Array.isArray(exercises) ? exercises.map((ex) => ({ ...ex })) : [];
+  state.workoutOverrides[day] = {
+    ...(state.workoutOverrides[day] || {}),
+    exercises: list,
+    isOff: list.length === 0 ? Boolean(state.workoutOverrides[day]?.isOff) : false,
+  };
+  saveState();
+}
+
+export function clearDayExerciseOverride(day) {
+  if (!state?.workoutOverrides?.[day]) return;
+  delete state.workoutOverrides[day];
+  saveState();
+}
+
+export function clearAllExerciseOverrides() {
+  if (!state) return;
+  state.workoutOverrides = {};
+  saveState();
 }
 
 export function workoutCompletion(date = todayDate()) {

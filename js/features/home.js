@@ -23,6 +23,17 @@ let waterCelebratedFor = "";
 
 export function initHome() {
   select("bentoGrid")?.addEventListener("click", handleBentoClick);
+  bindChip("coinsChip", () => {
+    haptic(HAPTIC.tap);
+    openLayer("rewardsSheet");
+  });
+  bindChip("streakChip", () => {
+    haptic(HAPTIC.tap);
+    goToScreen("progress");
+    requestAnimationFrame(() => {
+      select("heatmapGrid")?.closest(".heatmap-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+  });
   select("missionCard")?.addEventListener("click", (event) => {
     const cta = event.target.closest("[data-cta-screen]");
     if (cta) {
@@ -35,6 +46,18 @@ export function initHome() {
     const key = target.getAttribute("data-mission");
     if (key === "protein" || key === "calories") goToScreen("diet");
     if (key === "workout") goToScreen("train");
+  });
+}
+
+function bindChip(id, onActivate) {
+  const el = select(id);
+  if (!el) return;
+  el.addEventListener("click", onActivate);
+  el.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      onActivate();
+    }
   });
 }
 
@@ -218,7 +241,12 @@ function renderRings() {
 
   setRingProgress(select("burnRing"), burnTarget > 0 ? burn.total / burnTarget : 0);
   animateNumber(select("burnRingValue"), burn.total, { digits: 0 });
-  setText("burnRingSub", "kcal burnt");
+  /* Outer caption stays "Activity" — covers workouts, steps, sleep without clutter. */
+
+  const log = ensureGymLogForDate(todayDate());
+  animateNumber(select("heroSteps"), Number(log.steps || 0), { digits: 0 });
+  animateNumber(select("heroBurn"), burn.total, { digits: 0 });
+  animateNumber(select("heroEaten"), totals.kcal, { digits: 0 });
 
   const macros = [
     { id: "pillProtein", barId: "barProtein", value: totals.protein, target: profile.macros.proteinG },

@@ -11,9 +11,7 @@
 
 html {
   scroll-behavior: smooth;
-  /* Global optical scale: rem-based type sizes down ~6%, while px paddings
-   * stay put — so every card gains relative whitespace. */
-  font-size: 15px;
+  font-size: 16px;
 }
 
 body {
@@ -62,7 +60,8 @@ a {
   overflow: hidden;
   pointer-events: none;
   background:
-    radial-gradient(120% 60% at 50% -8%, rgba(0, 229, 255, 0.07), transparent 60%),
+    radial-gradient(120% 55% at 50% -10%, rgba(59, 130, 246, 0.08), transparent 58%),
+    radial-gradient(80% 40% at 100% 20%, rgba(139, 92, 246, 0.05), transparent 50%),
     var(--bg);
 }
 

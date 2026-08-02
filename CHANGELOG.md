@@ -2,6 +2,18 @@
 
 All notable changes to Dad Bod.
 
+## [1.0.1] — 2026-08-02 · Play Store polish
+
+- Solid red **Switch Profile** and **Clear Today** actions (readable contrast).
+- HQ list rows: slight title → description breathing space across Control Center.
+- Dad Coins sheet rebuilt for phone widths (stacked earn rows + clearer sections).
+- **Training Setup**: customize exercises per weekday; search/add from the same
+  wger library as Train → Library; reorder, edit sets, reset day/all.
+- Bottom nav / premium home / muscular hero polish from the 1.0 UI pass.
+- Help, Privacy, and Terms updated for custom plans and backup flows.
+- Repo cleanup: drop exploratory Flutter sandbox from tracking; keep a single
+  pair of signed Play artifacts under `release/`.
+
 ## [1.0.0] — 2026-08-01 · First public release
 
 Dad Bod — The Dad Physique OS. A premium, completely free fitness companion

@@ -108,6 +108,7 @@ const adminDefaultState = {
   weightEntries: [],
   photoEntries: [],
   rewards: { coins: 0, byDate: {}, ledger: [], streakKeys: {} },
+  workoutOverrides: {},
   editingMealId: null,
 };
 
@@ -137,6 +138,7 @@ const genericDefaultState = {
   weightEntries: [],
   photoEntries: [],
   rewards: { coins: 0, byDate: {}, ledger: [], streakKeys: {} },
+  workoutOverrides: {},
   editingMealId: null,
 };
 
@@ -297,6 +299,10 @@ export function mergeState(baseState, savedState) {
       ? savedState.rewards
       : { coins: 0, byDate: {}, ledger: [], streakKeys: {} },
     weeklyPlan: savedState?.weeklyPlan ? savedState.weeklyPlan : clone(baseState.weeklyPlan),
+    workoutOverrides:
+      savedState?.workoutOverrides && typeof savedState.workoutOverrides === "object"
+        ? savedState.workoutOverrides
+        : {},
   };
 
   /* v2 migration: retire the removed AI settings. */

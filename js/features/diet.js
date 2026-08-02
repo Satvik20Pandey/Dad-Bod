@@ -778,6 +778,7 @@ function mealDisplayName(meal) {
 
 function renderNutritionPanel() {
   const totals = dailyTotals();
+  const profile = state.profile || {};
 
   requestAnimationFrame(() => {
     drawMacroDonut(select("macroDonut"), [
@@ -787,6 +788,24 @@ function renderNutritionPanel() {
     ]);
   });
   setText("donutKcal", formatNum(totals.kcal, 0));
+
+  const macros = [
+    { key: "protein", id: "legendProtein", bar: "legendBarProtein" },
+    { key: "carbs", id: "legendCarbs", bar: "legendBarCarbs" },
+    { key: "fat", id: "legendFat", bar: "legendBarFat" },
+  ];
+  macros.forEach(({ key, id, bar }) => {
+    const value = Number(totals[key] || 0);
+    const target = Number(getNutrientTarget(profile, key) || 0);
+    setText(id, target > 0 ? `${formatNum(value, 0)}/${formatNum(target, 0)}g` : `${formatNum(value, 0)}g`);
+    const pct = target > 0 ? Math.min(100, Math.round((value / target) * 100)) : 0;
+    const barEl = select(bar);
+    if (barEl) {
+      requestAnimationFrame(() => {
+        barEl.style.width = `${pct}%`;
+      });
+    }
+  });
 
   const container = select("microPanel");
   if (!container) return;

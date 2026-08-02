@@ -24,6 +24,12 @@ tools/android-sdk/
 *.swo
 *~
 scripts/screenshots/
+premium_fitness/
+premium_fitness_DELETE_ME/
+lib/
+pubspec.yaml
+analysis_options.yaml
+setup-flutter.ps1
 
 # Track distributable artifacts in release/
 !release/*.apk

@@ -16,7 +16,7 @@ with Capacitor for Android.
 | **Train** | Structured weekly splits with form cues, load/rep logging, full-screen rest timer with haptics, session celebrations, cardio + abs, 700+ exercise library |
 | **Progress** | Animated weight trend with goal line, before/after photo compare slider, consistency heatmap, strength PR board with estimated 1RM, CSV export |
 | **Scan** | Center-nav fullscreen scanner (brackets + laser + haptics): BarcodeDetector → ZXing fallback; OFF v2 → OFF v0 → UPCItemDB name lookup — never a dead end |
-| **Dad Bod HQ** | Account (Google or offline), Dad Coins rewards, encrypted cloud backup, goals with USDA cross-check, training setup, nearby, recipes |
+| **Dad Bod HQ** | Account (Google or offline), Dad Coins rewards, encrypted cloud backup, goals with USDA cross-check, **customizable Training Setup** (per-day exercises + library search), nearby, recipes |
 
 ## Production API architecture
 
@@ -67,7 +67,8 @@ js/
   ui/                      Icons (inline Lucide-style), components
                            (sheets/toasts/confetti/haptics), canvas charts
   features/                Screen controllers (home, diet, workout, progress,
-                           nearby, recipes, more, capture, onboarding)
+                           nearby, recipes, more, training-setup, capture,
+                           onboarding, account)
 scripts/                   Build + test tooling
 assets/food-dataset.json   5,277-food nutrition dataset (generated)
 data/food-sources/         Canonical staples + supplements (dataset inputs)

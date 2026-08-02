@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1, user-scalable=no" />
-    <meta name="theme-color" content="#070B13" />
+    <meta name="theme-color" content="#F7F8FA" />
     <meta name="description" content="Dad Bod — The Dad Physique OS. Track calories, macros and 16 nutrients, structured workouts, hydration, weight and progress photos. Free forever." />
     <meta name="keywords" content="fitness tracker, calorie counter, indian food calories, workout tracker, macro tracker, dad bod, physique, free fitness app" />
     <meta name="author" content="Satvik Pandey" />
@@ -116,11 +116,11 @@
             <p class="greet-meta"><span id="dateTimeText">Today</span> · <span id="journeyDay">Day 1</span></p>
           </div>
           <div class="home-header-side">
-            <div class="coins-chip" id="coinsChip">
+            <div class="coins-chip chip-btn" id="coinsChip" role="button" tabindex="0" aria-label="Open Dad Coins">
               <i data-icon="medal" data-icon-size="15"></i>
               <b id="coinsCount">0</b>
             </div>
-            <div class="streak-chip" id="streakChip">
+            <div class="streak-chip chip-btn" id="streakChip" role="button" tabindex="0" aria-label="Open consistency">
               <i data-icon="flame" data-icon-size="16"></i>
               <b id="streakCount">0</b>
             </div>
@@ -128,27 +128,48 @@
           </div>
         </header>
 
-        <!-- Daily Mission / Physique Score -->
-        <article class="card mission-card" id="missionCard">
-          <div class="mission-left">
-            <div class="score-wrap">
-              <svg class="ring score-svg" width="132" height="132" viewBox="0 0 132 132">
-                <defs>
-                  <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stop-color="#00E5FF" />
-                    <stop offset="100%" stop-color="#00D084" />
-                  </linearGradient>
-                </defs>
-                <circle class="ring-bg" cx="66" cy="66" r="57" stroke-width="9" />
-                <circle class="ring-fill score" id="scoreRing" cx="66" cy="66" r="57" stroke-width="9"
-                  stroke-dasharray="358" stroke-dashoffset="358" transform="rotate(-90 66 66)" />
-              </svg>
-              <div class="score-center">
-                <b id="scoreValue">0</b>
-                <span>Physique<br/>Score</span>
+        <!-- Premium Physique Score hero (keeps all original IDs for JS) -->
+        <article class="card mission-card premium-hero" id="missionCard">
+          <div class="hero-top">
+            <div class="hero-copy">
+              <p class="physique-label">Physique Score</p>
+              <div class="hero-score-row">
+                <div class="score-wrap score-wrap-sm">
+                  <svg class="ring score-svg" width="88" height="88" viewBox="0 0 132 132">
+                    <defs>
+                      <linearGradient id="scoreGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#3B82F6" />
+                        <stop offset="100%" stop-color="#8B5CF6" />
+                      </linearGradient>
+                    </defs>
+                    <circle class="ring-bg" cx="66" cy="66" r="57" stroke-width="10" />
+                    <circle class="ring-fill score" id="scoreRing" cx="66" cy="66" r="57" stroke-width="10"
+                      stroke-dasharray="358" stroke-dashoffset="358" transform="rotate(-90 66 66)" />
+                  </svg>
+                  <div class="score-center">
+                    <b id="scoreValue">0</b>
+                  </div>
+                </div>
+                <div class="hero-stats">
+                  <div class="hero-stat">
+                    <b id="heroSteps">0</b>
+                    <span>STEPS</span>
+                  </div>
+                  <div class="hero-stat">
+                    <b id="heroBurn">0</b>
+                    <span>BURN KCAL</span>
+                  </div>
+                  <div class="hero-stat">
+                    <b id="heroEaten">0</b>
+                    <span>EATEN KCAL</span>
+                  </div>
+                </div>
               </div>
+              <p class="mission-hint" id="missionHint">Every logged meal and set moves this score.</p>
             </div>
-            <p class="mission-hint" id="missionHint">Every logged meal and set moves this score.</p>
+            <div class="hero-body" aria-hidden="true">
+              <img src="assets/hero-body.png" alt="" class="hero-body-img" />
+            </div>
           </div>
           <div class="mission-list" id="missionList"></div>
           <div class="mission-cta-slot" id="missionCta"></div>
@@ -159,7 +180,7 @@
           <div class="rings-row">
             <div class="ring-block">
               <div class="ring-holder">
-                <svg class="ring" width="108" height="108" viewBox="0 0 108 108">
+                <svg class="ring" width="96" height="96" viewBox="0 0 108 108">
                   <circle class="ring-bg" cx="54" cy="54" r="46" stroke-width="8" />
                   <circle class="ring-fill cal" id="calRing" cx="54" cy="54" r="46" stroke-width="8"
                     stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90 54 54)" />
@@ -173,17 +194,17 @@
             </div>
             <div class="ring-block">
               <div class="ring-holder">
-                <svg class="ring" width="108" height="108" viewBox="0 0 108 108">
+                <svg class="ring" width="96" height="96" viewBox="0 0 108 108">
                   <circle class="ring-bg" cx="54" cy="54" r="46" stroke-width="8" />
                   <circle class="ring-fill burn" id="burnRing" cx="54" cy="54" r="46" stroke-width="8"
                     stroke-dasharray="289" stroke-dashoffset="289" transform="rotate(-90 54 54)" />
                 </svg>
                 <div class="ring-center">
                   <b id="burnRingValue">0</b>
-                  <span id="burnRingSub">kcal burnt</span>
+                  <span>Burnt</span>
                 </div>
               </div>
-              <p class="ring-sub">workouts · steps · sleep</p>
+              <p class="ring-sub" id="burnRingSub">Activity</p>
             </div>
             <div class="macro-stack">
               <div class="macro-line"><span class="macro-dot protein"></span><span class="macro-name">Protein</span><b id="pillProtein">0g</b><i class="macro-bar"><em id="barProtein"></em></i></div>
@@ -225,10 +246,10 @@
               <canvas id="macroDonut" class="donut-canvas"></canvas>
               <div class="donut-center"><b id="donutKcal">0</b><span>kcal today</span></div>
             </div>
-            <div class="donut-legend">
-              <span><i class="macro-dot protein"></i>Protein</span>
-              <span><i class="macro-dot carbs"></i>Carbs</span>
-              <span><i class="macro-dot fat"></i>Fat</span>
+            <div class="donut-legend" id="dietMacroLegend">
+              <span data-macro="protein"><i class="macro-dot protein"></i><em>Protein</em><b id="legendProtein">0g</b><i class="legend-track"><em class="legend-fill protein" id="legendBarProtein"></em></i></span>
+              <span data-macro="carbs"><i class="macro-dot carbs"></i><em>Carbs</em><b id="legendCarbs">0g</b><i class="legend-track"><em class="legend-fill carbs" id="legendBarCarbs"></em></i></span>
+              <span data-macro="fat"><i class="macro-dot fat"></i><em>Fat</em><b id="legendFat">0g</b><i class="legend-track"><em class="legend-fill fat" id="legendBarFat"></em></i></span>
             </div>
           </div>
           <details class="micro-details">
@@ -440,6 +461,11 @@
 
         <div class="cc-group">
           <p class="cc-title">Training &amp; Goals</p>
+          <button type="button" class="cc-row" id="openProgressFromHq" data-go-screen="progress">
+            <span class="cc-icon accent"><i data-icon="trending" data-icon-size="19"></i></span>
+            <span class="cc-body"><b>Progress</b><small>Weight, photos, and strength PRs</small></span>
+            <i data-icon="chevronRight" data-icon-size="17"></i>
+          </button>
           <button type="button" class="cc-row" data-open-sheet="goalsSheet">
             <span class="cc-icon accent"><i data-icon="target" data-icon-size="19"></i></span>
             <span class="cc-body"><b>Goals &amp; Targets</b><small>Weight, calories, macros, water</small></span>
@@ -447,7 +473,7 @@
           </button>
           <button type="button" class="cc-row" data-open-sheet="workoutSetupSheet">
             <span class="cc-icon mint"><i data-icon="dumbbell" data-icon-size="19"></i></span>
-            <span class="cc-body"><b>Training Setup</b><small>Split start, rest day, session times</small></span>
+            <span class="cc-body"><b>Training Setup</b><small>Schedule, rest day, and custom exercise plan</small></span>
             <i data-icon="chevronRight" data-icon-size="17"></i>
           </button>
           <button type="button" class="cc-row" data-open-sheet="planSheet">
@@ -521,12 +547,16 @@
 
       <!-- Bottom navigation -->
       <nav class="bottom-nav" aria-label="Main navigation">
-        <button type="button" class="nav-btn active" data-screen="home"><i data-icon="home" data-icon-size="21"></i><small>Home</small></button>
-        <button type="button" class="nav-btn" data-screen="diet"><i data-icon="utensils" data-icon-size="21"></i><small>Diet</small></button>
-        <span class="nav-fab-slot"><button type="button" class="fab" id="scanBtn" aria-label="Scan barcode"><i data-icon="scan" data-icon-size="23"></i><small>Scan</small></button></span>
-        <button type="button" class="nav-btn" data-screen="train"><i data-icon="dumbbell" data-icon-size="21"></i><small>Train</small></button>
-        <button type="button" class="nav-btn" data-screen="progress"><i data-icon="trending" data-icon-size="21"></i><small>Progress</small></button>
-        <button type="button" class="nav-btn more-nav" data-screen="more"><i data-icon="grid" data-icon-size="21"></i><small>HQ</small></button>
+        <button type="button" class="nav-btn active" data-screen="home"><i data-icon="home" data-icon-size="22"></i><small>Home</small></button>
+        <button type="button" class="nav-btn" data-screen="diet"><i data-icon="utensils" data-icon-size="22"></i><small>Diet</small></button>
+        <span class="nav-fab-slot">
+          <button type="button" class="fab" id="scanBtn" aria-label="Scan barcode">
+            <i data-icon="scan" data-icon-size="26"></i>
+            <small>Scan</small>
+          </button>
+        </span>
+        <button type="button" class="nav-btn" data-screen="train"><i data-icon="dumbbell" data-icon-size="22"></i><small>Train</small></button>
+        <button type="button" class="nav-btn more-nav" data-screen="more"><i data-icon="grid" data-icon-size="22"></i><small>HQ</small></button>
       </nav>
     </main>
 
@@ -702,10 +732,11 @@
     <!-- Training setup sheet -->
     <div class="sheet hidden" id="workoutSetupSheet" aria-hidden="true">
       <div class="layer-backdrop" data-close-layer="workoutSetupSheet"></div>
-      <div class="sheet-panel">
+      <div class="sheet-panel tall">
         <div class="sheet-grip"></div>
         <button type="button" class="sheet-close" data-close-layer="workoutSetupSheet" aria-label="Close"><i data-icon="x" data-icon-size="18"></i></button>
         <h2 class="sheet-title">Training Setup</h2>
+        <p class="sheet-sub">Schedule preferences plus a customizable weekly exercise plan.</p>
         <form id="workoutPrefsForm" class="form-grid two-col">
           <label class="field">
             <span class="field-label">Gym closed day</span>
@@ -735,8 +766,30 @@
               <option value="morning">Morning</option>
             </select>
           </label>
-          <button type="submit" class="btn-primary full-width span-2">Save Setup</button>
+          <button type="submit" class="btn-primary full-width span-2">Save Schedule</button>
         </form>
+
+        <div class="plan-customize">
+          <div class="plan-customize-head">
+            <h3>Weekly exercise plan</h3>
+            <p id="planDayMeta">Pick a day to add or remove exercises.</p>
+          </div>
+          <div class="plan-day-seg" id="planDaySeg" role="tablist" aria-label="Training days"></div>
+          <div class="plan-editor" id="planEditor"></div>
+          <div class="plan-search-block">
+            <div class="search-bar slim">
+              <i data-icon="search" data-icon-size="18"></i>
+              <input type="text" id="planSearchInput" placeholder="Search library to add…" autocomplete="off" />
+            </div>
+            <div class="plan-search-results" id="planSearchResults">
+              <p class="plan-search-hint">Search the exercise library (same as Train → Library).</p>
+            </div>
+          </div>
+          <div class="btn-row plan-reset-row">
+            <button type="button" class="btn-secondary grow" id="planResetDayBtn">Reset this day</button>
+            <button type="button" class="btn-ghost grow" id="planResetAllBtn">Reset all days</button>
+          </div>
+        </div>
       </div>
     </div>
 
