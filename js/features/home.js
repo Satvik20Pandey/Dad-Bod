@@ -114,14 +114,11 @@ export function renderHome() {
 function renderGreeting() {
   setText("greetingText", `${greetingForHour()},`);
   setText("greetingName", currentUser?.name?.split(" ")[0] || "Athlete");
-  setText(
-    "dateTimeText",
-    new Date().toLocaleDateString(undefined, { weekday: "long", day: "2-digit", month: "short" })
-  );
-
-  const created = new Date(currentUser?.createdAt || Date.now());
-  const dayNumber = Math.max(1, Math.floor((Date.now() - created.getTime()) / 86400000) + 1);
-  setText("journeyDay", `Day ${dayNumber}`);
+  const now = new Date();
+  const weekday = now.toLocaleDateString("en-US", { weekday: "long" });
+  const day = String(now.getDate()).padStart(2, "0");
+  const month = now.toLocaleDateString("en-US", { month: "short" });
+  setText("dateTimeText", `${weekday}, ${day} ${month}`);
 
   const streak = calculateStreak();
   setText("streakCount", String(streak));
@@ -168,15 +165,12 @@ function renderMission() {
   animateNumber(scoreEl, score, { digits: 0 });
   setRingProgress(select("scoreRing"), score / 100);
 
-  const doneCount = missions.filter((m) => m.done).length;
-  setText(
-    "missionHint",
-    score >= 90
-      ? "Elite day. This is how physiques are built."
-      : score >= 60
-        ? `${doneCount}/${missions.length} missions locked. Keep pushing.`
-        : "Every logged meal and set moves this score."
-  );
+  const hint = select("missionHint");
+  if (hint) {
+    hint.textContent = "";
+    hint.classList.add("hidden");
+    hint.setAttribute("aria-hidden", "true");
+  }
 
   const list = select("missionList");
   if (!list) return;

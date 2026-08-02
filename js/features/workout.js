@@ -13,7 +13,7 @@ import {
   parseSetPrescription,
   estimateWorkoutMinutes,
 } from "../core/program.js";
-import { workoutCompletion, calculateDailyBurn, estimateExerciseCalories, getWorkoutForDay } from "../core/metrics.js";
+import { workoutCompletion, calculateDailyBurn, getWorkoutForDay } from "../core/metrics.js";
 import { searchExercises, getExerciseDetail } from "../services/wger.js";
 import { icon } from "../ui/icons.js";
 import {
@@ -159,6 +159,13 @@ function updatePanels() {
 /* ---- Strength ---- */
 
 function handleExerciseListClick(event) {
+  const videoBtn = event.target.closest("[data-video-query]");
+  if (videoBtn) {
+    const query = videoBtn.getAttribute("data-video-query");
+    window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, "_blank");
+    return;
+  }
+
   const timerBtn = event.target.closest("[data-timer]");
   if (timerBtn) {
     startRestTimer(timerBtn.getAttribute("data-exercise-name"), Number(timerBtn.getAttribute("data-timer")));
@@ -172,7 +179,7 @@ function handleExerciseListClick(event) {
   }
 
   const toggleTarget = event.target.closest("[data-toggle-exercise]");
-  if (toggleTarget && !event.target.closest("input, label")) {
+  if (toggleTarget && !event.target.closest("input, label, a, button:not(.exercise-main)")) {
     toggleExercise(Number(toggleTarget.getAttribute("data-toggle-exercise")));
   }
 }
@@ -441,19 +448,14 @@ function renderHero() {
   if (completion.isRestDay) {
     hero.innerHTML = `
       <div class="hero-rest">
-        <span class="hero-rest-icon">${icon("moon", "", 30)}</span>
+        <span class="hero-rest-icon">${icon("moon", "", 28)}</span>
         <h2>${escapeHtml(workout.title)}</h2>
-        <p>${escapeHtml(workout.note || "Recovery day. Muscle grows while you rest.")}</p>
         <p class="hero-cycle">${escapeHtml(trainingStartDay)} start · Closed ${escapeHtml(closedDay)}</p>
       </div>`;
     return;
   }
 
   const minutes = estimateWorkoutMinutes(workout);
-  const bodyWeight = Math.max(30, Number(state.profile.currentWeight || 70));
-  const estKcal = Math.round(
-    workout.exercises.reduce((sum, exercise) => sum + estimateExerciseCalories(exercise, bodyWeight, 20), 0)
-  );
   const pct = completion.gymTotal ? Math.round((completion.gymDone / completion.gymTotal) * 100) : 0;
 
   hero.innerHTML = `
@@ -465,7 +467,6 @@ function renderHero() {
     ${workout.muscles?.length ? `<div class="chip-row">${workout.muscles.map((m) => `<span class="chip accent">${escapeHtml(m)}</span>`).join("")}</div>` : ""}
     <div class="hero-stats">
       <span>${icon("clock", "", 15)} ~${minutes} min</span>
-      <span>${icon("flame", "", 15)} ~${estKcal} kcal</span>
       <span>${icon("layers", "", 15)} ${completion.gymTotal} exercises</span>
     </div>
     <div class="tile-progress hero-bar"><i style="width:${pct}%"></i></div>
@@ -507,16 +508,45 @@ function renderExerciseList() {
       const load = trackWeight ? Number(log.exerciseWeights?.[key] || 0) : 0;
       const reps = String(log.exerciseReps?.[key] || "");
       const timerSec = Math.max(20, Number(exercise.timerSec || parseSetPrescription(exercise.sets).secondsPerSet || 60));
+      const gifUrl = resolveExerciseGif(exercise.name);
+      const showScience = Boolean(isAdmin && exercise.science);
+      const videoQuery = `${exercise.name} proper form gym technique`;
+      const cues = exercise.cues || "Controlled tempo, full range of motion.";
 
       return `
-      <article class="exercise-card ${done ? "done" : ""}">
+      <article class="exercise-card rich ${done ? "done" : ""}">
         <button type="button" class="exercise-main" data-toggle-exercise="${idx}">
           <span class="exercise-check">${done ? icon("check", "", 15) : ""}</span>
           <span class="exercise-info">
             <span class="exercise-name">${escapeHtml(exercise.name)}</span>
-            <span class="exercise-meta">${escapeHtml(exercise.sets)} · ${escapeHtml(exercise.cues)}</span>
           </span>
+          <span class="exercise-sets-pill">${escapeHtml(exercise.sets || "—")}</span>
         </button>
+
+        ${gifUrl
+          ? `<div class="guide-media exercise-gif"><img src="${gifUrl}" alt="${escapeHtml(exercise.name)} demonstration" loading="lazy" onerror="this.parentElement.remove()" /></div>`
+          : ""}
+
+        <div class="exercise-guide-inline">
+          <div class="guide-block">
+            <h4>${icon("list", "", 15)} Prescription</h4>
+            <p>${escapeHtml(exercise.sets || "—")}</p>
+          </div>
+          <div class="guide-block">
+            <h4>${icon("target", "", 15)} Form Cues</h4>
+            <p>${escapeHtml(cues)}</p>
+          </div>
+          ${showScience
+            ? `<div class="guide-block science"><h4>${icon("sparkles", "", 15)} Why it works</h4><p>${escapeHtml(exercise.science)}</p></div>`
+            : ""}
+          ${exercise.tips
+            ? `<div class="guide-block"><h4>${icon("info", "", 15)} Coaching Notes</h4><p>${escapeHtml(exercise.tips)}</p></div>`
+            : ""}
+          <button type="button" class="btn-secondary full-width" data-video-query="${escapeHtml(exercise.videoQuery || videoQuery)}">
+            ${icon("externalLink", "", 17)} Watch Form Videos
+          </button>
+        </div>
+
         ${trackWeight
           ? `<div class="exercise-inputs">
               <label>Load kg<input type="number" min="0" step="0.5" inputmode="decimal" value="${load > 0 ? load : ""}" placeholder="35" data-weight-input data-idx="${idx}" /></label>
@@ -524,7 +554,6 @@ function renderExerciseList() {
             </div>`
           : ""}
         <div class="exercise-actions">
-          <button type="button" class="btn-chip" data-guide="${idx}">${icon("bookOpen", "", 15)} Guide</button>
           <button type="button" class="btn-chip accent" data-timer="${timerSec}" data-exercise-name="${escapeHtml(exercise.name)}">${icon("timer", "", 15)} ${Math.round(timerSec)}s Rest</button>
         </div>
       </article>`;
@@ -549,12 +578,17 @@ function renderAbsList() {
           <span class="exercise-check">${done ? icon("check", "", 15) : ""}</span>
           <span class="exercise-info">
             <span class="exercise-name">${escapeHtml(exercise.name)}</span>
-            <span class="exercise-meta">${escapeHtml(exercise.sets)}</span>
           </span>
+          <span class="exercise-sets-pill">${escapeHtml(exercise.sets)}</span>
         </button>
+        <div class="exercise-guide-inline compact">
+          <div class="guide-block">
+            <h4>${icon("target", "", 15)} Form Cues</h4>
+            <p>${escapeHtml(exercise.cues || "Controlled tempo, brace your core.")}</p>
+          </div>
+        </div>
         <div class="exercise-actions">
-          <button type="button" class="btn-chip" data-abs-guide="${idx}">${icon("bookOpen", "", 15)} Guide</button>
-          <button type="button" class="btn-chip accent" data-timer="${timerSec}" data-exercise-name="${escapeHtml(exercise.name)}">${icon("timer", "", 15)} ${timerSec}s</button>
+          <button type="button" class="btn-chip accent" data-timer="${timerSec}" data-exercise-name="${escapeHtml(exercise.name)}">${icon("timer", "", 15)} ${timerSec}s Rest</button>
         </div>
       </article>`;
     })

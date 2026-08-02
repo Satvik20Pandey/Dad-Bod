@@ -221,6 +221,9 @@
   color: var(--text-faint);
   font-size: 0.76rem;
   margin-top: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .home-header-side {
@@ -1622,7 +1625,7 @@
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--r-widget);
-  padding: 16px;
+  padding: 14px;
   backdrop-filter: blur(14px);
   transition: border-color var(--t-med), background var(--t-med);
 }
@@ -1634,7 +1637,7 @@
 
 .exercise-main {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 11px;
   width: 100%;
   text-align: left;
@@ -1650,7 +1653,6 @@
   justify-content: center;
   flex-shrink: 0;
   color: #04121a;
-  margin-top: 1px;
   transition: all var(--t-med) var(--ease-spring);
 }
 
@@ -1665,15 +1667,31 @@
   flex-direction: column;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 
 .exercise-name {
-  font-size: 0.94rem;
-  font-weight: 650;
+  font-size: 0.96rem;
+  font-weight: 700;
+  line-height: 1.25;
+  color: var(--text);
 }
 
 .exercise-card.done .exercise-name {
   color: var(--text-dim);
+}
+
+.exercise-sets-pill {
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.22);
+  color: #1D4ED8;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 .exercise-meta {
@@ -1681,11 +1699,43 @@
   color: var(--text-dim);
 }
 
+.exercise-gif {
+  margin: 12px 0 0;
+}
+
+.exercise-gif img {
+  max-height: 200px;
+  object-fit: contain;
+  background: #0B1220;
+}
+
+.exercise-guide-inline {
+  margin-top: 12px;
+  padding-top: 4px;
+}
+
+.exercise-guide-inline .guide-block {
+  margin-bottom: 10px;
+}
+
+.exercise-guide-inline .guide-block h4 {
+  margin-bottom: 4px;
+}
+
+.exercise-guide-inline .guide-block p {
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.exercise-guide-inline.compact {
+  margin-top: 10px;
+}
+
 .exercise-inputs {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
-  margin: 12px 0 0 35px;
+  margin: 12px 0 0;
 }
 
 .exercise-inputs label {
@@ -1696,7 +1746,7 @@
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--text-faint);
+  color: var(--text-dim);
 }
 
 .exercise-inputs input {
@@ -1707,11 +1757,15 @@
 .exercise-actions {
   display: flex;
   gap: 8px;
-  margin: 12px 0 0 35px;
+  margin: 12px 0 0;
 }
 
 .exercise-card.compact .exercise-actions {
   margin-top: 8px;
+}
+
+.mission-hint.hidden {
+  display: none;
 }
 
 /* Burn breakdown */
