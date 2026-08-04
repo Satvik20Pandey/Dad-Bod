@@ -75,7 +75,7 @@
   <body>
     <main>
       <h1>Dad Bod Privacy Policy</h1>
-      <p class="meta">Last updated: August 2, 2026</p>
+      <p class="meta">Last updated: August 4, 2026</p>
 
       <h2>1. Who We Are</h2>
       <p>
@@ -85,24 +85,24 @@
 
       <h2>2. Information We Process</h2>
       <ul>
-        <li>Profile details you enter, such as name and email.</li>
-        <li>If you sign in with Google: your name, email address, and profile photo, used only to identify your profile in the app.</li>
-        <li>Fitness and health entries you create, such as meals, workouts (including custom per-day exercise plans), weight, hydration, and photos.</li>
+        <li>Profile details you enter, such as your name and email address.</li>
+        <li>If you sign in with Google: your name, email address, and profile photo, used only to identify your profile and support optional encrypted backup.</li>
+        <li>Fitness and health entries you create, such as meals, workouts (including custom per-day exercise plans), weight, hydration, progress scores, and photos.</li>
         <li>Optional voice input if you use voice meal logging (processed by your device's speech service).</li>
         <li>Your approximate location, only while you use the optional "Nearby Gyms &amp; Parks" feature.</li>
       </ul>
 
       <h2>3. How We Use Information</h2>
       <ul>
-        <li>To provide nutrition, workout, hydration, and progress-tracking functionality.</li>
+        <li>To provide nutrition, workout, hydration, progress-tracking, and account functionality.</li>
         <li>To generate scores, summaries, and charts in the app.</li>
-        <li>To answer the specific lookups you trigger (food search, barcode, recipes, nearby places).</li>
+        <li>To answer the specific lookups you trigger (food search, barcode, recipes, exercise library, nearby places).</li>
       </ul>
 
       <h2>4. Where Data Is Stored</h2>
       <p>
-        Core app data is stored locally on your device (for example, browser/app local storage).
-        Dad Bod does not run a mandatory central account server for core tracking features.
+        Core app data is stored locally on your device (for example, browser/app local storage and IndexedDB where supported).
+        Dad Bod does not require a mandatory central account server for core tracking features.
       </p>
 
       <h2>5. Third-Party Services</h2>
@@ -111,8 +111,8 @@
         the minimum data needed and no personal identifiers:
       </p>
       <ul>
-        <li><strong>Google / Firebase Authentication</strong> &mdash; only if you choose to sign in, to verify your Google account.</li>
-        <li><strong>Firebase Firestore</strong> &mdash; only if you enable cloud backup. The stored blob is encrypted on your device with your passphrase and cannot be read by us or by Google.</li>
+        <li><strong>Google / Firebase Authentication</strong> &mdash; only if you choose to sign in, to verify your Google account and restore your signed-in profile.</li>
+        <li><strong>Firebase Firestore</strong> &mdash; only if you enable cloud backup. The stored backup blob is encrypted on your device with your passphrase and cannot be read by us or by Google.</li>
         <li><strong>Edamam</strong> &mdash; the food text you search online, for nutrition parsing.</li>
         <li><strong>Open Food Facts</strong> — barcodes you scan, for packaged-food data.</li>
         <li><strong>UPCItemDB</strong> — barcodes not found on Open Food Facts, for product-name lookup only.</li>
@@ -144,6 +144,7 @@
         <li>You can edit or delete entries directly in the app.</li>
         <li>You can clear app data in your device settings.</li>
         <li>You can uninstall the app to remove locally stored app data.</li>
+        <li>If you enabled encrypted cloud backup with a signed-in profile, you can request removal of that remote backup data.</li>
       </ul>
       <p>
         For formal deletion requests, use:
