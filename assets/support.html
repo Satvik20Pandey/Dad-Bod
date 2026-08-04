@@ -6,77 +6,129 @@
     <title>Dad Bod Support</title>
     <style>
       :root {
-        --bg: #f8fafb;
+        --bg: #f7f8fa;
         --surface: #ffffff;
-        --text: #0f1419;
-        --muted: #536471;
-        --border: #e8ecf0;
-        --primary: #ff6b35;
+        --text: #0f172a;
+        --muted: #475569;
+        --faint: #94a3b8;
+        --border: rgba(15, 23, 42, 0.08);
+        --accent: #3b82f6;
+        --accent-2: #8b5cf6;
+        --shadow: 0 16px 40px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
       }
       * { box-sizing: border-box; }
       body {
         margin: 0;
-        font-family: Arial, sans-serif;
-        background: linear-gradient(145deg, #fff9f5 0%, #f0f4ff 50%, #f0fff8 100%);
+        font-family: "Inter", "Segoe UI", Tahoma, Arial, sans-serif;
         color: var(--text);
-        line-height: 1.6;
+        line-height: 1.65;
+        background:
+          radial-gradient(70% 50% at 0% 0%, rgba(59, 130, 246, 0.10), transparent 60%),
+          radial-gradient(70% 50% at 100% 0%, rgba(139, 92, 246, 0.10), transparent 60%),
+          var(--bg);
       }
       main {
-        max-width: 860px;
-        margin: 24px auto;
+        max-width: 920px;
+        margin: 28px auto;
+        padding: 0 14px;
+      }
+      .shell {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 24px;
+        border-radius: 30px;
+        padding: 32px;
+        box-shadow: var(--shadow);
       }
       h1, h2 { margin: 0 0 12px; }
-      h1 { font-size: 1.7rem; }
-      h2 { font-size: 1.1rem; margin-top: 20px; }
+      h1 { font-size: 2rem; letter-spacing: -0.03em; }
+      h2 { font-size: 1.05rem; margin-top: 0; color: var(--text); }
       p, li { color: var(--muted); }
-      a { color: var(--primary); }
+      a { color: var(--accent); }
+      ul { padding-left: 20px; margin: 0; }
+      li + li { margin-top: 8px; }
+      .meta {
+        display: inline-block;
+        margin: 0 0 14px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(59, 130, 246, 0.08);
+        color: var(--accent);
+        font-size: 0.82rem;
+        font-weight: 700;
+      }
+      .intro {
+        max-width: 720px;
+        margin-bottom: 18px;
+      }
+      .card {
+        margin-top: 18px;
+        padding: 18px 20px;
+        border-radius: 22px;
+        border: 1px solid var(--border);
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
+      }
+      @media (max-width: 640px) {
+        .shell {
+          padding: 22px 18px;
+          border-radius: 24px;
+        }
+        h1 {
+          font-size: 1.7rem;
+        }
+      }
     </style>
   </head>
   <body>
     <main>
-      <h1>Dad Bod Support</h1>
-      <p>Last updated: August 4, 2026</p>
-      <p>Need help with setup, tracking, backup, or daily logging? This page covers the most common questions for Dad Bod.</p>
+      <div class="shell">
+        <h1>Dad Bod Support</h1>
+        <p class="meta">Last updated: August 4, 2026</p>
+        <p class="intro">Need help with setup, tracking, backup, or daily logging? This page covers the most common questions for Dad Bod.</p>
 
-      <h2>Contact</h2>
-      <p>
-        Support email:
-        <a href="mailto:satvikofficial20@gmail.com">satvikofficial20@gmail.com</a>
-      </p>
+        <section class="card">
+          <h2>Contact</h2>
+          <p>
+            Support email:
+            <a href="mailto:satvikofficial20@gmail.com">satvikofficial20@gmail.com</a>
+          </p>
+        </section>
 
-      <h2>Common Issues</h2>
-      <ul>
-        <li>Online food search, barcodes, recipes, and nearby places need an internet connection — logging and the Indian food dataset work fully offline.</li>
-        <li>If barcode or voice features do not start, check camera/microphone permissions in Android settings.</li>
-        <li>Nearby Gyms &amp; Parks needs location permission, requested only when you open the feature.</li>
-        <li>If workout, weight, or meal data looks missing, confirm the selected date first.</li>
-        <li>If you use Google Sign-In, encrypted cloud backup is optional. Continue Offline keeps your tracking local to the device.</li>
-        <li>If your training plan looks different than expected, check Dad Bod HQ → Training Setup for the closed day, split start day, and custom day exercises.</li>
-        <li>If app behavior looks stale after an update, fully close and reopen the app.</li>
-      </ul>
+        <section class="card">
+          <h2>Common Issues</h2>
+          <ul>
+            <li>Online food search, barcodes, recipes, and nearby places need an internet connection. Logging and the Indian food dataset work offline.</li>
+            <li>If barcode or voice features do not start, check camera and microphone permissions in Android settings.</li>
+            <li>Nearby Gyms &amp; Parks needs location permission, requested only when you open the feature.</li>
+            <li>If workout, weight, or meal data looks missing, confirm the selected date first.</li>
+            <li>If you use Google Sign-In, encrypted cloud backup is optional. Continue Offline keeps your tracking local to the device.</li>
+            <li>If your training plan looks different than expected, check Dad Bod HQ → Training Setup for the closed day, split start day, and custom day exercises.</li>
+            <li>If app behavior looks stale after an update, fully close and reopen the app.</li>
+          </ul>
+        </section>
 
-      <h2>What Dad Bod Supports</h2>
-      <ul>
-        <li>Meal logging, calorie and macro tracking, and nutrition label scan support.</li>
-        <li>Workout logging, custom per-day exercise plans, rest timers, and exercise guidance.</li>
-        <li>Body weight, progress photos, consistency tracking, and Dad Coins.</li>
-        <li>Encrypted cloud backup for signed-in users and local-only tracking for offline users.</li>
-      </ul>
+        <section class="card">
+          <h2>What Dad Bod Supports</h2>
+          <ul>
+            <li>Meal logging, calorie and macro tracking, and nutrition label scan support.</li>
+            <li>Workout logging, custom per-day exercise plans, rest timers, and exercise guidance.</li>
+            <li>Body weight, progress photos, consistency tracking, and Dad Coins.</li>
+            <li>Encrypted cloud backup for signed-in users and local-only tracking for offline users.</li>
+          </ul>
+        </section>
 
-      <h2>Response Time</h2>
-      <p>
-        We typically respond within 2 to 3 business days.
-      </p>
+        <section class="card">
+          <h2>Response Time</h2>
+          <p>We typically respond within 2 to 3 business days.</p>
+        </section>
 
-      <h2>Account and Data Deletion</h2>
-      <p>
-        To request deletion of a signed-in profile or optional cloud backup data, use:
-        <a href="data-deletion.html">Account and Data Deletion Request</a>
-      </p>
+        <section class="card">
+          <h2>Account and Data Deletion</h2>
+          <p>
+            To request deletion of a signed-in profile or optional cloud backup data, use:
+            <a href="data-deletion.html">Account and Data Deletion Request</a>
+          </p>
+        </section>
+      </div>
     </main>
   </body>
 </html>

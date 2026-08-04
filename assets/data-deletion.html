@@ -6,12 +6,14 @@
     <title>Dad Bod - Account and Data Deletion Request</title>
     <style>
       :root {
-        --bg: #f7faff;
+        --bg: #f7f8fa;
         --surface: #ffffff;
-        --text: #101826;
-        --muted: #4f6077;
-        --border: #dbe4ef;
-        --primary: #ff6b35;
+        --text: #0f172a;
+        --muted: #475569;
+        --border: rgba(15, 23, 42, 0.08);
+        --accent: #3b82f6;
+        --accent-2: #8b5cf6;
+        --shadow: 0 16px 40px rgba(15, 23, 42, 0.08), 0 4px 12px rgba(15, 23, 42, 0.04);
       }
 
       * {
@@ -20,20 +22,27 @@
 
       body {
         margin: 0;
-        font-family: "Segoe UI", Tahoma, Arial, sans-serif;
+        font-family: "Inter", "Segoe UI", Tahoma, Arial, sans-serif;
         color: var(--text);
         line-height: 1.65;
-        background: radial-gradient(circle at 0% 0%, #fff4ee 0%, transparent 35%),
-          radial-gradient(circle at 100% 100%, #eef6ff 0%, transparent 40%), var(--bg);
+        background:
+          radial-gradient(70% 50% at 0% 0%, rgba(59, 130, 246, 0.10), transparent 60%),
+          radial-gradient(70% 50% at 100% 0%, rgba(139, 92, 246, 0.10), transparent 60%),
+          var(--bg);
       }
 
       main {
-        max-width: 900px;
-        margin: 24px auto;
+        max-width: 960px;
+        margin: 28px auto;
+        padding: 0 14px;
+      }
+
+      .shell {
         background: var(--surface);
         border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 24px;
+        border-radius: 30px;
+        padding: 32px;
+        box-shadow: var(--shadow);
       }
 
       h1,
@@ -42,12 +51,13 @@
       }
 
       h1 {
-        font-size: 1.7rem;
+        font-size: 2rem;
+        letter-spacing: -0.03em;
       }
 
       h2 {
-        margin-top: 20px;
-        font-size: 1.1rem;
+        margin-top: 28px;
+        font-size: 1.08rem;
       }
 
       p,
@@ -56,41 +66,65 @@
       }
 
       a {
-        color: var(--primary);
+        color: var(--accent);
+      }
+
+      ol,
+      ul {
+        padding-left: 20px;
+      }
+
+      li + li {
+        margin-top: 8px;
+      }
+
+      .meta {
+        display: inline-block;
+        margin: 0 0 14px;
+        padding: 8px 12px;
+        border-radius: 999px;
+        background: rgba(59, 130, 246, 0.08);
+        color: var(--accent);
+        font-size: 0.82rem;
+        font-weight: 700;
       }
 
       .cta {
         display: inline-block;
         margin-top: 10px;
-        background: var(--primary);
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
         color: #fff;
         text-decoration: none;
-        border-radius: 12px;
-        padding: 10px 14px;
+        border-radius: 14px;
+        padding: 12px 16px;
         font-weight: 700;
+        box-shadow: 0 10px 24px rgba(59, 130, 246, 0.24);
       }
 
       .note {
         border: 1px solid var(--border);
-        border-radius: 12px;
-        padding: 12px;
-        background: #fbfdff;
+        border-radius: 18px;
+        padding: 14px 16px;
+        background: linear-gradient(180deg, rgba(255,255,255,0.98), rgba(248,250,252,0.98));
       }
 
       @media (max-width: 640px) {
-        main {
-          margin: 12px;
-          padding: 18px;
+        .shell {
+          padding: 22px 18px;
+          border-radius: 24px;
+        }
+
+        h1 {
+          font-size: 1.7rem;
         }
       }
     </style>
   </head>
   <body>
     <main>
+      <div class="shell">
       <h1>Dad Bod Account and Data Deletion Request</h1>
-      <p>
-        Last updated: August 4, 2026
-      </p>
+      <p class="meta">Last updated: August 4, 2026</p>
 
       <p>
         You can request deletion of your Dad Bod signed-in profile and any associated cloud backup data by contacting us. Dad Bod also supports self-service local deletion directly from your device.
@@ -143,6 +177,7 @@
         Support and privacy contact:
         <a href="mailto:satvikofficial20@gmail.com">satvikofficial20@gmail.com</a>
       </p>
+      </div>
     </main>
   </body>
 </html>
