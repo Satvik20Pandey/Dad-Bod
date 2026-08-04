@@ -50,5 +50,12 @@ PROGRESS YOU CAN SEE
 Weight trends, before/after photo compare, consistency heatmap, and strength
 records — all free, no subscription wall.
 
+## Media assets
+- App icon (512): `assets/icon-512.png` (also `release/play-store-icon-512.png`)
+- Feature graphic (1024×500): `assets/feature-graphic.png`
+- Phone screenshots: `assets/play-store/phone/`
+- 7-inch tablets: `assets/play-store/tablet-7/`
+- 10-inch tablets: `assets/play-store/tablet-10/`
+
 ## Contact
 satvikofficial20@gmail.com

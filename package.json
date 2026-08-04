@@ -15,6 +15,7 @@
     "test:meal-resolver": "node scripts/test-meal-resolver.js",
     "test:services": "node scripts/test-services.mjs",
     "test:smoke": "node scripts/smoke-test.mjs",
+    "generate:play-assets": "node scripts/generate-play-assets.mjs",
     "build:android": "powershell -ExecutionPolicy Bypass -File scripts/build-release.ps1",
     "setup:android": "powershell -ExecutionPolicy Bypass -File scripts/setup-android-sdk.ps1",
     "sync": "npx cap sync",

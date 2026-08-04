@@ -40,7 +40,7 @@ a stale config.
    | Key | SHA-1 | When |
    | --- | --- | --- |
    | Release (upload) | `84:B0:04:E6:66:F8:8E:6D:79:44:52:78:11:F6:6D:4D:EC:77:A4:3A` | Now |
-   | Play App Signing | from Play Console → Setup → App signing | **After first AAB upload** |
+   | Play App Signing | `B3:34:CD:C3:90:68:CE:86:25:A0:2B:2A:16:B6:CF:85:15:31:25:32` | Registered |
    | Debug | from `~/.android/debug.keystore` | Only if you run debug builds |
 
    **Re-download `google-services.json` after adding any fingerprint**, replace

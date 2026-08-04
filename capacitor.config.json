@@ -3,7 +3,7 @@
   "appName": "Dad Bod",
   "webDir": "dist",
   "android": {
-    "backgroundColor": "#070B13",
+    "backgroundColor": "#0B1424",
     "allowMixedContent": false
   },
   "server": {

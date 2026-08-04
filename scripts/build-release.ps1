@@ -107,6 +107,48 @@ try {
     npx cap sync android
     if ($LASTEXITCODE -ne 0) { throw "cap sync failed" }
 
+    $iconSource = Join-Path $Root "assets\icon.png"
+    if (Test-Path $iconSource) {
+        Write-Host "Applying Android launcher icons from assets/icon.png..." -ForegroundColor Yellow
+        Add-Type -AssemblyName System.Drawing
+        function Save-AndroidIcon([string]$inPath, [string]$outPath, [int]$size) {
+            $srcImg = [System.Drawing.Image]::FromFile($inPath)
+            try {
+                $bmp = New-Object System.Drawing.Bitmap $size, $size
+                $g = [System.Drawing.Graphics]::FromImage($bmp)
+                try {
+                    $g.Clear([System.Drawing.Color]::Transparent)
+                    $g.InterpolationMode = [System.Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+                    $g.SmoothingMode = [System.Drawing.Drawing2D.SmoothingMode]::HighQuality
+                    $g.PixelOffsetMode = [System.Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+                    $g.CompositingQuality = [System.Drawing.Drawing2D.CompositingQuality]::HighQuality
+                    $g.DrawImage($srcImg, 0, 0, $size, $size)
+                } finally { $g.Dispose() }
+                $bmp.Save($outPath, [System.Drawing.Imaging.ImageFormat]::Png)
+                $bmp.Dispose()
+            } finally { $srcImg.Dispose() }
+        }
+        $res = Join-Path $AndroidDir "app\src\main\res"
+        $launcher = @{ "mipmap-mdpi" = 48; "mipmap-hdpi" = 72; "mipmap-xhdpi" = 96; "mipmap-xxhdpi" = 144; "mipmap-xxxhdpi" = 192 }
+        foreach ($kv in $launcher.GetEnumerator()) {
+            $dir = Join-Path $res $kv.Key
+            Save-AndroidIcon $iconSource (Join-Path $dir "ic_launcher.png") $kv.Value
+            Save-AndroidIcon $iconSource (Join-Path $dir "ic_launcher_round.png") $kv.Value
+        }
+        $foreground = @{ "mipmap-mdpi" = 108; "mipmap-hdpi" = 162; "mipmap-xhdpi" = 216; "mipmap-xxhdpi" = 324; "mipmap-xxxhdpi" = 432 }
+        foreach ($kv in $foreground.GetEnumerator()) {
+            $dir = Join-Path $res $kv.Key
+            Save-AndroidIcon $iconSource (Join-Path $dir "ic_launcher_foreground.png") $kv.Value
+        }
+        $bgColorFile = Join-Path $res "values\ic_launcher_background.xml"
+        @"
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="ic_launcher_background">#0B1424</color>
+</resources>
+"@ | Set-Content -Path $bgColorFile -Encoding UTF8
+    }
+
     $splashPng = Join-Path $AndroidDir "app\src\main\res\drawable\splash.png"
     if (Test-Path $splashPng) {
         Remove-Item $splashPng -Force

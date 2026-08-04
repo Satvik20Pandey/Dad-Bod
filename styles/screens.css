@@ -23,25 +23,28 @@
 }
 
 .splash-orb {
-  width: 108px;
-  height: 108px;
-  border-radius: 50%;
+  width: 96px;
+  height: 96px;
+  border-radius: 22%;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #FFFFFF;
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  box-shadow: 0 12px 40px rgba(59, 130, 246, 0.16), var(--shadow-1);
+  background: transparent;
+  border: none;
+  box-shadow: 0 14px 44px rgba(11, 20, 36, 0.28), 0 0 0 1px rgba(59, 130, 246, 0.12);
   animation: orb-pulse 2.2s ease-in-out infinite;
+  overflow: hidden;
 }
 
 .splash-logo {
-  width: 62px;
-  height: 62px;
+  width: 96px;
+  height: 96px;
+  display: block;
+  border-radius: 22%;
 }
 
 @keyframes orb-pulse {
-  50% { box-shadow: 0 0 90px rgba(59, 130, 246, 0.4), inset 0 0 30px rgba(59, 130, 246, 0.14); }
+  50% { box-shadow: 0 16px 56px rgba(59, 130, 246, 0.35), 0 0 0 1px rgba(139, 92, 246, 0.18); }
 }
 
 .splash-wordmark {
@@ -92,9 +95,11 @@
 }
 
 .auth-logo {
-  width: 76px;
-  height: 76px;
-  filter: drop-shadow(0 0 24px rgba(59, 130, 246, 0.4));
+  width: 88px;
+  height: 88px;
+  border-radius: 22%;
+  display: block;
+  filter: drop-shadow(0 10px 28px rgba(11, 20, 36, 0.35));
 }
 
 .orb-ring {
